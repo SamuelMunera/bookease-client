@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 const CATEGORIES = [
@@ -9,61 +10,52 @@ const CATEGORIES = [
   { value: 'SALON', label: 'Salones' },
 ];
 
-const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
+const CAT_LABEL     = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
 const FEATURES = [
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-    ),
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
     title: 'Reserva en segundos',
-    sub: 'Sin llamadas, sin esperas',
+    sub: 'Sin llamadas ni esperas',
   },
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-      </svg>
-    ),
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
     title: 'Horarios en tiempo real',
     sub: 'Disponibilidad siempre actualizada',
   },
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
     title: 'Cancelación fácil',
     sub: 'Gestiona tus citas sin fricción',
   },
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    ),
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     title: 'Elige tu profesional',
     sub: 'El especialista que prefieras',
   },
 ];
 
+const HERO_STATS = [
+  { num: '2,500+', label: 'Negocios' },
+  { num: '28', label: 'Ciudades' },
+  { num: '100K+', label: 'Reservas' },
+  { num: '4.9★', label: 'Valoración' },
+];
+
 export default function BusinessListPage() {
+  const { user } = useAuth();
   const [businesses, setBusinesses] = useState([]);
-  const [category, setCategory] = useState('');
-  const [city, setCity] = useState('');
-  const [cityInput, setCityInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [category, setCategory]     = useState('');
+  const [city, setCity]             = useState('');
+  const [cityInput, setCityInput]   = useState('');
+  const [loading, setLoading]       = useState(false);
 
   useEffect(() => {
     setLoading(true);
     const params = {};
     if (category) params.category = category;
-    if (city) params.city = city;
+    if (city)     params.city     = city;
     api.getBusinesses(params).then(setBusinesses).finally(() => setLoading(false));
   }, [category, city]);
 
@@ -74,28 +66,41 @@ export default function BusinessListPage() {
 
   return (
     <>
+      {/* ── Promo bar ── */}
+      <div className="promo-bar">
+        <span className="promo-bar-dot" />
+        Nuevo en Bookease: confirmación instantánea en negocios seleccionados
+        <span className="promo-bar-dot" />
+      </div>
+
       {/* ── Hero ── */}
       <div className="hero">
         <div className="hero-inner">
-          <span className="hero-eyebrow">
+
+          <span className="hero-eyebrow animate-up animate-up-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
-            Reservas al instante
+            La plataforma de reservas más premium
           </span>
 
-          <h1 className="hero-title">
+          <h1 className="hero-title animate-up animate-up-2">
             Tu próxima cita,<br />
             <em>a un clic de distancia</em>
           </h1>
 
-          <p className="hero-subtitle">
-            Barberías, spas y salones de belleza premium.<br />
-            Elige, reserva y listo — sin esperas.
+          <p className="hero-subtitle animate-up animate-up-3">
+            Barberías, spas y salones de belleza de primer nivel.<br />
+            Reserva con los mejores profesionales, en segundos.
           </p>
 
-          <form className="search-bar" onSubmit={handleSearch} style={{ maxWidth: 460 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="2">
+          {/* Search bar */}
+          <form
+            className="search-bar animate-up animate-up-3"
+            style={{ maxWidth: 480 }}
+            onSubmit={handleSearch}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
@@ -108,6 +113,42 @@ export default function BusinessListPage() {
               Buscar
             </button>
           </form>
+
+          {/* Hero CTAs */}
+          <div className="hero-actions animate-up animate-up-4">
+            {!user && (
+              <Link to="/register">
+                <button className="btn btn-secondary btn-sm" style={{ background: 'rgba(255,255,255,.1)', color: '#fff', borderColor: 'rgba(255,255,255,.2)' }}>
+                  Crear cuenta gratis
+                </button>
+              </Link>
+            )}
+            <a
+              href="#businesses"
+              style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,.5)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', transition: 'color var(--ease)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,.8)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,.5)')}
+            >
+              Explorar negocios
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14M5 12l7 7 7-7"/>
+              </svg>
+            </a>
+          </div>
+
+          {/* Hero stats */}
+          <div className="hero-stats animate-in animate-in-1">
+            {HERO_STATS.map((s, i) => (
+              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-6)' }}>
+                {i > 0 && <div className="hero-stat-sep" />}
+                <div className="hero-stat">
+                  <div className="hero-stat-num">{s.num}</div>
+                  <div className="hero-stat-label">{s.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
 
@@ -125,7 +166,7 @@ export default function BusinessListPage() {
       </div>
 
       {/* ── Filters bar ── */}
-      <div className="filters-bar">
+      <div className="filters-bar" id="businesses">
         <span className="filters-title">Categoría</span>
         <div className="chip-group">
           {CATEGORIES.map((c) => (
@@ -154,21 +195,24 @@ export default function BusinessListPage() {
 
       {/* ── Business grid ── */}
       <div className="page">
+
+        {/* Skeleton */}
         {loading && (
           <div className="grid-auto">
             {[1,2,3,4,5,6].map((n) => (
               <div key={n} className="biz-card" style={{ pointerEvents: 'none' }}>
-                <div className="biz-card-img skeleton" />
+                <div className="biz-card-img skeleton" style={{ background: 'var(--surface-3)' }} />
                 <div className="biz-card-body" style={{ gap: 'var(--sp-3)' }}>
-                  <div className="skeleton" style={{ height: 14, width: '60%', borderRadius: 'var(--r-sm)' }} />
-                  <div className="skeleton" style={{ height: 18, width: '85%', borderRadius: 'var(--r-sm)' }} />
-                  <div className="skeleton" style={{ height: 12, width: '50%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 13, width: '55%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 18, width: '80%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 12, width: '45%', borderRadius: 'var(--r-sm)' }} />
                 </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Empty state */}
         {!loading && businesses.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon">
@@ -192,9 +236,10 @@ export default function BusinessListPage() {
           </div>
         )}
 
+        {/* Grid */}
         {!loading && businesses.length > 0 && (
           <>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
               {businesses.length} {businesses.length === 1 ? 'negocio' : 'negocios'} encontrados
             </p>
             <div className="grid-auto">
@@ -208,15 +253,19 @@ export default function BusinessListPage() {
                     <div className="biz-card-body">
                       <h3 className="biz-card-name">{b.name}</h3>
                       <p className="biz-card-address">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', flexShrink: 0 }}>
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                         </svg>
                         {b.address}, {b.city}
                       </p>
                       <div className="biz-card-footer">
                         <p className="biz-card-meta">
-                          {b.services?.length > 0 ? `${b.services.length} servicio${b.services.length !== 1 ? 's' : ''}` : ''}
-                          {b.professionals?.length > 0 ? ` · ${b.professionals.length} profesional${b.professionals.length !== 1 ? 'es' : ''}` : ''}
+                          {b.services?.length > 0
+                            ? `${b.services.length} servicio${b.services.length !== 1 ? 's' : ''}`
+                            : ''}
+                          {b.professionals?.length > 0
+                            ? ` · ${b.professionals.length} profesional${b.professionals.length !== 1 ? 'es' : ''}`
+                            : ''}
                         </p>
                         <div className="biz-card-arrow">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

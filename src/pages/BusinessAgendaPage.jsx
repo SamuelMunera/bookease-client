@@ -62,6 +62,14 @@ export default function BusinessAgendaPage() {
       <div style={{ paddingTop: 'var(--sp-4)', marginBottom: 'var(--sp-6)' }}>
         <p className="section-label">Panel de negocio</p>
         <h1 className="page-title">Agenda</h1>
+        {date === new Date().toISOString().split('T')[0] && (
+          <div className="today-pill" style={{ marginBottom: 'var(--sp-2)' }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+            Hoy
+          </div>
+        )}
         <p className="page-subtitle" style={{ textTransform: 'capitalize' }}>
           {date ? fmtFull(date) : 'Selecciona una fecha'}
         </p>

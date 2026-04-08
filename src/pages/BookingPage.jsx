@@ -91,6 +91,33 @@ export default function BookingPage() {
         <p className="page-subtitle">Selecciona la fecha y el horario que prefieras</p>
       </div>
 
+      {/* Steps */}
+      <div className="booking-steps">
+        <div className="booking-step done">
+          <span className="booking-step-num">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          Negocio
+        </div>
+        <div className="booking-step-line" />
+        <div className="booking-step done">
+          <span className="booking-step-num">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          Servicio
+        </div>
+        <div className="booking-step-line" />
+        <div className="booking-step active">
+          <span className="booking-step-num">3</span>
+          Horario
+        </div>
+        <div className="booking-step-line" />
+        <div className="booking-step">
+          <span className="booking-step-num">4</span>
+          Confirmar
+        </div>
+      </div>
+
       {/* Date picker */}
       <div className="card" style={{ marginBottom: 'var(--sp-4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>

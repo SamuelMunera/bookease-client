@@ -1,5 +1,5 @@
 /* ─── Fonts ─────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,300;1,6..72,400;1,6..72,500;1,6..72,600;1,6..72,700&display=swap');
 
 /* ─── Tokens ─────────────────────────────────────────────── */
 :root {
@@ -43,8 +43,12 @@
   --error-border:   #FECACA;
 
   /* Typography */
-  --font-heading:   'Playfair Display', Georgia, serif;
+  --font-heading:   'Newsreader', 'Playfair Display', Georgia, serif;
   --font-body:      'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Warm accent (from Stitch design system) */
+  --warm-accent:    #C8B89A;
+  --warm-accent-bg: #F5EFE6;
 
   /* Scale */
   --text-xs:   11px;
@@ -265,18 +269,25 @@ img { display: block; max-width: 100%; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
-  background: var(--crimson);
+  background: linear-gradient(135deg, #E8222A 0%, #D71A21 50%, #B01219 100%);
   color: #fff;
-  border-color: var(--crimson);
-  box-shadow: 0 1px 3px rgba(215,26,33,.25);
+  border-color: transparent;
+  box-shadow: 0 1px 3px rgba(215,26,33,.3), 0 2px 8px rgba(215,26,33,.12);
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,.1) 0%, transparent 100%);
+  pointer-events: none;
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--crimson-dark);
-  border-color: var(--crimson-dark);
-  box-shadow: 0 4px 12px rgba(215,26,33,.3);
+  background: linear-gradient(135deg, #D71A21 0%, #B01219 50%, #8B0D13 100%);
+  box-shadow: 0 4px 16px rgba(215,26,33,.38), 0 8px 24px rgba(215,26,33,.14);
   transform: translateY(-1px);
 }
-.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:active:not(:disabled) { transform: translateY(0); box-shadow: 0 1px 4px rgba(215,26,33,.25); }
 
 .btn-secondary {
   background: var(--surface);
@@ -374,14 +385,40 @@ select.input {
   overflow: hidden;
   flex-shrink: 0;
 }
-.biz-card-img-barbershop { background: linear-gradient(135deg, #1A1714 0%, #2D2926 60%, #1A1714 100%); }
-.biz-card-img-spa        { background: linear-gradient(135deg, #0F1A15 0%, #162C22 60%, #0D1E18 100%); }
-.biz-card-img-salon      { background: linear-gradient(135deg, #1A1220 0%, #2A1835 60%, #1A1220 100%); }
+.biz-card-img-barbershop {
+  background: linear-gradient(160deg, #0C0A08 0%, #1A1310 35%, #2C1E14 65%, #1A1714 100%);
+  position: relative;
+}
+.biz-card-img-barbershop::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 70% at 85% 25%, rgba(160,70,15,.35) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 15% 75%, rgba(215,26,33,.12) 0%, transparent 50%);
+}
+.biz-card-img-spa {
+  background: linear-gradient(160deg, #061410 0%, #0C2218 35%, #143020 65%, #0D1E18 100%);
+  position: relative;
+}
+.biz-card-img-spa::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 65% 65% at 80% 20%, rgba(20,100,50,.4) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 45% at 20% 80%, rgba(10,80,40,.2) 0%, transparent 50%);
+}
+.biz-card-img-salon {
+  background: linear-gradient(160deg, #130A1C 0%, #1E1030 35%, #2C1840 65%, #1A1220 100%);
+  position: relative;
+}
+.biz-card-img-salon::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 65% 60% at 80% 25%, rgba(120,50,200,.3) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 20% 75%, rgba(215,26,33,.1) 0%, transparent 50%);
+}
 .biz-card-img::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1px, transparent 0);
-  background-size: 20px 20px;
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.055) 1px, transparent 0);
+  background-size: 18px 18px;
 }
 .biz-card-img-letter {
   position: absolute; inset: 0;
@@ -839,4 +876,174 @@ select.input {
 @media (max-width: 480px) {
   .nav-user { display: none; }
   .nav-brand { font-size: var(--text-base); }
+}
+
+/* ─── Entry animations ────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.animate-up   { animation: fadeUp 0.65s cubic-bezier(.22,1,.36,1) both; }
+.animate-up-1 { animation-delay: 0.08s; }
+.animate-up-2 { animation-delay: 0.18s; }
+.animate-up-3 { animation-delay: 0.28s; }
+.animate-up-4 { animation-delay: 0.38s; }
+.animate-in   { animation: fadeIn 0.5s ease both; }
+.animate-in-1 { animation-delay: 0.5s; }
+
+/* upgrade skeleton to shimmer */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-3) 25%, var(--surface-2) 50%, var(--surface-3) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear, skeleton-pulse 0ms; /* override pulse with shimmer */
+}
+
+/* ─── Promo bar ───────────────────────────────────────────── */
+.promo-bar {
+  background: var(--charcoal);
+  color: rgba(255,255,255,.7);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 8px var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+.promo-bar-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--crimson); display: inline-block; }
+
+/* ─── Hero stats strip ────────────────────────────────────── */
+.hero-stats {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--sp-6); margin-top: var(--sp-8);
+  padding-top: var(--sp-6);
+  border-top: 1px solid rgba(255,255,255,.08);
+  flex-wrap: wrap;
+}
+.hero-stat { text-align: center; }
+.hero-stat-num {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.hero-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.38);
+}
+.hero-stat-sep { width: 1px; height: 32px; background: rgba(255,255,255,.1); }
+@media (max-width: 480px) { .hero-stat-sep { display: none; } .hero-stats { gap: var(--sp-5); } }
+
+/* ─── Nav accent line ─────────────────────────────────────── */
+.nav::after {
+  content: none; /* subtle: removed, border-bottom is enough */
+}
+
+/* ─── Business card category pill (styled) ───────────────── */
+.biz-card-img-label {
+  background: rgba(0,0,0,.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+/* ─── Service price color ─────────────────────────────────── */
+.service-price {
+  background: linear-gradient(135deg, var(--crimson-light) 0%, var(--crimson) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Pro avatar gradient ─────────────────────────────────── */
+.pro-card.selected .pro-avatar {
+  background: linear-gradient(135deg, #E8222A 0%, #B01219 100%);
+  color: #fff;
+}
+
+/* ─── Auth panel brand decorative quote ──────────────────── */
+.auth-brand-quote {
+  margin-top: var(--sp-8);
+  padding: var(--sp-4);
+  border-left: 2px solid rgba(215,26,33,.4);
+  font-size: var(--text-sm);
+  color: rgba(255,255,255,.45);
+  font-style: italic;
+  font-family: var(--font-heading);
+  line-height: 1.7;
+}
+
+/* ─── Booking page step indicator ────────────────────────── */
+.booking-steps {
+  display: flex; align-items: center; gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+}
+.booking-step {
+  display: flex; align-items: center; gap: var(--sp-2);
+  font-size: var(--text-xs); font-weight: 600;
+  color: var(--text-subtle); letter-spacing: 0.04em;
+}
+.booking-step.active { color: var(--crimson); }
+.booking-step.done   { color: var(--success); }
+.booking-step-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  flex-shrink: 0;
+}
+.booking-step.active .booking-step-num { background: var(--crimson); color: #fff; border-color: var(--crimson); }
+.booking-step.done .booking-step-num   { background: var(--success); color: #fff; border-color: var(--success); }
+.booking-step-line { flex: 1; height: 1px; background: var(--border); max-width: 32px; }
+
+/* ─── Agenda today pill ───────────────────────────────────── */
+.today-pill {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  background: var(--crimson-subtle); color: var(--crimson-dark);
+  border: 1px solid var(--crimson-border);
+  border-radius: var(--r-full); padding: 4px 12px;
+  font-size: var(--text-xs); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin-bottom: var(--sp-2);
+}
+
+/* ─── Card shine overlay on hover ────────────────────────── */
+.biz-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, transparent 60%);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--ease);
+  pointer-events: none;
+}
+.biz-card { position: relative; }
+.biz-card:hover::after { opacity: 1; }
+
+/* ─── Input icon wrapper ──────────────────────────────────── */
+.input-wrap {
+  position: relative;
+}
+.input-wrap .input { padding-left: 40px; }
+.input-wrap-icon {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--text-subtle); pointer-events: none;
+  display: flex; align-items: center;
 }

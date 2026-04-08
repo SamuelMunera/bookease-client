@@ -61,6 +61,10 @@ export default function LoginPage() {
               </li>
             ))}
           </ul>
+
+          <blockquote className="auth-brand-quote">
+            "El tiempo es el único lujo que no podemos comprar — pero sí podemos optimizarlo."
+          </blockquote>
         </div>
       </div>
 
