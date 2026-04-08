@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 
 const CATEGORIES = [
@@ -10,12 +10,54 @@ const CATEGORIES = [
 ];
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
+const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
+
+const FEATURES = [
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    ),
+    title: 'Reserva en segundos',
+    sub: 'Sin llamadas, sin esperas',
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+    ),
+    title: 'Horarios en tiempo real',
+    sub: 'Disponibilidad siempre actualizada',
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+    title: 'Cancelación fácil',
+    sub: 'Gestiona tus citas sin fricción',
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+    title: 'Elige tu profesional',
+    sub: 'El especialista que prefieras',
+  },
+];
 
 export default function BusinessListPage() {
   const [businesses, setBusinesses] = useState([]);
   const [category, setCategory] = useState('');
   const [city, setCity] = useState('');
+  const [cityInput, setCityInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -25,64 +67,169 @@ export default function BusinessListPage() {
     api.getBusinesses(params).then(setBusinesses).finally(() => setLoading(false));
   }, [category, city]);
 
+  function handleSearch(e) {
+    e.preventDefault();
+    setCity(cityInput.trim());
+  }
+
   return (
     <>
-      {/* Hero */}
-      <div style={{ background: 'var(--slate-dark)', color: '#fff', padding: 'var(--sp-12) var(--sp-6)', textAlign: 'center' }}>
-        <p style={{ color: 'var(--gold-light)', fontSize: 'var(--text-sm)', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'var(--sp-3)' }}>
-          Reservas al instante
-        </p>
-        <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: 'clamp(28px,5vw,48px)', fontWeight: 700, marginBottom: 'var(--sp-4)', lineHeight: 1.15 }}>
-          Tu próxima cita,<br />
-          <em style={{ fontStyle: 'italic', color: 'var(--gold-light)' }}>a un clic de distancia</em>
-        </h1>
-        <p style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 480, margin: '0 auto', fontSize: 'var(--text-base)' }}>
-          Barberías, spas y salones de belleza. Elige, reserva y listo.
-        </p>
+      {/* ── Hero ── */}
+      <div className="hero">
+        <div className="hero-inner">
+          <span className="hero-eyebrow">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            Reservas al instante
+          </span>
+
+          <h1 className="hero-title">
+            Tu próxima cita,<br />
+            <em>a un clic de distancia</em>
+          </h1>
+
+          <p className="hero-subtitle">
+            Barberías, spas y salones de belleza premium.<br />
+            Elige, reserva y listo — sin esperas.
+          </p>
+
+          <form className="search-bar" onSubmit={handleSearch} style={{ maxWidth: 460 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Busca por ciudad..."
+              value={cityInput}
+              onChange={(e) => setCityInput(e.target.value)}
+            />
+            <button className="btn btn-primary btn-sm" type="submit" style={{ flexShrink: 0 }}>
+              Buscar
+            </button>
+          </form>
+        </div>
       </div>
 
-      <div className="page">
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: 'var(--sp-3)', marginBottom: 'var(--sp-6)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div className="chip-group">
-            {CATEGORIES.map((c) => (
-              <button key={c.value} className={`chip${category === c.value ? ' active' : ''}`}
-                onClick={() => setCategory(c.value)}>{c.label}</button>
-            ))}
+      {/* ── Features strip ── */}
+      <div className="features-strip">
+        {FEATURES.map((f) => (
+          <div key={f.title} className="feature-item">
+            <div className="feature-icon">{f.icon}</div>
+            <div>
+              <p className="feature-text-title">{f.title}</p>
+              <p className="feature-text-sub">{f.sub}</p>
+            </div>
           </div>
-          <input className="input" style={{ width: 180 }} placeholder="Buscar ciudad..."
-            value={city} onChange={(e) => setCity(e.target.value)} />
-        </div>
+        ))}
+      </div>
 
-        {loading && <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando negocios...</p>}
-
-        <div className="grid-auto">
-          {businesses.map((b) => (
-            <Link key={b.id} to={`/businesses/${b.id}`} style={{ textDecoration: 'none' }}>
-              <div className="card card-hover" style={{ height: '100%' }}>
-                {/* Color bar */}
-                <div style={{ height: 4, background: 'linear-gradient(90deg, var(--gold), var(--gold-light))', borderRadius: 'var(--r-sm)', marginBottom: 'var(--sp-4)', marginTop: 'calc(-1 * var(--sp-5))', marginLeft: 'calc(-1 * var(--sp-5))', marginRight: 'calc(-1 * var(--sp-5))', borderTopLeftRadius: 'var(--r-lg)', borderTopRightRadius: 'var(--r-lg)' }} />
-                <p className="category-tag" style={{ marginBottom: 'var(--sp-2)' }}>{CAT_LABEL[b.category] || b.category}</p>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-md)', marginBottom: 'var(--sp-2)' }}>{b.name}</h3>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
-                  {b.address}, {b.city}
-                </p>
-                {b.services?.length > 0 && (
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>
-                    {b.services.length} servicio{b.services.length !== 1 ? 's' : ''}
-                    {b.professionals?.length > 0 ? ` · ${b.professionals.length} profesional${b.professionals.length !== 1 ? 'es' : ''}` : ''}
-                  </p>
-                )}
-              </div>
-            </Link>
+      {/* ── Filters bar ── */}
+      <div className="filters-bar">
+        <span className="filters-title">Categoría</span>
+        <div className="chip-group">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.value}
+              className={`chip${category === c.value ? ' active' : ''}`}
+              onClick={() => setCategory(c.value)}
+            >
+              {c.label}
+            </button>
           ))}
         </div>
+        {city && (
+          <button
+            className="chip"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={() => { setCity(''); setCityInput(''); }}
+          >
+            {city}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* ── Business grid ── */}
+      <div className="page">
+        {loading && (
+          <div className="grid-auto">
+            {[1,2,3,4,5,6].map((n) => (
+              <div key={n} className="biz-card" style={{ pointerEvents: 'none' }}>
+                <div className="biz-card-img skeleton" />
+                <div className="biz-card-body" style={{ gap: 'var(--sp-3)' }}>
+                  <div className="skeleton" style={{ height: 14, width: '60%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 18, width: '85%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 12, width: '50%', borderRadius: 'var(--r-sm)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loading && businesses.length === 0 && (
           <div className="empty-state">
-            <p style={{ fontSize: 'var(--text-md)', marginBottom: 'var(--sp-2)' }}>Sin resultados</p>
+            <div className="empty-state-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </div>
+            <p style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--sp-2)' }}>
+              Sin resultados
+            </p>
             <p>Prueba con otra categoría o ciudad.</p>
+            {city && (
+              <button
+                className="btn btn-secondary"
+                style={{ marginTop: 'var(--sp-4)' }}
+                onClick={() => { setCity(''); setCityInput(''); }}
+              >
+                Limpiar búsqueda
+              </button>
+            )}
           </div>
+        )}
+
+        {!loading && businesses.length > 0 && (
+          <>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {businesses.length} {businesses.length === 1 ? 'negocio' : 'negocios'} encontrados
+            </p>
+            <div className="grid-auto">
+              {businesses.map((b) => (
+                <Link key={b.id} to={`/businesses/${b.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
+                  <div className="biz-card" style={{ width: '100%' }}>
+                    <div className={`biz-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
+                      <span className="biz-card-img-letter">{b.name[0]}</span>
+                      <span className="biz-card-img-label">{CAT_LABEL[b.category] || b.category}</span>
+                    </div>
+                    <div className="biz-card-body">
+                      <h3 className="biz-card-name">{b.name}</h3>
+                      <p className="biz-card-address">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }}>
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        {b.address}, {b.city}
+                      </p>
+                      <div className="biz-card-footer">
+                        <p className="biz-card-meta">
+                          {b.services?.length > 0 ? `${b.services.length} servicio${b.services.length !== 1 ? 's' : ''}` : ''}
+                          {b.professionals?.length > 0 ? ` · ${b.professionals.length} profesional${b.professionals.length !== 1 ? 'es' : ''}` : ''}
+                        </p>
+                        <div className="biz-card-arrow">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </>

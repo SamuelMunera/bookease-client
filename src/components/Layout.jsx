@@ -11,11 +11,12 @@ export default function Layout() {
   }
 
   return (
-    <>
+    <div className="app-shell">
       <nav className="nav">
         <Link to="/" className="nav-brand">
-          Book<span>ease</span>
+          Book<span className="nav-brand-accent">ease</span>
         </Link>
+
         <div className="nav-links">
           {!user && (
             <>
@@ -25,22 +26,33 @@ export default function Layout() {
               </Link>
             </>
           )}
+
           {user?.role === 'CLIENT' && (
             <Link to="/my-bookings" className="nav-link">Mis reservas</Link>
           )}
+
           {user?.role === 'BUSINESS_OWNER' && (
             <Link to="/agenda" className="nav-link">Mi agenda</Link>
           )}
+
           {user && (
             <>
-              <div className="nav-divider" />
+              <span className="nav-divider" />
               <span className="nav-user">{user.name}</span>
               <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Salir</button>
             </>
           )}
         </div>
       </nav>
-      <Outlet />
-    </>
+
+      <main className="app-main">
+        <Outlet />
+      </main>
+
+      <footer className="footer">
+        <span className="footer-brand">Book<span>ease</span></span>
+        <span className="footer-copy">© {new Date().getFullYear()} · Reservas para barberías, spa y salones</span>
+      </footer>
+    </div>
   );
 }
