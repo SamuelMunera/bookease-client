@@ -2,38 +2,199 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 
-const DAYS_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const WEEKDAYS  = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-function formatDateLabel(dateStr) {
+function formatLabel(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
   return `${DAYS_ES[d.getDay()]}, ${d.getDate()} de ${MONTHS_ES[d.getMonth()]}`;
 }
 
+/* ── Mini calendar ───────────────────────────────────────── */
+function MiniCalendar({ value, onChange }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const selected = value ? new Date(value + 'T00:00:00') : null;
+  const [view, setView] = useState(() => {
+    const d = new Date(today);
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+
+  function prevMonth() {
+    setView(v => {
+      const d = new Date(v.year, v.month - 1, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  }
+  function nextMonth() {
+    setView(v => {
+      const d = new Date(v.year, v.month + 1, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  }
+
+  // Build calendar grid
+  const firstDay = new Date(view.year, view.month, 1);
+  // Mon=0 offset
+  let startOffset = firstDay.getDay() - 1;
+  if (startOffset < 0) startOffset = 6;
+
+  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  function selectDay(day) {
+    if (!day) return;
+    const d = new Date(view.year, view.month, day);
+    d.setHours(0, 0, 0, 0);
+    if (d < today) return;
+    const str = `${view.year}-${String(view.month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    onChange(str);
+  }
+
+  const monthLabel = new Date(view.year, view.month, 1)
+    .toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+
+  return (
+    <div className="mini-cal">
+      {/* Nav */}
+      <div className="mini-cal-nav">
+        <button className="mini-cal-arrow" onClick={prevMonth} aria-label="Mes anterior">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <span className="mini-cal-month">{monthLabel}</span>
+        <button className="mini-cal-arrow" onClick={nextMonth} aria-label="Mes siguiente">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="mini-cal-grid">
+        {WEEKDAYS.map(d => (
+          <div key={d} className="mini-cal-wday">{d}</div>
+        ))}
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e${i}`} />;
+          const date = new Date(view.year, view.month, day);
+          date.setHours(0,0,0,0);
+          const isPast    = date < today;
+          const isToday   = date.getTime() === today.getTime();
+          const isSel     = selected && date.getTime() === selected.getTime();
+          return (
+            <button
+              key={day}
+              className={`mini-cal-day${isPast ? ' past' : ''}${isToday ? ' today' : ''}${isSel ? ' selected' : ''}`}
+              onClick={() => selectDay(day)}
+              disabled={isPast}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Step indicator ──────────────────────────────────────── */
+function Steps({ step }) {
+  const steps = ['Negocio', 'Servicio', 'Horario', 'Confirmar'];
+  return (
+    <div className="booking-steps">
+      {steps.map((s, i) => {
+        const done   = i + 1 < step;
+        const active = i + 1 === step;
+        return (
+          <div key={s} style={{ display:'flex', alignItems:'center' }}>
+            <div className={`booking-step${done ? ' done' : ''}${active ? ' active' : ''}`}>
+              <span className="booking-step-num">
+                {done
+                  ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  : i + 1}
+              </span>
+              {s}
+            </div>
+            {i < steps.length - 1 && <div className="booking-step-line" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Success screen ──────────────────────────────────────── */
+function SuccessScreen({ date, time, onViewBookings, onExplore }) {
+  return (
+    <div className="booking-success">
+      {/* Confetti ring */}
+      <div className="booking-success-ring">
+        <div className="booking-success-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2 className="booking-success-title">¡Reserva confirmada!</h2>
+      <p className="booking-success-sub">
+        Tu cita está agendada para el<br />
+        <strong>{formatLabel(date)}</strong> a las <strong>{time}</strong>
+      </p>
+      <p className="booking-success-note">
+        Recibirás un correo de confirmación en breve.
+      </p>
+
+      <div className="booking-success-actions">
+        <button className="btn btn-primary" onClick={onViewBookings}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Ver mis reservas
+        </button>
+        <button className="btn btn-secondary" onClick={onExplore}>
+          Explorar más
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   MAIN
+   ══════════════════════════════════════════════════════════ */
 export default function BookingPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const professionalId = params.get('professionalId');
-  const serviceId = params.get('serviceId');
+  const serviceId      = params.get('serviceId');
 
   const today = new Date().toISOString().split('T')[0];
-  const [date, setDate] = useState(today);
-  const [slots, setSlots] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [date,       setDate]       = useState(today);
+  const [slots,      setSlots]      = useState([]);
+  const [selected,   setSelected]   = useState(null);
+  const [loading,    setLoading]    = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [error,      setError]      = useState('');
+  const [success,    setSuccess]    = useState(false);
 
   useEffect(() => {
     setSelected(null);
     setError('');
     setLoading(true);
     api.getSlots({ professionalId, serviceId, date })
-      .then((d) => setSlots(d.slots || []))
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then(d  => setSlots(d.slots || []))
+      .catch(e => setError(e.message))
+      .finally(()  => setLoading(false));
   }, [date, professionalId, serviceId]);
 
   async function handleConfirm() {
@@ -53,190 +214,177 @@ export default function BookingPage() {
   if (success) {
     return (
       <div className="page-sm">
-        <div style={{ textAlign: 'center', padding: 'var(--sp-16) var(--sp-4)' }}>
-          <div className="success-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', marginBottom: 'var(--sp-2)', color: 'var(--text)' }}>
-            ¡Reserva confirmada!
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-2)', lineHeight: 1.7 }}>
-            Tu cita está agendada para el<br />
-            <strong style={{ color: 'var(--text)' }}>{formatDateLabel(date)}</strong> a las <strong style={{ color: 'var(--text)' }}>{selected?.startTime}</strong>
-          </p>
-          <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-xs)', marginBottom: 'var(--sp-8)' }}>
-            Recibirás un email de confirmación en breve.
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--sp-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" onClick={() => navigate('/my-bookings')}>
-              Ver mis reservas
-            </button>
-            <button className="btn btn-secondary" onClick={() => navigate('/')}>
-              Explorar más
-            </button>
-          </div>
-        </div>
+        <SuccessScreen
+          date={date}
+          time={selected?.startTime}
+          onViewBookings={() => navigate('/my-bookings')}
+          onExplore={() => navigate('/')}
+        />
       </div>
     );
   }
 
   return (
-    <div className="page-sm" style={{ maxWidth: 560 }}>
-      {/* Page header */}
-      <div style={{ paddingTop: 'var(--sp-8)', marginBottom: 'var(--sp-6)' }}>
-        <p className="section-label">Selección de horario</p>
+    <div className="page-sm booking-page-v2">
+      {/* ── Page header ── */}
+      <div className="booking-page-header">
+        <p className="section-label">Paso 3 de 4</p>
         <h1 className="page-title">Elige tu horario</h1>
-        <p className="page-subtitle">Selecciona la fecha y el horario que prefieras</p>
+        <p className="page-subtitle">Selecciona fecha y hora para tu cita</p>
       </div>
 
-      {/* Steps */}
-      <div className="booking-steps">
-        <div className="booking-step done">
-          <span className="booking-step-num">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
-          Negocio
-        </div>
-        <div className="booking-step-line" />
-        <div className="booking-step done">
-          <span className="booking-step-num">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-          </span>
-          Servicio
-        </div>
-        <div className="booking-step-line" />
-        <div className="booking-step active">
-          <span className="booking-step-num">3</span>
-          Horario
-        </div>
-        <div className="booking-step-line" />
-        <div className="booking-step">
-          <span className="booking-step-num">4</span>
-          Confirmar
-        </div>
-      </div>
+      {/* ── Steps ── */}
+      <Steps step={3} />
 
-      {/* Date picker */}
-      <div className="card" style={{ marginBottom: 'var(--sp-4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--r-lg)', background: 'var(--crimson-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--crimson)', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+      {/* ── Body grid: calendar + slots ── */}
+      <div className="booking-body">
+
+        {/* LEFT: Calendar */}
+        <div className="booking-col">
+          <div className="booking-section-card">
+            <div className="booking-section-head">
+              <div className="booking-section-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+              </div>
+              <div>
+                <p className="booking-section-title">Fecha</p>
+                {date && (
+                  <p className="booking-section-val" style={{ textTransform:'capitalize' }}>
+                    {formatLabel(date)}
+                  </p>
+                )}
+              </div>
+            </div>
+            <MiniCalendar value={date} onChange={setDate} />
           </div>
-          <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>Fecha de la cita</p>
         </div>
-        <div className="form-group">
-          <label className="form-label" htmlFor="date">Selecciona una fecha</label>
-          <input
-            id="date"
-            className="input"
-            type="date"
-            min={today}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-          {date && (
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--sp-2)', textTransform: 'capitalize' }}>
-              {formatDateLabel(date)}
-            </p>
+
+        {/* RIGHT: Slots */}
+        <div className="booking-col">
+          <div className="booking-section-card booking-section-card--slots">
+            <div className="booking-section-head">
+              <div className="booking-section-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <div>
+                <p className="booking-section-title">Horario disponible</p>
+                {!loading && slots.length > 0 && (
+                  <p className="booking-section-val">{slots.length} turno{slots.length !== 1 ? 's' : ''}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Slot loading skeleton */}
+            {loading && (
+              <div className="slot-grid">
+                {[...Array(8)].map((_, n) => (
+                  <div key={n} className="skeleton" style={{ height:42, borderRadius:'var(--r-lg)' }} />
+                ))}
+              </div>
+            )}
+
+            {/* Empty */}
+            {!loading && slots.length === 0 && !error && (
+              <div className="booking-slots-empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.25">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <p>Sin horarios para esta fecha.</p>
+                <span>Elige otro día en el calendario.</span>
+              </div>
+            )}
+
+            {/* Slots grid */}
+            {!loading && slots.length > 0 && (
+              <div className="slot-grid">
+                {slots.map((slot) => (
+                  <button
+                    key={slot.startTime}
+                    className={`slot-btn2${selected?.startTime === slot.startTime ? ' active' : ''}`}
+                    onClick={() => setSelected(slot)}
+                  >
+                    <span className="slot-btn2-time">{slot.startTime}</span>
+                    {slot.endTime && (
+                      <span className="slot-btn2-end">–{slot.endTime}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Selected summary */}
+          {selected && (
+            <div className="slot-selected-card">
+              <div className="slot-selected-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--crimson)" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div style={{ flex:1 }}>
+                <p className="slot-selected-label">Cita seleccionada</p>
+                <p className="slot-selected-val">
+                  {formatLabel(date)} · {selected.startTime}
+                  {selected.endTime && ` – ${selected.endTime}`}
+                </p>
+              </div>
+              <button
+                className="slot-selected-clear"
+                onClick={() => setSelected(null)}
+                aria-label="Deseleccionar"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Slots */}
-      <div className="card" style={{ marginBottom: 'var(--sp-4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--r-lg)', background: 'var(--crimson-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--crimson)', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-          </div>
-          <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>Horarios disponibles</p>
-        </div>
+      {/* ── Error ── */}
+      {error && (
+        <p className="error-msg" style={{ marginBottom:'var(--sp-4)' }}>{error}</p>
+      )}
 
-        {loading && (
-          <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-            {[1,2,3,4,5,6,8].map((n) => (
-              <div key={n} className="skeleton" style={{ height: 42, width: 84, borderRadius: 'var(--r-lg)' }} />
-            ))}
-          </div>
-        )}
-
-        {!loading && slots.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 'var(--sp-6) 0' }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5" style={{ display: 'block', margin: '0 auto var(--sp-3)' }}>
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-              Sin horarios disponibles para esta fecha.
-            </p>
-            <p style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-xs)', marginTop: 'var(--sp-1)' }}>
-              Prueba con otra fecha.
-            </p>
-          </div>
-        )}
-
-        {!loading && slots.length > 0 && (
-          <div className="slot-grid">
-            {slots.map((slot) => (
-              <button
-                key={slot.startTime}
-                className={`slot-btn${selected?.startTime === slot.startTime ? ' active' : ''}`}
-                onClick={() => setSelected(slot)}
-              >
-                {slot.startTime}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {selected && (
-          <div className="slot-summary">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-1)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--crimson-dark)" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"/>
+      {/* ── Confirm CTA ── */}
+      <div className="booking-cta">
+        <p className="booking-cta-note">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Cancelación gratuita hasta 24 h antes
+        </p>
+        <button
+          className="btn btn-primary btn-lg"
+          disabled={!selected || submitting}
+          onClick={handleConfirm}
+          style={{ minWidth:220 }}
+        >
+          {submitting ? (
+            <>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                style={{ animation:'spin 1s linear infinite' }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
               </svg>
-              <p style={{ fontWeight: 700, color: 'var(--crimson-dark)', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Horario seleccionado
-              </p>
-            </div>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--crimson-dark)', fontWeight: 600 }}>
-              {formatDateLabel(date)} · {selected.startTime} – {selected.endTime}
-            </p>
-          </div>
-        )}
+              Confirmando…
+            </>
+          ) : (
+            <>
+              Confirmar reserva
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </>
+          )}
+        </button>
       </div>
-
-      {error && <p className="error-msg" style={{ marginBottom: 'var(--sp-3)' }}>{error}</p>}
-
-      <button
-        className="btn btn-primary btn-lg btn-full"
-        disabled={!selected || submitting}
-        onClick={handleConfirm}
-      >
-        {submitting ? (
-          <>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-            </svg>
-            Confirmando...
-          </>
-        ) : (
-          <>
-            Confirmar reserva
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </>
-        )}
-      </button>
-
-      <p style={{ textAlign: 'center', fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginTop: 'var(--sp-3)' }}>
-        Puedes cancelar tu reserva hasta 24 horas antes
-      </p>
     </div>
   );
 }
