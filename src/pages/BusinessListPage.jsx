@@ -13,6 +13,76 @@ const CATEGORIES = [
 const CAT_LABEL     = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
+/* ── Mock data — visible mientras no haya DB conectada ── */
+const MOCK_BUSINESSES = [
+  {
+    id: 'mock-1',
+    name: 'The Noble Blade',
+    category: 'BARBERSHOP',
+    address: 'Calle 93 #11-45',
+    city: 'Bogotá',
+    phone: '+57 310 000 0001',
+    description: 'Barbería de lujo especializada en cortes clásicos y afeitado con navaja.',
+    services:      [1, 2, 3, 4],
+    professionals: [1, 2],
+  },
+  {
+    id: 'mock-2',
+    name: 'Serenity Spa & Wellness',
+    category: 'SPA',
+    address: 'Av. El Dorado #68-95, Piso 3',
+    city: 'Bogotá',
+    phone: '+57 310 000 0002',
+    description: 'Experiencias de bienestar premium: masajes terapéuticos, faciales y ritual de aguas.',
+    services:      [1, 2, 3, 4, 5],
+    professionals: [1, 2, 3],
+  },
+  {
+    id: 'mock-3',
+    name: 'Atelier Studio',
+    category: 'SALON',
+    address: 'Carrera 15 #82-10',
+    city: 'Bogotá',
+    phone: '+57 310 000 0003',
+    description: 'Salón de alta peluquería con especialistas en color, keratina y tratamientos capilares.',
+    services:      [1, 2, 3],
+    professionals: [1, 2],
+  },
+  {
+    id: 'mock-4',
+    name: 'Barber Society',
+    category: 'BARBERSHOP',
+    address: 'Carrera 7 #116-50',
+    city: 'Bogotá',
+    phone: '+57 310 000 0004',
+    description: 'El club donde el estilo se define. Ambiente exclusivo, maestros barberos.',
+    services:      [1, 2, 3, 4, 5, 6],
+    professionals: [1, 2, 3],
+  },
+  {
+    id: 'mock-5',
+    name: 'Zen Garden Spa',
+    category: 'SPA',
+    address: 'Calle 100 #19-61',
+    city: 'Medellín',
+    phone: '+57 310 000 0005',
+    description: 'Retiro urbano de bienestar con inspiración oriental. Masajes, aromaterapia y meditación.',
+    services:      [1, 2, 3, 4],
+    professionals: [1, 2],
+  },
+  {
+    id: 'mock-6',
+    name: 'Lumière Beauty Lounge',
+    category: 'SALON',
+    address: 'Calle 10 #43-11',
+    city: 'Medellín',
+    phone: '+57 310 000 0006',
+    description: 'Belleza con tecnología europea. Especialistas en mechas, balayage y cuidado del cabello.',
+    services:      [1, 2, 3, 4],
+    professionals: [1, 2, 3, 4],
+  },
+];
+
 const FEATURES = [
   {
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
@@ -45,19 +115,42 @@ const HERO_STATS = [
 
 export default function BusinessListPage() {
   const { user } = useAuth();
-  const [businesses, setBusinesses] = useState([]);
-  const [category, setCategory]     = useState('');
-  const [city, setCity]             = useState('');
-  const [cityInput, setCityInput]   = useState('');
-  const [loading, setLoading]       = useState(false);
+  const [businesses, setBusinesses]   = useState([]);
+  const [category, setCategory]       = useState('');
+  const [city, setCity]               = useState('');
+  const [cityInput, setCityInput]     = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [isMockMode, setIsMockMode]   = useState(false);
 
   useEffect(() => {
     setLoading(true);
     const params = {};
     if (category) params.category = category;
     if (city)     params.city     = city;
-    api.getBusinesses(params).then(setBusinesses).finally(() => setLoading(false));
+    api.getBusinesses(params)
+      .then((data) => {
+        if (data && data.length > 0) {
+          setBusinesses(data);
+          setIsMockMode(false);
+        } else {
+          setBusinesses(applyMockFilters(params));
+          setIsMockMode(true);
+        }
+      })
+      .catch(() => {
+        setBusinesses(applyMockFilters(params));
+        setIsMockMode(true);
+      })
+      .finally(() => setLoading(false));
   }, [category, city]);
+
+  function applyMockFilters({ category: cat, city: c } = {}) {
+    return MOCK_BUSINESSES.filter((b) => {
+      if (cat && b.category !== cat) return false;
+      if (c   && !b.city.toLowerCase().includes(c.toLowerCase())) return false;
+      return true;
+    });
+  }
 
   function handleSearch(e) {
     e.preventDefault();
@@ -239,12 +332,34 @@ export default function BusinessListPage() {
         {/* Grid */}
         {!loading && businesses.length > 0 && (
           <>
+            {/* Mock mode banner */}
+            {isMockMode && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                padding: 'var(--sp-3) var(--sp-4)',
+                background: 'var(--warning-bg)',
+                border: '1px solid var(--warning-border)',
+                borderRadius: 'var(--r-lg)',
+                marginBottom: 'var(--sp-5)',
+                fontSize: 'var(--text-sm)',
+                color: 'var(--warning)',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>
+                  <strong>Modo preview</strong> — mostrando datos de ejemplo. Conecta la base de datos para ver negocios reales.
+                </span>
+              </div>
+            )}
+
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-              {businesses.length} {businesses.length === 1 ? 'negocio' : 'negocios'} encontrados
+              {businesses.length} {businesses.length === 1 ? 'negocio' : 'negocios'} {isMockMode ? 'de ejemplo' : 'encontrados'}
             </p>
             <div className="grid-auto">
               {businesses.map((b) => (
-                <Link key={b.id} to={`/businesses/${b.id}`} style={{ textDecoration: 'none', display: 'flex' }}>
+                <Link key={b.id} to={isMockMode ? '#' : `/businesses/${b.id}`} style={{ textDecoration: 'none', display: 'flex' }}
+                  onClick={isMockMode ? (e) => e.preventDefault() : undefined}>
                   <div className="biz-card" style={{ width: '100%' }}>
                     <div className={`biz-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
                       <span className="biz-card-img-letter">{b.name[0]}</span>
