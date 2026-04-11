@@ -261,14 +261,15 @@ export default function BusinessListPage() {
             <div key={i} className="hero-p" style={{
               width: p.w, height: p.h,
               top: p.top, left: p.left,
-              background: i % 3 === 0 ? 'var(--crimson)' : i % 3 === 1 ? 'var(--warm-accent)' : '#fff',
+              background: i % 3 === 0 ? 'var(--gold)' : i % 3 === 1 ? 'var(--violet)' : 'var(--teal)',
+              opacity: 0.5,
               animationDuration: `${p.dur}, ${p.driftDur}`,
               animationDelay: `${p.delay}, ${p.delay}`,
             }}/>
           ))}
           {/* Glow orbs */}
-          <div className="hero-orb" style={{ width:500, height:500, left:'50%', top:'0%' }} />
-          <div className="hero-orb" style={{ width:300, height:300, left:'80%', top:'60%', animationDelay:'3s' }} />
+          <div className="hero-orb" style={{ width: 600, height: 600, left: '50%', top: '0%' }} />
+          <div className="hero-orb" style={{ width: 350, height: 350, left: '80%', top: '60%', animationDelay: '3s', background: 'radial-gradient(ellipse, rgba(124,92,252,0.1) 0%, transparent 70%)' }} />
         </div>
 
         <div className="hero-inner" style={{ position:'relative', zIndex:1 }}>
@@ -304,13 +305,13 @@ export default function BusinessListPage() {
           {!user && (
             <div className="hero-actions animate-up animate-up-4">
               <Link to="/register">
-                <button className="btn btn-sm" style={{ background:'rgba(255,255,255,.1)', color:'#fff', border:'1px solid rgba(255,255,255,.2)', borderRadius:'var(--r-lg)' }}>
+                <button className="btn btn-secondary btn-sm">
                   Crear cuenta gratis
                 </button>
               </Link>
-              <a href="#businesses" style={{ fontSize:'var(--text-sm)', color:'rgba(255,255,255,.45)', display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}
-                onMouseEnter={e => e.currentTarget.style.color='rgba(255,255,255,.8)'}
-                onMouseLeave={e => e.currentTarget.style.color='rgba(255,255,255,.45)'}>
+              <a href="#businesses" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', transition: 'color var(--ease)' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-muted)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-subtle)'}>
                 Explorar negocios
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
               </a>
@@ -346,7 +347,7 @@ export default function BusinessListPage() {
       {trending.length > 0 && (
         <HorizontalSection
           title="Más <em>populares</em> esta semana"
-          eyebrow="🔥 Trending ahora"
+          eyebrow="Trending ahora"
           items={trending}
           badge={(b) => b.isTrending ? (
             <div className="biz-badge biz-badge-trending">
@@ -389,7 +390,7 @@ export default function BusinessListPage() {
       {newest.length > 0 && (
         <HorizontalSection
           title="Recién <em>llegados</em>"
-          eyebrow="✨ Nuevos en Bookease"
+          eyebrow="Nuevos en Bookease"
           items={newest}
           badge={(b) => b.isNew ? (
             <div className="biz-badge biz-badge-new">Nuevo</div>
@@ -421,9 +422,9 @@ export default function BusinessListPage() {
       <div className="page">
         {/* Mock banner */}
         {isMockMode && !loading && (
-          <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', padding:'var(--sp-3) var(--sp-4)', background:'var(--warning-bg)', border:'1px solid var(--warning-border)', borderRadius:'var(--r-lg)', marginBottom:'var(--sp-5)', fontSize:'var(--text-sm)', color:'var(--warning)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span><strong>Modo preview</strong> — datos de ejemplo. Conecta la base de datos para ver negocios reales.</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-5)', background: 'rgba(212,168,83,0.06)', border: '1px solid var(--gold-border)', borderRadius: 'var(--r-lg)', marginBottom: 'var(--sp-5)', fontSize: 'var(--text-sm)', color: 'var(--gold)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style={{ color: 'var(--text-muted)' }}><strong style={{ color: 'var(--gold)' }}>Modo preview</strong> — datos de ejemplo. Conecta la base de datos para ver negocios reales.</span>
           </div>
         )}
 
@@ -458,7 +459,7 @@ export default function BusinessListPage() {
         {/* Grid */}
         {!loading && businesses.length > 0 && (
           <>
-            <p style={{fontSize:'var(--text-xs)',color:'var(--text-subtle)',marginBottom:'var(--sp-5)',fontWeight:600,letterSpacing:'0.07em',textTransform:'uppercase'}}>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
               {businesses.length} {businesses.length === 1 ? 'negocio' : 'negocios'} {isMockMode ? 'de ejemplo' : 'encontrados'}
             </p>
             <div className="grid-auto">

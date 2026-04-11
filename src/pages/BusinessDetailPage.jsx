@@ -7,12 +7,12 @@ const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belle
 
 /* ── Avatar colours based on initial letter ───────────────── */
 const AVATAR_PALETTES = [
-  { bg: 'linear-gradient(135deg,#D71A21,#8B0D13)', color: '#fff' },
-  { bg: 'linear-gradient(135deg,#1A1714,#4A4440)', color: '#fff' },
-  { bg: 'linear-gradient(135deg,#C8B89A,#a0896e)', color: '#1A1714' },
-  { bg: 'linear-gradient(135deg,#166534,#14532d)', color: '#fff' },
-  { bg: 'linear-gradient(135deg,#92600A,#6b4507)', color: '#fff' },
-  { bg: 'linear-gradient(135deg,#1d4ed8,#1e3a8a)', color: '#fff' },
+  { bg: 'linear-gradient(135deg,#D4A853,#A8833F)', color: '#0A0808' },
+  { bg: 'linear-gradient(135deg,#7C5CFC,#5B3FD9)', color: '#fff' },
+  { bg: 'linear-gradient(135deg,#00D4C8,#008F8B)', color: '#0A0808' },
+  { bg: 'linear-gradient(135deg,#22C55E,#15803D)', color: '#fff' },
+  { bg: 'linear-gradient(135deg,#F59E0B,#B45309)', color: '#0A0808' },
+  { bg: 'linear-gradient(135deg,#EC4899,#9D174D)', color: '#fff' },
 ];
 function avatarPalette(name) {
   const idx = (name?.charCodeAt(0) ?? 0) % AVATAR_PALETTES.length;
@@ -209,7 +209,7 @@ function BookingBar({ service, error, onBook, ready }) {
               <p className="booking-bar-service">{service.name}</p>
               <p className="booking-bar-meta">
                 {service.duration} min
-                {error && <> · <span style={{ color: 'var(--crimson-light)' }}>{error}</span></>}
+                {error && <> · <span style={{ color: 'var(--error)' }}>{error}</span></>}
               </p>
             </>
           ) : (
@@ -430,7 +430,7 @@ export default function BusinessDetailPage() {
                     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                   </svg>
                   {selectedServiceData?.name} · {selectedServiceData?.duration} min
-                  <span style={{ fontWeight:700, color:'var(--crimson)' }}>
+                  <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
                     · ${Number(selectedServiceData?.price || 0).toLocaleString('es-CO')}
                   </span>
                 </div>
@@ -459,7 +459,7 @@ export default function BusinessDetailPage() {
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
             <span>Selecciona un profesional y un servicio para reservar</span>
-            {error && <span style={{ color:'var(--crimson)', marginLeft:'var(--sp-2)' }}>— {error}</span>}
+            {error && <span style={{ color: 'var(--error)', marginLeft: 'var(--sp-2)' }}>— {error}</span>}
           </div>
         )}
       </div>

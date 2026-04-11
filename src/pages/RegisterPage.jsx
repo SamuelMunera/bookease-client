@@ -3,6 +3,21 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
+const ACCOUNT_TYPES = [
+  {
+    value: 'CLIENT',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    title: 'Cliente',
+    desc: 'Reserva citas y gestiona tus visitas',
+  },
+  {
+    value: 'BUSINESS_OWNER',
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    title: 'Negocio',
+    desc: 'Recibe y gestiona reservas de tu local',
+  },
+];
+
 export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -44,22 +59,28 @@ export default function RegisterPage() {
             Crea tu cuenta y empieza a reservar en los mejores negocios de estética y bienestar.
           </p>
 
-          <div style={{ marginTop: 'var(--sp-10)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
-            {[
-              { label: 'Cliente', desc: 'Reserva citas y gestiona tus visitas', icon: '👤' },
-              { label: 'Negocio', desc: 'Recibe y gestiona reservas de tu local', icon: '🏪' },
-            ].map((opt) => (
-              <div key={opt.label} style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'flex-start' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 'var(--r-lg)', background: 'rgba(215,26,33,.18)', border: '1px solid rgba(215,26,33,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>
+          <div style={{ marginTop: 'var(--sp-10)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+            {ACCOUNT_TYPES.map((opt) => (
+              <div key={opt.value} style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 'var(--r-lg)',
+                  background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, color: 'var(--gold)',
+                }}>
                   {opt.icon}
                 </div>
                 <div>
-                  <p style={{ fontWeight: 600, color: '#fff', fontSize: 'var(--text-sm)', marginBottom: 2 }}>{opt.label}</p>
-                  <p style={{ color: 'rgba(255,255,255,.5)', fontSize: 'var(--text-xs)', lineHeight: 1.5 }}>{opt.desc}</p>
+                  <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 3 }}>{opt.title}</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', lineHeight: 1.5 }}>{opt.desc}</p>
                 </div>
               </div>
             ))}
           </div>
+
+          <blockquote className="auth-brand-quote">
+            "Más de 2.500 profesionales esperan para atenderte."
+          </blockquote>
         </div>
       </div>
 
@@ -112,14 +133,35 @@ export default function RegisterPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="role">Tipo de cuenta</label>
-              <select id="role" className="input" value={form.role} onChange={set('role')}>
-                <option value="CLIENT">Soy cliente — quiero reservar</option>
-                <option value="BUSINESS_OWNER">Soy negocio — quiero recibir reservas</option>
-              </select>
+              <label className="form-label">Tipo de cuenta</label>
+              <div className="role-cards">
+                {ACCOUNT_TYPES.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`role-card${form.role === opt.value ? ' selected' : ''}`}
+                    onClick={() => setForm({ ...form, role: opt.value })}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setForm({ ...form, role: opt.value })}
+                  >
+                    <div style={{ color: form.role === opt.value ? 'var(--gold)' : 'var(--text-muted)', marginBottom: 6 }}>
+                      {opt.icon}
+                    </div>
+                    <p className="role-card-title">{opt.title}</p>
+                    <p className="role-card-desc">{opt.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {error && <p className="error-msg">{error}</p>}
+            {error && (
+              <p className="error-msg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {error}
+              </p>
+            )}
 
             <button
               className="btn btn-primary btn-lg btn-full"
@@ -127,7 +169,21 @@ export default function RegisterPage() {
               disabled={loading}
               style={{ marginTop: 'var(--sp-2)' }}
             >
-              {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
+              {loading ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                  Creando cuenta...
+                </>
+              ) : (
+                <>
+                  Crear cuenta gratis
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </>
+              )}
             </button>
           </form>
 

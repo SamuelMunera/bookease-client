@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 const BRAND_FEATURES = [
-  'Reserva en barberías, spas y salones top',
-  'Disponibilidad en tiempo real, siempre actualizada',
-  'Elige tu profesional favorito',
-  'Cancela o modifica sin complicaciones',
+  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>, text: 'Barberías, spas y salones top' },
+  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>, text: 'Disponibilidad en tiempo real' },
+  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>, text: 'Elige tu profesional favorito' },
+  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>, text: 'Cancela o modifica sin complicaciones' },
 ];
 
 export default function LoginPage() {
@@ -49,15 +49,18 @@ export default function LoginPage() {
             Conectamos clientes con los mejores profesionales del cuidado personal.
           </p>
 
-          <ul style={{ marginTop: 'var(--sp-8)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', listStyle: 'none' }}>
+          <ul style={{ marginTop: 'var(--sp-8)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', listStyle: 'none' }}>
             {BRAND_FEATURES.map((feat) => (
-              <li key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-3)', fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,.65)', lineHeight: 1.5 }}>
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: 'rgba(215,26,33,.25)', border: '1px solid rgba(215,26,33,.4)', flexShrink: 0, marginTop: 1 }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--crimson-light)" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+              <li key={feat.text} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                <span style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 22, height: 22, borderRadius: '50%',
+                  background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)',
+                  color: 'var(--gold)', flexShrink: 0
+                }}>
+                  {feat.icon}
                 </span>
-                {feat}
+                {feat.text}
               </li>
             ))}
           </ul>
@@ -103,7 +106,14 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && <p className="error-msg">{error}</p>}
+            {error && (
+              <p className="error-msg">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {error}
+              </p>
+            )}
 
             <button
               className="btn btn-primary btn-lg btn-full"
@@ -119,7 +129,12 @@ export default function LoginPage() {
                   Ingresando...
                 </>
               ) : (
-                'Iniciar sesión'
+                <>
+                  Iniciar sesión
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </>
               )}
             </button>
           </form>
