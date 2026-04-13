@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import { MOCK_BUSINESSES, MOCK_PROFESSIONALS, MOCK_SERVICES_BY_CAT } from '../data/mockBusinesses';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 
@@ -264,6 +265,14 @@ export default function BusinessDetailPage() {
       setBusiness(biz);
       setProfessionals(profs);
       setServices(svcs);
+    }).catch(() => {
+      // Fallback to mock data when API is unavailable (preview mode)
+      const mockBiz = MOCK_BUSINESSES.find(b => b.id === id);
+      if (mockBiz) {
+        setBusiness(mockBiz);
+        setProfessionals(MOCK_PROFESSIONALS);
+        setServices(MOCK_SERVICES_BY_CAT[mockBiz.category] || []);
+      }
     });
   }, [id]);
 

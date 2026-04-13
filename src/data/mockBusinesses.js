@@ -1,0 +1,61 @@
+export const MOCK_BUSINESSES = [
+  { id:'m1', name:'The Noble Blade', category:'BARBERSHOP', address:'Calle 93 #11-45', city:'Bogotá',
+    rating:4.9, reviewCount:312, bookingsThisWeek:87, isTrending:true,  isNew:false, isFeatured:true,
+    tags:['Corte clásico','Afeitado navaja','Beard trim'], phone:'601 234 5678',
+    description:'Barbería de lujo con más de 10 años perfeccionando el arte del corte clásico y moderno.' },
+  { id:'m2', name:'Serenity Spa & Wellness', category:'SPA', address:'Av. El Dorado #68-95, P3', city:'Bogotá',
+    rating:4.8, reviewCount:228, bookingsThisWeek:63, isTrending:true,  isNew:false, isFeatured:true,
+    tags:['Masaje terapéutico','Faciales','Ritual de aguas'], phone:'601 345 6789',
+    description:'Centro de bienestar integral con tratamientos de spa de primer nivel y atención personalizada.' },
+  { id:'m3', name:'Atelier Studio', category:'SALON', address:'Carrera 15 #82-10', city:'Bogotá',
+    rating:4.7, reviewCount:189, bookingsThisWeek:54, isTrending:false, isNew:true,  isFeatured:true,
+    tags:['Balayage','Keratina','Color'], phone:'601 456 7890',
+    description:'Estudio de belleza especializado en técnicas de coloración europeas y cuidado capilar avanzado.' },
+  { id:'m4', name:'Barber Society', category:'BARBERSHOP', address:'Carrera 7 #116-50', city:'Bogotá',
+    rating:4.9, reviewCount:445, bookingsThisWeek:102, isTrending:true,  isNew:false, isFeatured:false,
+    tags:['Corte fade','Hot towel shave','Diseño de barba'], phone:'601 567 8901',
+    description:'La sociedad de barberos más exclusiva de Bogotá. Fade perfectos y afeitados con navaja caliente.' },
+  { id:'m5', name:'Zen Garden Spa', category:'SPA', address:'Calle 100 #19-61', city:'Medellín',
+    rating:4.6, reviewCount:143, bookingsThisWeek:38, isTrending:false, isNew:true,  isFeatured:false,
+    tags:['Aromaterapia','Reflexología','Meditación'], phone:'604 123 4567',
+    description:'Refugio de tranquilidad en el corazón de Medellín. Terapias holísticas y rituales ancestrales.' },
+  { id:'m6', name:'Lumière Beauty Lounge', category:'SALON', address:'Calle 10 #43-11', city:'Medellín',
+    rating:4.8, reviewCount:267, bookingsThisWeek:71, isTrending:false, isNew:true,  isFeatured:false,
+    tags:['Mechas','Corte europeo','Nutrición capilar'], phone:'604 234 5678',
+    description:'Salón de belleza premium con técnicas europeas. Especialistas en transformaciones de color.' },
+  { id:'m7', name:'Imperio Barbershop', category:'BARBERSHOP', address:'Av. 68 #44-30', city:'Bogotá',
+    rating:4.7, reviewCount:198, bookingsThisWeek:49, isTrending:false, isNew:true,  isFeatured:false,
+    tags:['Skin fade','Diseño','Barba'], phone:'601 678 9012',
+    description:'Barbería de barrio con clase. Los mejores fade de la ciudad a precios accesibles.' },
+  { id:'m8', name:'Aqua Vitae Spa', category:'SPA', address:'Calle 72 #10-07', city:'Cali',
+    rating:4.9, reviewCount:321, bookingsThisWeek:94, isTrending:true,  isNew:false, isFeatured:false,
+    tags:['Hidromasaje','Envolvimiento','Exfoliación'], phone:'602 345 6789',
+    description:'El spa más reconocido de Cali. Circuitos de aguas termales y tratamientos corporales exclusivos.' },
+];
+
+export const MOCK_PROFESSIONALS = [
+  { id:'p1', name:'Andrés Morales',  bio:'10 años de experiencia en estilos clásicos y modernos' },
+  { id:'p2', name:'Juliana Pérez',   bio:'Experta en colorimetría y técnicas de color avanzadas' },
+  { id:'p3', name:'Carlos Vega',     bio:'Maestro barbero con certificación internacional' },
+];
+
+export const MOCK_SERVICES_BY_CAT = {
+  BARBERSHOP: [
+    { id:'s1', name:'Corte clásico',       duration:30, price:35000,  description:'Corte personalizado con acabado premium' },
+    { id:'s2', name:'Afeitado con navaja', duration:45, price:55000,  description:'Ritual completo de afeitado clásico' },
+    { id:'s3', name:'Beard trim',           duration:20, price:25000,  description:'Diseño y perfilado de barba' },
+    { id:'s4', name:'Corte + Barba',        duration:60, price:70000,  description:'Combo completo con hot towel' },
+  ],
+  SPA: [
+    { id:'s1', name:'Masaje terapéutico',  duration:60, price:120000, description:'Relajación profunda con aceites esenciales' },
+    { id:'s2', name:'Facial vitamínico',   duration:45, price:90000,  description:'Limpieza, exfoliación e hidratación' },
+    { id:'s3', name:'Ritual de aguas',     duration:90, price:180000, description:'Circuito completo de hidromasaje' },
+    { id:'s4', name:'Aromaterapia',        duration:50, price:100000, description:'Equilibrio cuerpo-mente con esencias naturales' },
+  ],
+  SALON: [
+    { id:'s1', name:'Corte europeo',          duration:45,  price:65000,  description:'Técnica de corte con tijeras profesionales' },
+    { id:'s2', name:'Balayage',               duration:120, price:250000, description:'Coloración degradada de aspecto natural' },
+    { id:'s3', name:'Keratina',               duration:90,  price:200000, description:'Alisado y nutrición capilar profunda' },
+    { id:'s4', name:'Mechas californianas',   duration:100, price:220000, description:'Iluminación natural y progresiva' },
+  ],
+};

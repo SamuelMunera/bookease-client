@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import { MOCK_BUSINESSES } from '../data/mockBusinesses';
 
 /* ─── constants ─────────────────────────────────────────── */
 const CATEGORIES = [
@@ -12,34 +13,6 @@ const CATEGORIES = [
 ];
 const CAT_LABEL     = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
-
-/* ─── mock data ─────────────────────────────────────────── */
-const MOCK_BUSINESSES = [
-  { id:'m1', name:'The Noble Blade', category:'BARBERSHOP', address:'Calle 93 #11-45', city:'Bogotá',
-    rating:4.9, reviewCount:312, bookingsThisWeek:87, isTrending:true,  isNew:false, isFeatured:true,
-    tags:['Corte clásico','Afeitado navaja','Beard trim'], services:[1,2,3,4], professionals:[1,2] },
-  { id:'m2', name:'Serenity Spa & Wellness', category:'SPA', address:'Av. El Dorado #68-95, P3', city:'Bogotá',
-    rating:4.8, reviewCount:228, bookingsThisWeek:63, isTrending:true,  isNew:false, isFeatured:true,
-    tags:['Masaje terapéutico','Faciales','Ritual de aguas'], services:[1,2,3,4,5], professionals:[1,2,3] },
-  { id:'m3', name:'Atelier Studio', category:'SALON', address:'Carrera 15 #82-10', city:'Bogotá',
-    rating:4.7, reviewCount:189, bookingsThisWeek:54, isTrending:false, isNew:true,  isFeatured:true,
-    tags:['Balayage','Keratina','Color'], services:[1,2,3], professionals:[1,2] },
-  { id:'m4', name:'Barber Society', category:'BARBERSHOP', address:'Carrera 7 #116-50', city:'Bogotá',
-    rating:4.9, reviewCount:445, bookingsThisWeek:102, isTrending:true,  isNew:false, isFeatured:false,
-    tags:['Corte fade','Hot towel shave','Diseño de barba'], services:[1,2,3,4,5,6], professionals:[1,2,3] },
-  { id:'m5', name:'Zen Garden Spa', category:'SPA', address:'Calle 100 #19-61', city:'Medellín',
-    rating:4.6, reviewCount:143, bookingsThisWeek:38, isTrending:false, isNew:true,  isFeatured:false,
-    tags:['Aromaterapia','Reflexología','Meditación'], services:[1,2,3,4], professionals:[1,2] },
-  { id:'m6', name:'Lumière Beauty Lounge', category:'SALON', address:'Calle 10 #43-11', city:'Medellín',
-    rating:4.8, reviewCount:267, bookingsThisWeek:71, isTrending:false, isNew:true,  isFeatured:false,
-    tags:['Mechas','Corte europeo','Nutrición capilar'], services:[1,2,3,4], professionals:[1,2,3,4] },
-  { id:'m7', name:'Imperio Barbershop', category:'BARBERSHOP', address:'Av. 68 #44-30', city:'Bogotá',
-    rating:4.7, reviewCount:198, bookingsThisWeek:49, isTrending:false, isNew:true,  isFeatured:false,
-    tags:['Skin fade','Diseño','Barba'],  services:[1,2,3], professionals:[1,2] },
-  { id:'m8', name:'Aqua Vitae Spa', category:'SPA', address:'Calle 72 #10-07', city:'Cali',
-    rating:4.9, reviewCount:321, bookingsThisWeek:94, isTrending:true,  isNew:false, isFeatured:false,
-    tags:['Hidromasaje','Envolvimiento','Exfoliación'], services:[1,2,3,4,5], professionals:[1,2,3] },
-];
 
 /* ─── category showcase data ────────────────────────────── */
 const CAT_TILES = [
@@ -192,7 +165,9 @@ const FEATURES = [
    ══════════════════════════════════════════════════════════ */
 export default function BusinessListPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [businesses, setBusinesses]   = useState([]);
+  // category only filters "Explorar todos los negocios"; trending/newest are always unfiltered
   const [category, setCategory]       = useState('');
   const [city, setCity]               = useState('');
   const [cityInput, setCityInput]     = useState('');
@@ -212,37 +187,44 @@ export default function BusinessListPage() {
     { num: `${(c4/10).toFixed(1)}★`,   label: 'Valoración' },
   ];
 
+  // Fetch all businesses for city (no category filter — category is applied locally to the grid only)
   useEffect(() => {
     setLoading(true);
     const params = {};
-    if (category) params.category = category;
-    if (city)     params.city     = city;
+    if (city) params.city = city;
     api.getBusinesses(params)
       .then((data) => {
         if (data && data.length > 0) { setBusinesses(data); setIsMockMode(false); }
-        else                          { setBusinesses(applyMockFilters(params)); setIsMockMode(true); }
+        else                          { setBusinesses(applyMockCityFilter(city)); setIsMockMode(true); }
       })
-      .catch(() => { setBusinesses(applyMockFilters(params)); setIsMockMode(true); })
+      .catch(() => { setBusinesses(applyMockCityFilter(city)); setIsMockMode(true); })
       .finally(() => setLoading(false));
-  }, [category, city]);
+  }, [city]);
 
-  function applyMockFilters({ category: cat, city: c } = {}) {
-    return MOCK_BUSINESSES.filter((b) => {
-      if (cat && b.category !== cat) return false;
-      if (c   && !b.city.toLowerCase().includes(c.toLowerCase())) return false;
-      return true;
-    });
+  function applyMockCityFilter(c) {
+    if (!c) return MOCK_BUSINESSES;
+    return MOCK_BUSINESSES.filter(b => b.city.toLowerCase().includes(c.toLowerCase()));
   }
 
-  function handleSearch(e) { e.preventDefault(); setCity(cityInput.trim()); }
+  function scrollToGrid() {
+    document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function handleSearch(e) {
+    e.preventDefault();
+    setCity(cityInput.trim());
+    scrollToGrid();
+  }
 
   const handleCardClick = useCallback((b) => {
-    if (!isMockMode) window.location.href = `/businesses/${b.id}`;
-  }, [isMockMode]);
+    navigate(`/businesses/${b.id}`);
+  }, [navigate]);
 
-  // derived sections
+  // trending / newest: always use the full (unfiltered-by-category) businesses list
   const trending = businesses.filter(b => b.isTrending);
   const newest   = businesses.filter(b => b.isNew);
+  // category filter applies only to the explore-all grid
+  const gridBusinesses = category ? businesses.filter(b => b.category === category) : businesses;
 
   return (
     <>
@@ -369,7 +351,7 @@ export default function BusinessListPage() {
           </div>
           <div className="cat-grid">
             {CAT_TILES.map(cat => (
-              <div key={cat.value} className="cat-tile" onClick={() => setCategory(cat.value === category ? '' : cat.value)}>
+              <div key={cat.value} className="cat-tile" onClick={() => { setCategory(cat.value === category ? '' : cat.value); scrollToGrid(); }}>
                 <div className={`cat-tile-bg ${cat.imgClass}`} />
                 <div className="cat-tile-overlay" />
                 <div className="cat-tile-body">
@@ -445,27 +427,26 @@ export default function BusinessListPage() {
         )}
 
         {/* Empty */}
-        {!loading && businesses.length === 0 && (
+        {!loading && gridBusinesses.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </div>
             <p style={{fontSize:'var(--text-base)',fontWeight:600,color:'var(--text)',marginBottom:'var(--sp-2)'}}>Sin resultados</p>
             <p>Prueba con otra categoría o ciudad.</p>
-            {city && <button className="btn btn-secondary" style={{marginTop:'var(--sp-4)'}} onClick={() => { setCity(''); setCityInput(''); }}>Limpiar búsqueda</button>}
+            {(city || category) && <button className="btn btn-secondary" style={{marginTop:'var(--sp-4)'}} onClick={() => { setCity(''); setCityInput(''); setCategory(''); }}>Limpiar filtros</button>}
           </div>
         )}
 
         {/* Grid */}
-        {!loading && businesses.length > 0 && (
+        {!loading && gridBusinesses.length > 0 && (
           <>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-              {businesses.length} {businesses.length === 1 ? 'negocio' : 'negocios'} {isMockMode ? 'de ejemplo' : 'encontrados'}
+              {gridBusinesses.length} {gridBusinesses.length === 1 ? 'negocio' : 'negocios'} {isMockMode ? 'de ejemplo' : 'encontrados'}
             </p>
             <div className="grid-auto">
-              {businesses.map(b => (
-                <Link key={b.id} to={isMockMode ? '#' : `/businesses/${b.id}`}
-                  onClick={isMockMode ? e => e.preventDefault() : undefined}
+              {gridBusinesses.map(b => (
+                <Link key={b.id} to={`/businesses/${b.id}`}
                   style={{textDecoration:'none',display:'flex'}}>
                   <div className="biz-card" style={{width:'100%',position:'relative'}}>
                     {/* trending / new badge on grid card */}
