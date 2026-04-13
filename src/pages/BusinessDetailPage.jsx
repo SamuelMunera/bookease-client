@@ -170,39 +170,78 @@ function ProfCard({ p, selected, onSelect }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   SERVICE CARD
+   SERVICE CARD v3 — rich vertical card
    ══════════════════════════════════════════════════════════ */
-function ServiceCard({ sv, selected, onSelect }) {
+const SVC_ICON = {
+  BARBERSHOP: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+      <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+      <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+      <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+    </svg>
+  ),
+  SPA: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 22c-4.97 0-9-3.13-9-7 0-1.8.7-3.44 1.86-4.72C6.1 8.85 9.5 7 12 7s5.9 1.85 7.14 3.28C20.3 11.56 21 13.2 21 15c0 3.87-4.03 7-9 7z"/>
+      <path d="M12 7V2M9 4l3-2 3 2"/>
+    </svg>
+  ),
+  SALON: (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    </svg>
+  ),
+};
+
+function ServiceCard({ sv, selected, onSelect, category }) {
   return (
     <div
-      className={`svc-card2${selected ? ' selected' : ''}`}
+      className={`svc-card3${selected ? ' selected' : ''}`}
       onClick={() => onSelect(sv.id)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onSelect(sv.id)}
       aria-pressed={selected}
     >
-      <div className="svc-card2-strip" />
+      <div className="svc-card3-strip" />
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p className="svc-card2-name">{sv.name}</p>
-        {sv.description && (
-          <p className="svc-card2-desc">{sv.description}</p>
-        )}
-        <div className="svc-card2-meta">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* Top: category icon + duration badge */}
+      <div className="svc-card3-top">
+        <div className="svc-card3-icon">
+          {SVC_ICON[category] ?? SVC_ICON.BARBERSHOP}
+        </div>
+        <span className="svc-card3-duration">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
           {sv.duration} min
-        </div>
+        </span>
       </div>
 
-      <div style={{ textAlign: 'right', flexShrink: 0, paddingLeft: 'var(--sp-3)' }}>
-        <p className="svc-card2-price">${Number(sv.price).toLocaleString('es-CO')}</p>
-        <div className={`svc-card2-check${selected ? ' visible' : ''}`}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
+      {/* Name + description */}
+      <p className="svc-card3-name">{sv.name}</p>
+      {sv.description && <p className="svc-card3-desc">{sv.description}</p>}
+
+      {/* Footer: price + CTA */}
+      <div className="svc-card3-footer">
+        <p className="svc-card3-price">${Number(sv.price).toLocaleString('es-CO')}</p>
+        <div className={`svc-card3-cta${selected ? ' selected' : ''}`}>
+          {selected ? (
+            <>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Seleccionado
+            </>
+          ) : (
+            <>
+              Elegir
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -420,13 +459,14 @@ export default function BusinessDetailPage() {
                 <p style={{ fontSize: 'var(--text-sm)' }}>Sin servicios registrados.</p>
               </div>
             ) : (
-              <div className="detail-cards-list">
+              <div className="svc-cards-grid">
                 {services.map((sv) => (
                   <ServiceCard
                     key={sv.id}
                     sv={sv}
                     selected={selectedService === sv.id}
                     onSelect={(id) => { setSelectedService(id); setError(''); }}
+                    category={business.category}
                   />
                 ))}
               </div>
