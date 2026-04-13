@@ -2472,6 +2472,13 @@ input, textarea, select { font-family: inherit; }
   .mobile-booking-bar { display: flex; }
   .inline-cta { display: none; }
   .page { padding: var(--sp-5) var(--sp-4); }
+  /* Detail page */
+  .detail-page { padding: var(--sp-5) var(--sp-4); }
+  .biz-hero { padding: var(--sp-10) var(--sp-5) var(--sp-8); }
+  .booking-bar { padding: var(--sp-3) var(--sp-4); }
+  /* Profile page */
+  .prof-profile-hero { padding: var(--sp-8) 0 var(--sp-10); }
+  .prof-profile-stats { gap: var(--sp-4); padding: var(--sp-4) var(--sp-6); }
 }
 
 @media (max-width: 480px) {
@@ -2485,6 +2492,24 @@ input, textarea, select { font-family: inherit; }
   .my-booking-card { flex-direction: column; }
   .agenda-stats { grid-template-columns: repeat(2, 1fr); }
   .slots-grid { grid-template-columns: repeat(4, 1fr); }
+  /* Detail page */
+  .biz-hero { padding: var(--sp-8) var(--sp-4) var(--sp-6); }
+  .detail-page { padding: var(--sp-4) var(--sp-3); }
+  .biz-hero-stat { min-width: 0; padding: var(--sp-3) var(--sp-4); }
+  .biz-hero-stats { gap: var(--sp-2); }
+  .detail-section-label { margin-bottom: var(--sp-4); }
+  /* Profile page */
+  .prof-profile-header { flex-direction: column; gap: var(--sp-4); }
+  .prof-profile-name { font-size: var(--text-2xl); }
+  .prof-profile-stats {
+    flex-direction: row; flex-wrap: wrap; gap: var(--sp-4);
+    padding: var(--sp-4);
+  }
+  .prof-profile-stat { flex: 1; min-width: 80px; }
+  .prof-profile-stat-sep { display: none; }
+  .prof-profile-bottom-cta { padding: var(--sp-5); }
+  /* Service cards: single col on small mobile */
+  .svc-cards-grid { grid-template-columns: 1fr !important; }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -3330,4 +3355,47 @@ input, textarea, select { font-family: inherit; }
 }
 @media (max-width: 600px) {
   .prof-profile-bottom-cta { flex-direction: column; align-items: flex-start; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — 375px (iPhone SE / small Android)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 375px) {
+  /* Prevent any horizontal overflow */
+  body { overflow-x: hidden; }
+
+  /* Nav */
+  .nav-brand-icon { display: none; }
+  .nav-brand { font-size: 18px; }
+
+  /* Business list hero */
+  .hero-title { font-size: 26px; }
+
+  /* Detail page: tighter padding */
+  .detail-page { padding: var(--sp-3) var(--sp-3); }
+  .biz-hero { padding: var(--sp-6) var(--sp-3) var(--sp-5); }
+  .biz-hero-stats { flex-wrap: wrap; }
+  .biz-hero-stat { flex: 1; min-width: 90px; }
+
+  /* Booking bar: single column on very small screens */
+  .booking-bar-inner { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+  .booking-bar-right { justify-content: space-between; }
+  .booking-bar-btn { flex: 1; }
+
+  /* Prof profile */
+  .prof-profile-hero-cta { flex-direction: column; align-items: stretch; }
+  .prof-profile-hero-cta .btn { justify-content: center; }
+
+  /* Service card price size */
+  .svc-card3-price { font-size: var(--text-md); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — 1280px+ desktop widescreen
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 1280px) {
+  /* Give more breathing room in detail page */
+  .detail-page { padding: var(--sp-8) var(--sp-8); }
+  /* Services grid: allow 2 cols inside the right column on wide screens */
+  .detail-grid { gap: var(--sp-8); }
 }
