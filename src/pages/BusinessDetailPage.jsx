@@ -138,7 +138,20 @@ function ProfCard({ p, selected, onSelect }) {
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p className="prof-card2-name">{p.name}</p>
+        <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)', flexWrap:'wrap' }}>
+          <p className="prof-card2-name" style={{ margin:0 }}>{p.name}</p>
+          <Link
+            to={`/professionals/${p.id}`}
+            className="prof-card2-profile-link"
+            onClick={(e) => e.stopPropagation()}
+            tabIndex={0}
+          >
+            Ver perfil
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </Link>
+        </div>
         {p.bio && <p className="prof-card2-bio">{p.bio}</p>}
         <div className="prof-card2-avail">
           <span className="prof-card2-avail-dot" />

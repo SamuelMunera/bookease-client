@@ -9,6 +9,7 @@ import BusinessDetailPage from './pages/BusinessDetailPage';
 import BookingPage from './pages/BookingPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import BusinessAgendaPage from './pages/BusinessAgendaPage';
+import ProfessionalProfilePage from './pages/ProfessionalProfilePage';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="businesses/:id" element={<BusinessDetailPage />} />
+            <Route path="professionals/:id" element={<ProfessionalProfilePage />} />
             <Route path="book" element={
               <ProtectedRoute role="CLIENT"><BookingPage /></ProtectedRoute>
             } />

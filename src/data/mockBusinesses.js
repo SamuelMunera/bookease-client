@@ -34,9 +34,51 @@ export const MOCK_BUSINESSES = [
 ];
 
 export const MOCK_PROFESSIONALS = [
-  { id:'p1', name:'Andrés Morales',  bio:'10 años de experiencia en estilos clásicos y modernos' },
-  { id:'p2', name:'Juliana Pérez',   bio:'Experta en colorimetría y técnicas de color avanzadas' },
-  { id:'p3', name:'Carlos Vega',     bio:'Maestro barbero con certificación internacional' },
+  {
+    id: 'p1', name: 'Andrés Morales', role: 'Master Barber',
+    bio: '10 años de experiencia en estilos clásicos y modernos',
+    about: 'Andrés es uno de los barberos más reconocidos de Bogotá. Formado en la escuela clásica europea y perfeccionado en técnicas modernas de fade y diseño, ha trabajado con clientes de todo el continente. Su pasión por el detalle y el cuidado personal lo convierte en el profesional ideal para quienes buscan una experiencia de barbería premium.',
+    experience: '10 años', rating: 4.9, reviewCount: 127, businessId: 'm1',
+    specialties: ['Corte clásico', 'Skin fade', 'Diseño de barba', 'Hot towel shave', 'Afeitado navaja'],
+    gallery: [
+      { id:'g1', label:'Skin Fade',       seed:'barber-andrés-1' },
+      { id:'g2', label:'Corte clásico',   seed:'barber-andrés-2' },
+      { id:'g3', label:'Beard design',    seed:'barber-andrés-3' },
+      { id:'g4', label:'Hot towel',       seed:'barber-andrés-4' },
+      { id:'g5', label:'Fade + barba',    seed:'barber-andrés-5' },
+      { id:'g6', label:'Corte moderno',   seed:'barber-andrés-6' },
+    ],
+  },
+  {
+    id: 'p2', name: 'Juliana Pérez', role: 'Color Specialist',
+    bio: 'Experta en colorimetría y técnicas de color avanzadas',
+    about: 'Juliana lleva 7 años transformando la imagen de sus clientes con técnicas de coloración de vanguardia. Certificada en balayage, mechas californianas y corrección de color, combina su formación técnica con un ojo artístico único. Ha sido reconocida en múltiples publicaciones de belleza como una de las mejores coloristas de Colombia.',
+    experience: '7 años', rating: 4.8, reviewCount: 98, businessId: 'm3',
+    specialties: ['Balayage', 'Mechas californianas', 'Corrección de color', 'Keratina', 'Colorimetría'],
+    gallery: [
+      { id:'g1', label:'Balayage',        seed:'salon-juliana-1' },
+      { id:'g2', label:'Mechas',          seed:'salon-juliana-2' },
+      { id:'g3', label:'Color vibrante',  seed:'salon-juliana-3' },
+      { id:'g4', label:'Keratina',        seed:'salon-juliana-4' },
+      { id:'g5', label:'Corrección',      seed:'salon-juliana-5' },
+      { id:'g6', label:'Degradado',       seed:'salon-juliana-6' },
+    ],
+  },
+  {
+    id: 'p3', name: 'Carlos Vega', role: 'Certified Barber',
+    bio: 'Maestro barbero con certificación internacional',
+    about: 'Carlos es un maestro barbero certificado por la International Barbers Association. Con más de 12 años de trayectoria, ha perfeccionado el arte del afeitado clásico y el diseño de barba. Su técnica con navaja recta es legendaria entre sus clientes habituales. Actualmente forma a la próxima generación de barberos en Bogotá.',
+    experience: '12 años', rating: 5.0, reviewCount: 214, businessId: 'm4',
+    specialties: ['Afeitado navaja', 'Diseño de barba', 'Corte clásico', 'Fade', 'Tratamiento capilar'],
+    gallery: [
+      { id:'g1', label:'Navaja clásica',  seed:'barber-carlos-1' },
+      { id:'g2', label:'Barba diseñada',  seed:'barber-carlos-2' },
+      { id:'g3', label:'Fade perfecto',   seed:'barber-carlos-3' },
+      { id:'g4', label:'Corte + barba',   seed:'barber-carlos-4' },
+      { id:'g5', label:'Afeitado ritual', seed:'barber-carlos-5' },
+      { id:'g6', label:'Diseño skin',     seed:'barber-carlos-6' },
+    ],
+  },
 ];
 
 export const MOCK_SERVICES_BY_CAT = {
