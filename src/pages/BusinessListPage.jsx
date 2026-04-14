@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { MOCK_BUSINESSES } from '../data/mockBusinesses';
 
 /* ─── constants ─────────────────────────────────────────── */
 const CATEGORIES = [
@@ -172,7 +171,7 @@ export default function BusinessListPage() {
   const [city, setCity]               = useState('');
   const [cityInput, setCityInput]     = useState('');
   const [loading, setLoading]         = useState(false);
-  const [isMockMode, setIsMockMode]   = useState(false);
+  const [apiError, setApiError]       = useState(false);
 
   // animated counters
   const c1 = useAnimatedCounter(2500);
@@ -190,21 +189,14 @@ export default function BusinessListPage() {
   // Fetch all businesses for city (no category filter — category is applied locally to the grid only)
   useEffect(() => {
     setLoading(true);
+    setApiError(false);
     const params = {};
     if (city) params.city = city;
     api.getBusinesses(params)
-      .then((data) => {
-        if (data && data.length > 0) { setBusinesses(data); setIsMockMode(false); }
-        else                          { setBusinesses(applyMockCityFilter(city)); setIsMockMode(true); }
-      })
-      .catch(() => { setBusinesses(applyMockCityFilter(city)); setIsMockMode(true); })
+      .then((data) => setBusinesses(data || []))
+      .catch(() => { setBusinesses([]); setApiError(true); })
       .finally(() => setLoading(false));
   }, [city]);
-
-  function applyMockCityFilter(c) {
-    if (!c) return MOCK_BUSINESSES;
-    return MOCK_BUSINESSES.filter(b => b.city.toLowerCase().includes(c.toLowerCase()));
-  }
 
   function scrollToGrid() {
     document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' });
@@ -402,11 +394,11 @@ export default function BusinessListPage() {
       </div>
 
       <div className="page">
-        {/* Mock banner */}
-        {isMockMode && !loading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-5)', background: 'rgba(212,168,83,0.06)', border: '1px solid var(--gold-border)', borderRadius: 'var(--r-lg)', marginBottom: 'var(--sp-5)', fontSize: 'var(--text-sm)', color: 'var(--gold)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style={{ color: 'var(--text-muted)' }}><strong style={{ color: 'var(--gold)' }}>Modo preview</strong> — datos de ejemplo. Conecta la base de datos para ver negocios reales.</span>
+        {/* API error banner */}
+        {apiError && !loading && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-5)', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--r-lg)', marginBottom: 'var(--sp-5)', fontSize: 'var(--text-sm)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style={{ color: 'var(--text-muted)' }}>No se pudo conectar con el servidor. Verifica que la API esté activa.</span>
           </div>
         )}
 
@@ -442,7 +434,7 @@ export default function BusinessListPage() {
         {!loading && gridBusinesses.length > 0 && (
           <>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-5)', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-              {gridBusinesses.length} {gridBusinesses.length === 1 ? 'negocio' : 'negocios'} {isMockMode ? 'de ejemplo' : 'encontrados'}
+              {gridBusinesses.length} {gridBusinesses.length === 1 ? 'negocio' : 'negocios'} encontrados
             </p>
             <div className="grid-auto">
               {gridBusinesses.map(b => (

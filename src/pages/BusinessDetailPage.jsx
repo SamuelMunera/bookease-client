@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { MOCK_BUSINESSES, MOCK_PROFESSIONALS, MOCK_SERVICES_BY_CAT } from '../data/mockBusinesses';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 
@@ -306,6 +305,7 @@ export default function BusinessDetailPage() {
   const [selectedProf, setSelectedProf]   = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [error, setError]             = useState('');
+  const [loadError, setLoadError]     = useState('');
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -314,17 +314,12 @@ export default function BusinessDetailPage() {
       api.getBusinessProfessionals(id),
       api.getBusinessServices(id),
     ]).then(([biz, profs, svcs]) => {
+      if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
-      setProfessionals(profs);
-      setServices(svcs);
-    }).catch(() => {
-      // Fallback to mock data when API is unavailable (preview mode)
-      const mockBiz = MOCK_BUSINESSES.find(b => b.id === id);
-      if (mockBiz) {
-        setBusiness(mockBiz);
-        setProfessionals(MOCK_PROFESSIONALS);
-        setServices(MOCK_SERVICES_BY_CAT[mockBiz.category] || []);
-      }
+      setProfessionals(profs || []);
+      setServices(svcs || []);
+    }).catch((err) => {
+      setLoadError(err.message || 'No se pudo cargar el negocio.');
     });
   }, [id]);
 
@@ -339,6 +334,27 @@ export default function BusinessDetailPage() {
   }
 
   const selectedServiceData = services.find((s) => s.id === selectedService);
+
+  /* ── Error state ── */
+  if (loadError) {
+    return (
+      <div className="page" style={{ paddingTop: 'var(--sp-16)', textAlign: 'center' }}>
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <p style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--sp-2)' }}>
+            {loadError}
+          </p>
+          <Link to="/">
+            <button className="btn btn-secondary" style={{ marginTop: 'var(--sp-4)' }}>Volver al inicio</button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   /* ── Loading state ── */
   if (!business) {
