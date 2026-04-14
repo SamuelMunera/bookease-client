@@ -193,11 +193,9 @@ function BookingCard({ b, onCancel, onRescheduled }) {
   const [showReschedule, setShowReschedule] = useState(false);
 
   return (
-    <div className={`my-booking-card${b.status === 'CANCELLED' ? ' cancelled' : ''}${!upcoming && b.status !== 'CANCELLED' ? ' past' : ''}`}
-         style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-
-      {/* Main row */}
-      <div style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+      {/* Original card — flat flex row, no style override */}
+      <div className={`my-booking-card${b.status === 'CANCELLED' ? ' cancelled' : ''}${!upcoming && b.status !== 'CANCELLED' ? ' past' : ''}`}>
         {/* Left: date badge */}
         <DateBadge dateStr={b.date} status={b.status} />
 
@@ -254,7 +252,7 @@ function BookingCard({ b, onCancel, onRescheduled }) {
         </div>
       </div>
 
-      {/* Reschedule panel */}
+      {/* Reschedule panel — sibling below the card */}
       {showReschedule && (
         <ReschedulePanel
           booking={b}
