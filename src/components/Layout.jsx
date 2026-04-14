@@ -99,21 +99,19 @@ export default function Layout() {
           Book<span className="nav-brand-accent">ease</span>
         </Link>
 
-        {/* Center links — anonymous only */}
-        {!user && (
-          <div className="nav-center">
-            {NAV_LINKS.map(l => (
-              <Link
-                key={l.to + l.label}
-                to={l.to}
-                className={`nav-link${isActive(l.to) ? ' active' : ''}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-            <span className="nav-pill-badge">Nuevo</span>
-          </div>
-        )}
+        {/* Center links — always visible */}
+        <div className="nav-center">
+          {NAV_LINKS.map(l => (
+            <Link
+              key={l.to + l.label}
+              to={l.to}
+              className={`nav-link${isActive(l.to) ? ' active' : ''}`}
+            >
+              {l.label}
+            </Link>
+          ))}
+          {!user && <span className="nav-pill-badge">Nuevo</span>}
+        </div>
 
         {/* Right side */}
         <div className="nav-right">
