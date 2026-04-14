@@ -38,6 +38,7 @@ const api = {
   createBooking: (body) => request('/bookings', { method: 'POST', body: JSON.stringify(body) }),
   getMyBookings: () => request('/bookings/me'),
   cancelBooking: (id) => request(`/bookings/${id}/cancel`, { method: 'PATCH' }),
+  cancelBookingAsOwner: (id) => request(`/bookings/${id}/cancel-owner`, { method: 'PATCH' }),
   confirmBooking: (id) => request(`/bookings/${id}/confirm`, { method: 'PATCH' }),
 };
 

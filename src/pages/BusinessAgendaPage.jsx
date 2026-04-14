@@ -184,7 +184,7 @@ export default function BusinessAgendaPage() {
   }
   async function handleCancel(id) {
     if (!confirm('¿Cancelar esta reserva?')) return;
-    await api.cancelBooking(id);
+    await api.cancelBookingAsOwner(id);
     load();
   }
 
