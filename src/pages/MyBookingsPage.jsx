@@ -81,7 +81,7 @@ function ReschedulePanel({ booking, onDone, onClose }) {
     setStartTime('');
     setError('');
     api.getSlots({ professionalId: booking.professional.id, serviceId: booking.service.id, date })
-      .then(setSlots)
+      .then(data => setSlots(data.slots || []))
       .catch(() => setSlots([]))
       .finally(() => setSlotLoad(false));
   }, [date]);
