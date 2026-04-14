@@ -101,88 +101,184 @@ function ReschedulePanel({ booking, onDone, onClose }) {
     }
   }
 
+  const fmtSelected = (d) => {
+    if (!d) return null;
+    return new Date(d + 'T00:00:00').toLocaleDateString('es-CO', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    });
+  };
+
   return (
     <div style={{
-      marginTop: 'var(--sp-3)',
-      padding: 'var(--sp-4)',
-      background: 'var(--surface-3)',
-      borderRadius: 'var(--r-lg)',
+      background: 'var(--surface-2)',
       border: '1px solid var(--border)',
+      borderRadius: 'var(--r-xl)',
+      overflow: 'hidden',
     }}>
-      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)', marginBottom: 'var(--sp-3)' }}>
-        Aplazar cita
-      </p>
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
-        {/* Date */}
-        <div>
-          <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
-            Nueva fecha
-          </label>
-          <input
-            type="date"
-            className="input"
-            value={date}
-            min={todayISO()}
-            onChange={e => setDate(e.target.value)}
-            required
-            style={{ maxWidth: 200 }}
-          />
+      {/* ── Panel header ── */}
+      <div style={{
+        padding: 'var(--sp-3) var(--sp-4)',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface-3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+          <div style={{
+            width: 26, height: 26, borderRadius: 'var(--r-md)',
+            background: 'var(--gold-subtle)', color: 'var(--gold)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+              <path d="M8 16H3v5"/>
+            </svg>
+          </div>
+          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)' }}>Aplazar cita</span>
+          <span style={{
+            fontSize: 'var(--text-xs)', color: 'var(--text-subtle)',
+            background: 'var(--surface-4)', padding: '2px 8px', borderRadius: 'var(--r-full)',
+          }}>{booking.service.name}</span>
         </div>
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', display: 'flex', padding: 4, borderRadius: 'var(--r-sm)' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
 
-        {/* Slots */}
-        {date && (
-          <div>
-            <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
-              Horario disponible
-            </label>
-            {slotLoad ? (
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)' }}>Cargando horarios…</p>
-            ) : slots.length === 0 ? (
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)' }}>Sin disponibilidad ese día.</p>
+      {/* ── Body ── */}
+      <div style={{ padding: 'var(--sp-4) var(--sp-5)' }}>
+
+        {/* Current → New indicator */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+          padding: 'var(--sp-3) var(--sp-4)', marginBottom: 'var(--sp-4)',
+          background: 'var(--surface-3)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+        }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Actual</p>
+            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'capitalize' }}>{fmtSelected(toDateOnly(booking.date))}</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>{booking.startTime}–{booking.endTime}</p>
+          </div>
+          <svg width="18" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          <div style={{ flex: 1, textAlign: 'right' }}>
+            <p style={{ fontSize: 'var(--text-xs)', color: date ? 'var(--gold)' : 'var(--text-subtle)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>Nueva</p>
+            {date && startTime ? (
+              <>
+                <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--gold)', textTransform: 'capitalize' }}>{fmtSelected(date)}</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)' }}>{startTime}</p>
+              </>
             ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
-                {slots.map(s => (
-                  <button
-                    key={s.startTime}
-                    type="button"
-                    onClick={() => setStartTime(s.startTime)}
-                    style={{
-                      padding: '4px 12px',
-                      borderRadius: 'var(--r-md)',
-                      border: `1px solid ${startTime === s.startTime ? 'var(--accent)' : 'var(--border)'}`,
-                      background: startTime === s.startTime ? 'var(--accent)' : 'var(--surface-2)',
-                      color: startTime === s.startTime ? '#fff' : 'var(--text)',
-                      fontSize: 'var(--text-sm)',
-                      cursor: 'pointer',
-                      fontWeight: startTime === s.startTime ? 600 : 400,
-                    }}
-                  >
-                    {s.startTime}
-                  </button>
-                ))}
-              </div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-dim)' }}>Pendiente</p>
             )}
           </div>
-        )}
-
-        {error && (
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--error)' }}>{error}</p>
-        )}
-
-        <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm"
-            disabled={!date || !startTime || saving}
-          >
-            {saving ? 'Guardando…' : 'Confirmar cambio'}
-          </button>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
-            Cancelar
-          </button>
         </div>
-      </form>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+
+          {/* Step 1: Date */}
+          <div>
+            <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 8 }}>
+              1 · Nueva fecha
+            </label>
+            <input
+              type="date"
+              className="input"
+              value={date}
+              min={todayISO()}
+              onChange={e => setDate(e.target.value)}
+              required
+              style={{ maxWidth: 200 }}
+            />
+          </div>
+
+          {/* Step 2: Slots */}
+          {date && (
+            <div>
+              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 8 }}>
+                2 · Horario
+              </label>
+              {slotLoad ? (
+                <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+                  {[1,2,3,4,5,6].map(n => (
+                    <div key={n} className="skeleton" style={{ width: 66, height: 34, borderRadius: 'var(--r-md)' }} />
+                  ))}
+                </div>
+              ) : slots.length === 0 ? (
+                <div style={{ padding: 'var(--sp-3) var(--sp-4)', background: 'var(--surface-3)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Sin disponibilidad ese día. Prueba con otra fecha.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+                  {slots.map(s => {
+                    const active = startTime === s.startTime;
+                    return (
+                      <button
+                        key={s.startTime}
+                        type="button"
+                        onClick={() => setStartTime(s.startTime)}
+                        style={{
+                          minWidth: 66,
+                          padding: '7px 14px',
+                          borderRadius: 'var(--r-md)',
+                          border: `1.5px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                          background: active ? 'var(--gold-subtle)' : 'var(--surface-3)',
+                          color: active ? 'var(--gold)' : 'var(--text-muted)',
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: active ? 700 : 500,
+                          cursor: 'pointer',
+                          transition: 'border-color .12s, background .12s, color .12s',
+                          letterSpacing: '0.02em',
+                        }}
+                      >
+                        {s.startTime}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--error)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {error}
+            </p>
+          )}
+
+          <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={!date || !startTime || saving}
+            >
+              {saving ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
+                  Guardando…
+                </>
+              ) : 'Confirmar cambio'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
