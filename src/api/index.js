@@ -43,6 +43,8 @@ const api = {
   cancelBooking: (id) => request(`/bookings/${id}/cancel`, { method: 'PATCH' }),
   cancelBookingAsOwner: (id) => request(`/bookings/${id}/cancel-owner`, { method: 'PATCH' }),
   confirmBooking: (id) => request(`/bookings/${id}/confirm`, { method: 'PATCH' }),
+  rescheduleBooking: (id, body) =>
+    request(`/bookings/${id}/reschedule`, { method: 'PATCH', body: JSON.stringify(body) }),
 };
 
 export default api;

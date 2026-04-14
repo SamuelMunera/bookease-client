@@ -23,6 +23,11 @@ function isUpcoming(dateStr) {
   return d >= t;
 }
 
+function todayISO() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+
 /* ── Calendar date badge ─────────────────────────────────── */
 function DateBadge({ dateStr, status }) {
   const d = new Date(toDateOnly(dateStr) + 'T00:00:00');
@@ -61,51 +66,202 @@ function StatusIcon({ status }) {
   );
 }
 
-/* ── Booking card ────────────────────────────────────────── */
-function BookingCard({ b, onCancel }) {
-  const upcoming = isUpcoming(b.date);
-  return (
-    <div className={`my-booking-card${b.status === 'CANCELLED' ? ' cancelled' : ''}${!upcoming && b.status !== 'CANCELLED' ? ' past' : ''}`}>
-      {/* Left: date badge */}
-      <DateBadge dateStr={b.date} status={b.status} />
+/* ── Reschedule panel ────────────────────────────────────── */
+function ReschedulePanel({ booking, onDone, onClose }) {
+  const [date,      setDate]      = useState('');
+  const [slots,     setSlots]     = useState([]);
+  const [slotLoad,  setSlotLoad]  = useState(false);
+  const [startTime, setStartTime] = useState('');
+  const [saving,    setSaving]    = useState(false);
+  const [error,     setError]     = useState('');
 
-      {/* Center: info */}
-      <div className="my-booking-info">
-        <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)', marginBottom:4 }}>
-          <p className="my-booking-service">{b.service.name}</p>
-          <StatusIcon status={b.status} />
+  useEffect(() => {
+    if (!date) { setSlots([]); setStartTime(''); return; }
+    setSlotLoad(true);
+    setStartTime('');
+    setError('');
+    api.getSlots({ professionalId: booking.professional.id, serviceId: booking.service.id, date })
+      .then(setSlots)
+      .catch(() => setSlots([]))
+      .finally(() => setSlotLoad(false));
+  }, [date]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!date || !startTime) return;
+    setSaving(true);
+    setError('');
+    try {
+      await api.rescheduleBooking(booking.id, { date, startTime });
+      onDone();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{
+      marginTop: 'var(--sp-3)',
+      padding: 'var(--sp-4)',
+      background: 'var(--surface-3)',
+      borderRadius: 'var(--r-lg)',
+      border: '1px solid var(--border)',
+    }}>
+      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)', marginBottom: 'var(--sp-3)' }}>
+        Aplazar cita
+      </p>
+
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+        {/* Date */}
+        <div>
+          <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, display: 'block', marginBottom: 4 }}>
+            Nueva fecha
+          </label>
+          <input
+            type="date"
+            className="input"
+            value={date}
+            min={todayISO()}
+            onChange={e => setDate(e.target.value)}
+            required
+            style={{ maxWidth: 200 }}
+          />
         </div>
 
-        <p className="my-booking-pro">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
-          {b.professional.name}
-        </p>
+        {/* Slots */}
+        {date && (
+          <div>
+            <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, display: 'block', marginBottom: 6 }}>
+              Horario disponible
+            </label>
+            {slotLoad ? (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)' }}>Cargando horarios…</p>
+            ) : slots.length === 0 ? (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)' }}>Sin disponibilidad ese día.</p>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+                {slots.map(s => (
+                  <button
+                    key={s.startTime}
+                    type="button"
+                    onClick={() => setStartTime(s.startTime)}
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: 'var(--r-md)',
+                      border: `1px solid ${startTime === s.startTime ? 'var(--accent)' : 'var(--border)'}`,
+                      background: startTime === s.startTime ? 'var(--accent)' : 'var(--surface-2)',
+                      color: startTime === s.startTime ? '#fff' : 'var(--text)',
+                      fontSize: 'var(--text-sm)',
+                      cursor: 'pointer',
+                      fontWeight: startTime === s.startTime ? 600 : 400,
+                    }}
+                  >
+                    {s.startTime}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-        <p className="my-booking-time">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span style={{ textTransform:'capitalize' }}>{fmtLong(b.date)}</span>
-          {' · '}{b.startTime}{b.endTime ? `–${b.endTime}` : ''}
-        </p>
-      </div>
+        {error && (
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--error)' }}>{error}</p>
+        )}
 
-      {/* Right: badge + action */}
-      <div className="my-booking-actions">
-        <span className={`badge ${STATUS_BADGE[b.status]}`}>
-          {STATUS_LABEL[b.status]}
-        </span>
-        {b.status !== 'CANCELLED' && upcoming && (
+        <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
           <button
-            className="btn btn-danger btn-sm"
-            onClick={() => onCancel(b.id)}
+            type="submit"
+            className="btn btn-primary btn-sm"
+            disabled={!date || !startTime || saving}
           >
+            {saving ? 'Guardando…' : 'Confirmar cambio'}
+          </button>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
             Cancelar
           </button>
-        )}
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/* ── Booking card ────────────────────────────────────────── */
+function BookingCard({ b, onCancel, onRescheduled }) {
+  const upcoming = isUpcoming(b.date);
+  const [showReschedule, setShowReschedule] = useState(false);
+
+  return (
+    <div className={`my-booking-card${b.status === 'CANCELLED' ? ' cancelled' : ''}${!upcoming && b.status !== 'CANCELLED' ? ' past' : ''}`}
+         style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+
+      {/* Main row */}
+      <div style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
+        {/* Left: date badge */}
+        <DateBadge dateStr={b.date} status={b.status} />
+
+        {/* Center: info */}
+        <div className="my-booking-info">
+          <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)', marginBottom:4 }}>
+            <p className="my-booking-service">{b.service.name}</p>
+            <StatusIcon status={b.status} />
+          </div>
+
+          <p className="my-booking-pro">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            {b.professional.name}
+          </p>
+
+          <p className="my-booking-time">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span style={{ textTransform:'capitalize' }}>{fmtLong(b.date)}</span>
+            {' · '}{b.startTime}{b.endTime ? `–${b.endTime}` : ''}
+          </p>
+        </div>
+
+        {/* Right: badge + actions */}
+        <div className="my-booking-actions">
+          <span className={`badge ${STATUS_BADGE[b.status]}`}>
+            {STATUS_LABEL[b.status]}
+          </span>
+          {b.status !== 'CANCELLED' && upcoming && (
+            <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setShowReschedule(v => !v)}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                  <path d="M8 16H3v5"/>
+                </svg>
+                Aplazar
+              </button>
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={() => onCancel(b.id)}
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Reschedule panel */}
+      {showReschedule && (
+        <ReschedulePanel
+          booking={b}
+          onDone={() => { setShowReschedule(false); onRescheduled(); }}
+          onClose={() => setShowReschedule(false)}
+        />
+      )}
     </div>
   );
 }
@@ -241,7 +397,12 @@ export default function MyBookingsPage() {
           ) : (
             <div className="my-bookings-list">
               {visible.map(b => (
-                <BookingCard key={b.id} b={b} onCancel={handleCancel} />
+                <BookingCard
+                  key={b.id}
+                  b={b}
+                  onCancel={handleCancel}
+                  onRescheduled={load}
+                />
               ))}
             </div>
           )}
