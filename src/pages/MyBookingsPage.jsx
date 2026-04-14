@@ -9,20 +9,23 @@ const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
                    'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
+// Prisma serializes @db.Date as "2026-04-14T00:00:00.000Z"; slice to "YYYY-MM-DD"
+function toDateOnly(s) { return s ? s.slice(0, 10) : ''; }
+
 function fmtLong(dateStr) {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('es-CO', {
+  return new Date(toDateOnly(dateStr) + 'T00:00:00').toLocaleDateString('es-CO', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
 }
 function isUpcoming(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(toDateOnly(dateStr) + 'T00:00:00');
   const t = new Date(); t.setHours(0,0,0,0);
   return d >= t;
 }
 
 /* ── Calendar date badge ─────────────────────────────────── */
 function DateBadge({ dateStr, status }) {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(toDateOnly(dateStr) + 'T00:00:00');
   const isCancelled = status === 'CANCELLED';
   return (
     <div className={`my-date-badge${isCancelled ? ' cancelled' : ''}`}>

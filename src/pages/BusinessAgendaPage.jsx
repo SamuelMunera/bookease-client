@@ -6,13 +6,15 @@ const DAYS_ES   = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Vierne
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
                    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
+function toDateOnly(s) { return s ? s.slice(0, 10) : ''; }
+
 function fmtFull(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(toDateOnly(dateStr) + 'T00:00:00');
   return `${DAYS_ES[d.getDay()]} ${d.getDate()} de ${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`;
 }
 function isToday(dateStr) {
   const t = new Date(); t.setHours(0,0,0,0);
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(toDateOnly(dateStr) + 'T00:00:00');
   return d.getTime() === t.getTime();
 }
 

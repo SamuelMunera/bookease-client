@@ -9,7 +9,7 @@ const WEEKDAYS  = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 function formatLabel(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(dateStr.slice(0, 10) + 'T00:00:00');
   return `${DAYS_ES[d.getDay()]}, ${d.getDate()} de ${MONTHS_ES[d.getMonth()]}`;
 }
 
