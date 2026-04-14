@@ -10,6 +10,8 @@ import BookingPage from './pages/BookingPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import BusinessAgendaPage from './pages/BusinessAgendaPage';
 import ProfessionalProfilePage from './pages/ProfessionalProfilePage';
+import BusinessesPage from './pages/BusinessesPage';
+import HowItWorksPage from './pages/HowItWorksPage';
 
 export default function App() {
   return (
@@ -18,10 +20,12 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<BusinessListPage />} />
+            <Route path="businesses" element={<BusinessesPage />} />
+            <Route path="businesses/:id" element={<BusinessDetailPage />} />
+            <Route path="how-it-works" element={<HowItWorksPage />} />
+            <Route path="professionals/:id" element={<ProfessionalProfilePage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
-            <Route path="businesses/:id" element={<BusinessDetailPage />} />
-            <Route path="professionals/:id" element={<ProfessionalProfilePage />} />
             <Route path="book" element={
               <ProtectedRoute role="CLIENT"><BookingPage /></ProtectedRoute>
             } />

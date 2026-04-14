@@ -4,16 +4,17 @@ import { useAuth } from '../context/AuthContext';
 
 const NAV_LINKS = [
   { to: '/', label: 'Explorar' },
-  { to: '/#businesses', label: 'Negocios' },
+  { to: '/businesses', label: 'Negocios' },
+  { to: '/how-it-works', label: 'Cómo funciona' },
 ];
 
 const FOOTER_COLS = [
   {
     title: 'Para clientes',
     links: [
-      { label: 'Explorar negocios', to: '/' },
+      { label: 'Explorar negocios', to: '/businesses' },
       { label: 'Mis reservas', to: '/my-bookings' },
-      { label: 'Cómo funciona', to: '/' },
+      { label: 'Cómo funciona', to: '/how-it-works' },
       { label: 'Crear cuenta', to: '/register' },
     ],
   },
@@ -29,10 +30,10 @@ const FOOTER_COLS = [
   {
     title: 'Categorías',
     links: [
-      { label: 'Barberías', to: '/' },
-      { label: 'Spas & Wellness', to: '/' },
-      { label: 'Salones de belleza', to: '/' },
-      { label: 'Ver todas', to: '/' },
+      { label: 'Barberías', to: '/businesses?category=BARBERSHOP' },
+      { label: 'Spas & Wellness', to: '/businesses?category=SPA' },
+      { label: 'Salones de belleza', to: '/businesses?category=SALON' },
+      { label: 'Ver todas', to: '/businesses' },
     ],
   },
 ];
@@ -110,7 +111,6 @@ export default function Layout() {
                 {l.label}
               </Link>
             ))}
-            <a href="/#businesses" className="nav-link">Cómo funciona</a>
             <span className="nav-pill-badge">Nuevo</span>
           </div>
         )}
@@ -198,7 +198,8 @@ export default function Layout() {
           {!user && (
             <>
               <Link to="/" className="nav-mobile-link">Explorar</Link>
-              <Link to="/#businesses" className="nav-mobile-link">Negocios</Link>
+              <Link to="/businesses" className="nav-mobile-link">Negocios</Link>
+              <Link to="/how-it-works" className="nav-mobile-link">Cómo funciona</Link>
               <Link to="/login" className="nav-mobile-link">Iniciar sesión</Link>
               <Link to="/register" className="nav-mobile-cta">Registrarse gratis</Link>
             </>
