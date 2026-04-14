@@ -155,6 +155,8 @@ function TimelineRow({ b, onConfirm, onCancel }) {
 /* ══════════════════════════════════════════════════════════
    MAIN
    ══════════════════════════════════════════════════════════ */
+const EMPTY_SVC = { name: '', description: '', duration: '', price: '' };
+
 export default function BusinessAgendaPage() {
   const { user } = useAuth();
   const [businesses, setBusinesses] = useState([]);
@@ -163,6 +165,13 @@ export default function BusinessAgendaPage() {
   const [bookings,   setBookings]   = useState([]);
   const [loading,    setLoading]    = useState(false);
 
+  // service form
+  const [showSvcForm, setShowSvcForm] = useState(false);
+  const [svcForm,     setSvcForm]     = useState(EMPTY_SVC);
+  const [svcError,    setSvcError]    = useState('');
+  const [svcOk,       setSvcOk]       = useState('');
+  const [svcSaving,   setSvcSaving]   = useState(false);
+
   useEffect(() => {
     api.getBusinesses().then(all => {
       const mine = all.filter(b => b.ownerId === user.id);
@@ -170,6 +179,33 @@ export default function BusinessAgendaPage() {
       if (mine.length === 1) setBusinessId(mine[0].id);
     });
   }, [user.id]);
+
+  async function handleCreateService(e) {
+    e.preventDefault();
+    setSvcError(''); setSvcOk('');
+    const dur = parseInt(svcForm.duration, 10);
+    const pri = parseFloat(svcForm.price);
+    if (!svcForm.name || !svcForm.duration || svcForm.price === '') {
+      return setSvcError('Nombre, duración y precio son obligatorios.');
+    }
+    if (isNaN(dur) || dur <= 0) return setSvcError('Duración debe ser un número positivo.');
+    if (isNaN(pri) || pri < 0)  return setSvcError('Precio debe ser >= 0.');
+    setSvcSaving(true);
+    try {
+      const created = await api.createService(businessId, {
+        name: svcForm.name.trim(),
+        description: svcForm.description.trim() || undefined,
+        duration: dur,
+        price: pri,
+      });
+      setSvcOk(`Servicio "${created.name}" creado.`);
+      setSvcForm(EMPTY_SVC);
+    } catch (err) {
+      setSvcError(err.message);
+    } finally {
+      setSvcSaving(false);
+    }
+  }
 
   function load() {
     if (!businessId) return;
@@ -233,6 +269,61 @@ export default function BusinessAgendaPage() {
 
         <DateNav value={date} onChange={setDate} />
       </div>
+
+      {/* ── Service creation ── */}
+      {businessId && (
+        <div style={{ marginBottom: 'var(--sp-6)' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => { setShowSvcForm(v => !v); setSvcError(''); setSvcOk(''); }}
+          >
+            {showSvcForm ? 'Cerrar' : '+ Agregar servicio'}
+          </button>
+
+          {showSvcForm && (
+            <form onSubmit={handleCreateService} style={{ marginTop: 'var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', maxWidth: 480 }}>
+              <input
+                className="input"
+                placeholder="Nombre del servicio *"
+                value={svcForm.name}
+                onChange={e => setSvcForm(f => ({ ...f, name: e.target.value }))}
+              />
+              <input
+                className="input"
+                placeholder="Descripción (opcional)"
+                value={svcForm.description}
+                onChange={e => setSvcForm(f => ({ ...f, description: e.target.value }))}
+              />
+              <div style={{ display: 'flex', gap: 'var(--sp-3)' }}>
+                <input
+                  className="input"
+                  placeholder="Duración (min) *"
+                  type="number"
+                  min="1"
+                  value={svcForm.duration}
+                  onChange={e => setSvcForm(f => ({ ...f, duration: e.target.value }))}
+                  style={{ flex: 1 }}
+                />
+                <input
+                  className="input"
+                  placeholder="Precio *"
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={svcForm.price}
+                  onChange={e => setSvcForm(f => ({ ...f, price: e.target.value }))}
+                  style={{ flex: 1 }}
+                />
+              </div>
+              {svcError && <p className="error-msg" style={{ marginBottom: 0 }}>{svcError}</p>}
+              {svcOk    && <p style={{ color: 'var(--success)', fontSize: 'var(--text-sm)' }}>{svcOk}</p>}
+              <button className="btn btn-primary btn-sm" type="submit" disabled={svcSaving} style={{ alignSelf: 'flex-start' }}>
+                {svcSaving ? 'Guardando…' : 'Crear servicio'}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* ── Stats ── */}
       {!loading && bookings.length > 0 && (
