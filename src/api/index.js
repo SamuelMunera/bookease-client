@@ -27,6 +27,7 @@ const api = {
   getBusinesses: (params = {}) => request(`/businesses?${new URLSearchParams(params)}`),
   getBusiness: (id) => request(`/businesses/${id}`),
   getBusinessProfessionals: (id) => request(`/businesses/${id}/professionals`),
+  getProfessional: (id) => request(`/professionals/${id}`),
   getBusinessServices: (id) => request(`/businesses/${id}/services`),
   createService: (businessId, body) =>
     request(`/businesses/${businessId}/services`, { method: 'POST', body: JSON.stringify(body) }),
