@@ -32,7 +32,7 @@ export default function RegisterPage() {
     try {
       const data = await api.register(form);
       login(data);
-      navigate(data.user.role === 'BUSINESS_OWNER' ? '/agenda' : '/');
+      navigate(data.user.role === 'BUSINESS_OWNER' ? '/register-business' : '/');
     } catch (err) {
       setError(err.message);
     } finally {

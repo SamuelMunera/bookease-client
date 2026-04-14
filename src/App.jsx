@@ -12,6 +12,8 @@ import BusinessAgendaPage from './pages/BusinessAgendaPage';
 import ProfessionalProfilePage from './pages/ProfessionalProfilePage';
 import BusinessesPage from './pages/BusinessesPage';
 import HowItWorksPage from './pages/HowItWorksPage';
+import RegisterBusinessPage from './pages/RegisterBusinessPage';
+import BusinessDashboardPage from './pages/BusinessDashboardPage';
 
 export default function App() {
   return (
@@ -34,6 +36,12 @@ export default function App() {
             } />
             <Route path="agenda" element={
               <ProtectedRoute role="BUSINESS_OWNER"><BusinessAgendaPage /></ProtectedRoute>
+            } />
+            <Route path="register-business" element={
+              <ProtectedRoute role="BUSINESS_OWNER"><RegisterBusinessPage /></ProtectedRoute>
+            } />
+            <Route path="dashboard" element={
+              <ProtectedRoute role="BUSINESS_OWNER"><BusinessDashboardPage /></ProtectedRoute>
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
