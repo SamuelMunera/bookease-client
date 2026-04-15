@@ -172,6 +172,27 @@ export default function Layout() {
             </>
           )}
 
+          {/* — Professional — */}
+          {user?.role === 'PROFESSIONAL' && (
+            <>
+              <Link to="/pro/dashboard" className={`nav-link${isActive('/pro/dashboard') ? ' active' : ''}`}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                </svg>
+                Mi panel
+              </Link>
+              <Link to="/my-bookings" className="nav-cta-outline" style={{ borderColor: 'rgba(124,92,252,0.4)', color: 'var(--violet)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Mis citas
+              </Link>
+            </>
+          )}
+
           {/* — User chip — */}
           {user && (
             <div className="nav-user-chip">
@@ -222,6 +243,13 @@ export default function Layout() {
             <>
               <Link to="/dashboard" className="nav-mobile-link">Dashboard</Link>
               <Link to="/agenda" className="nav-mobile-link">Agenda</Link>
+              <button className="nav-mobile-link" style={{ textAlign:'left', width:'100%' }} onClick={handleLogout}>Cerrar sesión</button>
+            </>
+          )}
+          {user?.role === 'PROFESSIONAL' && (
+            <>
+              <Link to="/pro/dashboard" className="nav-mobile-link">Mi panel</Link>
+              <Link to="/my-bookings" className="nav-mobile-link">Mis citas</Link>
               <button className="nav-mobile-link" style={{ textAlign:'left', width:'100%' }} onClick={handleLogout}>Cerrar sesión</button>
             </>
           )}

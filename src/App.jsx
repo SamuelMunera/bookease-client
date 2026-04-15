@@ -14,6 +14,9 @@ import BusinessesPage from './pages/BusinessesPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import RegisterBusinessPage from './pages/RegisterBusinessPage';
 import BusinessDashboardPage from './pages/BusinessDashboardPage';
+import ProLoginPage from './pages/ProLoginPage';
+import ProRegisterPage from './pages/ProRegisterPage';
+import ProfessionalDashboardPage from './pages/ProfessionalDashboardPage';
 
 export default function App() {
   return (
@@ -42,6 +45,11 @@ export default function App() {
             } />
             <Route path="dashboard" element={
               <ProtectedRoute role="BUSINESS_OWNER"><BusinessDashboardPage /></ProtectedRoute>
+            } />
+            <Route path="pro/login" element={<ProLoginPage />} />
+            <Route path="pro/register" element={<ProRegisterPage />} />
+            <Route path="pro/dashboard" element={
+              <ProtectedRoute role="PROFESSIONAL"><ProfessionalDashboardPage /></ProtectedRoute>
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

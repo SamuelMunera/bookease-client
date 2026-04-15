@@ -36,6 +36,11 @@ const api = {
   getBusinessBookings: (id, params = {}) =>
     request(`/businesses/${id}/bookings?${new URLSearchParams(params)}`),
 
+  // Professionals auth
+  registerProfessional: (body) => request('/pro/register', { method: 'POST', body: JSON.stringify(body) }),
+  getProMe: () => request('/pro/me'),
+  getProBookings: () => request('/pro/me/bookings'),
+
   // Slots
   getSlots: (params) => request(`/slots?${new URLSearchParams(params)}`),
 
