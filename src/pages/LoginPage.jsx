@@ -24,7 +24,8 @@ export default function LoginPage() {
     try {
       const data = await api.login(form);
       login(data);
-      navigate(data.user.role === 'BUSINESS_OWNER' ? '/agenda' : '/');
+      const dest = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard', CLIENT: '/' };
+      navigate(dest[data.user.role] || '/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -142,6 +143,10 @@ export default function LoginPage() {
           <p className="auth-foot">
             ¿No tienes cuenta?{' '}
             <Link to="/register">Regístrate gratis</Link>
+          </p>
+          <p className="auth-foot" style={{ marginTop: 'var(--sp-2)', paddingTop: 'var(--sp-3)', borderTop: '1px solid var(--border)' }}>
+            ¿Eres profesional o dueño de negocio?{' '}
+            <Link to="/pro/login" style={{ color: 'var(--violet)' }}>Acceso profesional</Link>
           </p>
         </div>
       </div>
