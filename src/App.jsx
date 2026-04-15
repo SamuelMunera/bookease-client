@@ -32,7 +32,7 @@ export default function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="book" element={
-              <ProtectedRoute role="CLIENT"><BookingPage /></ProtectedRoute>
+              <ProtectedRoute><BookingPage /></ProtectedRoute>
             } />
             <Route path="my-bookings" element={
               <ProtectedRoute role="CLIENT"><MyBookingsPage /></ProtectedRoute>
