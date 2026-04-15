@@ -301,6 +301,7 @@ export default function BusinessDetailPage() {
 
   const [business, setBusiness]       = useState(null);
   const [professionals, setProfessionals] = useState([]);
+  const [allServices, setAllServices] = useState([]);
   const [services, setServices]       = useState([]);
   const [selectedProf, setSelectedProf]   = useState('');
   const [selectedService, setSelectedService] = useState('');
@@ -317,11 +318,28 @@ export default function BusinessDetailPage() {
       if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
       setProfessionals(profs || []);
+      setAllServices(svcs || []);
       setServices(svcs || []);
     }).catch((err) => {
       setLoadError(err.message || 'No se pudo cargar el negocio.');
     });
   }, [id]);
+
+  // When professional changes, filter services to only those they can do
+  useEffect(() => {
+    if (!selectedProf) { setServices(allServices); setSelectedService(''); return; }
+    api.getProfessionalServices(selectedProf)
+      .then(proServices => {
+        if (!proServices?.length) {
+          // No services assigned yet → show all
+          setServices(allServices);
+        } else {
+          setServices(proServices);
+        }
+        setSelectedService('');
+      })
+      .catch(() => setServices(allServices));
+  }, [selectedProf]); // eslint-disable-line
 
   function handleBook() {
     if (!user) return navigate('/login');
