@@ -35,7 +35,7 @@ export default function App() {
               <ProtectedRoute><BookingPage /></ProtectedRoute>
             } />
             <Route path="my-bookings" element={
-              <ProtectedRoute role="CLIENT"><MyBookingsPage /></ProtectedRoute>
+              <ProtectedRoute role={['CLIENT','PROFESSIONAL']}><MyBookingsPage /></ProtectedRoute>
             } />
             <Route path="agenda" element={
               <ProtectedRoute role="BUSINESS_OWNER"><BusinessAgendaPage /></ProtectedRoute>

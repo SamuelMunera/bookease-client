@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada' };
@@ -391,13 +392,17 @@ function EmptyState() {
    MAIN
    ══════════════════════════════════════════════════════════ */
 export default function MyBookingsPage() {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState('upcoming');
 
+  const isPro = user?.role === 'PROFESSIONAL';
+
   function load() {
     setLoading(true);
-    api.getMyBookings().then(setBookings).finally(() => setLoading(false));
+    const req = isPro ? api.getProBookings() : api.getMyBookings();
+    req.then(data => setBookings(Array.isArray(data) ? data : [])).finally(() => setLoading(false));
   }
   useEffect(load, []);
 

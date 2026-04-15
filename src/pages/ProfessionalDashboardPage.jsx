@@ -77,8 +77,25 @@ function BookingRow({ booking }) {
 
 const DAYS_LABEL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DEFAULT_SCHEDULE = [0,1,2,3,4,5,6].map(d => ({
-  dayOfWeek: d, startTime: '09:00', endTime: '18:00', isActive: false,
+  dayOfWeek: d, startTime: '09:00', endTime: '18:00', isActive: false, isOverride: false,
 }));
+
+function getWeekStart(offset = 0) {
+  const d = new Date();
+  const dow = d.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff + offset * 7);
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function fmtWeekRange(weekStart) {
+  const [y, m, d] = weekStart.split('-').map(Number);
+  const mon = new Date(y, m-1, d);
+  const sun = new Date(y, m-1, d+6);
+  const fmt = (dt) => dt.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  return `${fmt(mon)} – ${fmt(sun)}`;
+}
 
 export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
@@ -94,6 +111,8 @@ export default function ProfessionalDashboardPage() {
   const [serviceMsg, setServiceMsg]     = useState('');
 
   // Schedule
+  const [weekOffset, setWeekOffset]     = useState(0);
+  const [weekStart, setWeekStartState]  = useState(() => getWeekStart(0));
   const [schedule, setSchedule]         = useState(DEFAULT_SCHEDULE);
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [scheduleMsg, setScheduleMsg]   = useState('');
@@ -121,18 +140,18 @@ export default function ProfessionalDashboardPage() {
       .then(s => setMyServiceIds(new Set((Array.isArray(s) ? s : []).map(x => x.id))))
       .catch(() => {});
 
-    api.getProSchedule()
+  }, []);
+
+  // Reload schedule when week changes
+  useEffect(() => {
+    const ws = getWeekStart(weekOffset);
+    setWeekStartState(ws);
+    api.getWeekSchedule(ws)
       .then(rows => {
-        if (!rows?.length) return;
-        setSchedule(DEFAULT_SCHEDULE.map(def => {
-          const saved = rows.find(r => r.dayOfWeek === def.dayOfWeek);
-          return saved
-            ? { dayOfWeek: saved.dayOfWeek, startTime: saved.startTime, endTime: saved.endTime, isActive: saved.isActive }
-            : def;
-        }));
+        if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
       })
       .catch(() => {});
-  }, []);
+  }, [weekOffset]);
 
   async function saveServices() {
     setSavingServices(true); setServiceMsg('');
@@ -146,10 +165,23 @@ export default function ProfessionalDashboardPage() {
   async function saveSchedule() {
     setSavingSchedule(true); setScheduleMsg('');
     try {
-      await api.setProSchedule(schedule);
+      await api.setWeekSchedule(weekStart, schedule);
       setScheduleMsg('Guardado');
+      // mark all as override
+      setSchedule(s => s.map(d => ({ ...d, isOverride: true })));
     } catch { setScheduleMsg('Error al guardar'); }
     finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
+  }
+
+  async function resetWeek() {
+    try {
+      await api.deleteWeekSchedule(weekStart);
+      // reload recurring fallback
+      const rows = await api.getWeekSchedule(weekStart);
+      if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
+      setScheduleMsg('Semana restablecida');
+      setTimeout(() => setScheduleMsg(''), 2500);
+    } catch { setScheduleMsg('Error al restablecer'); }
   }
 
   function toggleService(id) {
@@ -239,7 +271,7 @@ export default function ProfessionalDashboardPage() {
             )}
           </div>
 
-          <Link to="/pro/profile" style={{
+          <Link to={pro.id ? `/professionals/${pro.id}` : '#'} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: 'var(--sp-2) var(--sp-4)',
             borderRadius: 'var(--r-md)',
@@ -474,17 +506,34 @@ export default function ProfessionalDashboardPage() {
 
       {/* ── Mi Disponibilidad ── */}
       <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
-          <div>
-            <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mi disponibilidad</h2>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
-              Activa los días que atiendes y configura tu horario.
-            </p>
+        <div style={{ marginBottom: 'var(--sp-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
+            <div>
+              <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mi disponibilidad</h2>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
+                Horarios específicos por semana. Si no hay override, se usa el horario recurrente.
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+              {scheduleMsg && <span style={{ fontSize: 'var(--text-xs)', color: scheduleMsg.includes('Error') ? 'var(--red)' : 'var(--green)' }}>{scheduleMsg}</span>}
+              <button className="btn btn-ghost" onClick={resetWeek} style={{ padding: '5px 12px', fontSize: 'var(--text-xs)' }}>Usar recurrente</button>
+              <button className="btn btn-primary" onClick={saveSchedule} disabled={savingSchedule} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
+                {savingSchedule ? 'Guardando…' : 'Guardar semana'}
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-            {scheduleMsg && <span style={{ fontSize: 'var(--text-xs)', color: scheduleMsg === 'Guardado' ? 'var(--green)' : 'var(--red)' }}>{scheduleMsg}</span>}
-            <button className="btn btn-primary" onClick={saveSchedule} disabled={savingSchedule} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
-              {savingSchedule ? 'Guardando…' : 'Guardar'}
+
+          {/* Week navigator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', padding: 'var(--sp-2) var(--sp-3)', background: 'var(--surface)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', width: 'fit-content' }}>
+            <button type="button" onClick={() => setWeekOffset(o => o - 1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 4 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', minWidth: 160, textAlign: 'center' }}>
+              {weekOffset === 0 ? 'Esta semana' : weekOffset === 1 ? 'Próxima semana' : weekOffset === -1 ? 'Semana pasada' : fmtWeekRange(weekStart)}
+              <span style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 400, color: 'var(--text-muted)' }}>{fmtWeekRange(weekStart)}</span>
+            </span>
+            <button type="button" onClick={() => setWeekOffset(o => o + 1)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 4 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>
         </div>
@@ -513,10 +562,15 @@ export default function ProfessionalDashboardPage() {
                 }} />
               </button>
 
-              {/* Day name */}
-              <span style={{ width: 90, fontSize: 'var(--text-sm)', fontWeight: day.isActive ? 600 : 400, color: day.isActive ? 'var(--text)' : 'var(--text-muted)' }}>
-                {DAYS_LABEL[day.dayOfWeek]}
-              </span>
+              {/* Day name + override badge */}
+              <div style={{ width: 120, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: day.isActive ? 600 : 400, color: day.isActive ? 'var(--text)' : 'var(--text-muted)' }}>
+                  {DAYS_LABEL[day.dayOfWeek]}
+                </span>
+                {day.isOverride && (
+                  <span style={{ fontSize: 10, color: 'var(--violet)', fontWeight: 600 }}>personalizado</span>
+                )}
+              </div>
 
               {/* Time inputs */}
               {day.isActive ? (

@@ -50,6 +50,9 @@ const api = {
   setProServices: (serviceIds) => request('/pro/me/services', { method: 'PUT', body: JSON.stringify({ serviceIds }) }),
   getProSchedule: () => request('/pro/me/schedule'),
   setProSchedule: (days) => request('/pro/me/schedule', { method: 'PUT', body: JSON.stringify({ days }) }),
+  getWeekSchedule: (ws) => request(`/pro/me/schedule/week/${ws}`),
+  setWeekSchedule: (ws, days) => request(`/pro/me/schedule/week/${ws}`, { method: 'PUT', body: JSON.stringify({ days }) }),
+  deleteWeekSchedule: (ws) => request(`/pro/me/schedule/week/${ws}`, { method: 'DELETE' }),
   getProfessionalServices: (id) => request(`/professionals/${id}/services`),
 
   // Slots
