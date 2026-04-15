@@ -118,6 +118,12 @@ export default function Layout() {
           {/* — Guest — */}
           {!user && (
             <>
+              <Link to="/pro/login" className="nav-link" style={{ color: 'var(--violet)', fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                Soy profesional
+              </Link>
               <Link to="/login" className="nav-link">Iniciar sesión</Link>
               <Link to="/register" className="nav-cta">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -229,6 +235,7 @@ export default function Layout() {
               <Link to="/businesses" className="nav-mobile-link">Negocios</Link>
               <Link to="/how-it-works" className="nav-mobile-link">Cómo funciona</Link>
               <Link to="/login" className="nav-mobile-link">Iniciar sesión</Link>
+              <Link to="/pro/login" className="nav-mobile-link" style={{ color: 'var(--violet)' }}>Soy profesional</Link>
               <Link to="/register" className="nav-mobile-cta">Registrarse gratis</Link>
             </>
           )}
