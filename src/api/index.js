@@ -46,6 +46,11 @@ const api = {
   registerProfessional: (body) => request('/pro/register', { method: 'POST', body: JSON.stringify(body) }),
   getProMe: () => request('/pro/me'),
   getProBookings: () => request('/pro/me/bookings'),
+  getProServices: () => request('/pro/me/services'),
+  setProServices: (serviceIds) => request('/pro/me/services', { method: 'PUT', body: JSON.stringify({ serviceIds }) }),
+  getProSchedule: () => request('/pro/me/schedule'),
+  setProSchedule: (days) => request('/pro/me/schedule', { method: 'PUT', body: JSON.stringify({ days }) }),
+  getProfessionalServices: (id) => request(`/professionals/${id}/services`),
 
   // Slots
   getSlots: (params) => request(`/slots?${new URLSearchParams(params)}`),

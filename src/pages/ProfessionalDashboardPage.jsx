@@ -75,6 +75,11 @@ function BookingRow({ booking }) {
   );
 }
 
+const DAYS_LABEL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DEFAULT_SCHEDULE = [0,1,2,3,4,5,6].map(d => ({
+  dayOfWeek: d, startTime: '09:00', endTime: '18:00', isActive: false,
+}));
+
 export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -82,9 +87,28 @@ export default function ProfessionalDashboardPage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
+  // Services
+  const [bizServices, setBizServices]   = useState([]);
+  const [myServiceIds, setMyServiceIds] = useState(new Set());
+  const [savingServices, setSavingServices] = useState(false);
+  const [serviceMsg, setServiceMsg]     = useState('');
+
+  // Schedule
+  const [schedule, setSchedule]         = useState(DEFAULT_SCHEDULE);
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [scheduleMsg, setScheduleMsg]   = useState('');
+
   useEffect(() => {
     api.getProMe()
-      .then(data => setProfile(data))
+      .then(data => {
+        setProfile(data);
+        // load business services once we know businessId
+        if (data?.businessId) {
+          api.getBusinessServices(data.businessId)
+            .then(s => setBizServices(Array.isArray(s) ? s : []))
+            .catch(() => {});
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingProfile(false));
 
@@ -92,7 +116,53 @@ export default function ProfessionalDashboardPage() {
       .then(data => setBookings(Array.isArray(data) ? data : data.bookings ?? []))
       .catch(() => {})
       .finally(() => setLoadingBookings(false));
+
+    api.getProServices()
+      .then(s => setMyServiceIds(new Set((Array.isArray(s) ? s : []).map(x => x.id))))
+      .catch(() => {});
+
+    api.getProSchedule()
+      .then(rows => {
+        if (!rows?.length) return;
+        setSchedule(DEFAULT_SCHEDULE.map(def => {
+          const saved = rows.find(r => r.dayOfWeek === def.dayOfWeek);
+          return saved
+            ? { dayOfWeek: saved.dayOfWeek, startTime: saved.startTime, endTime: saved.endTime, isActive: saved.isActive }
+            : def;
+        }));
+      })
+      .catch(() => {});
   }, []);
+
+  async function saveServices() {
+    setSavingServices(true); setServiceMsg('');
+    try {
+      await api.setProServices([...myServiceIds]);
+      setServiceMsg('Guardado');
+    } catch { setServiceMsg('Error al guardar'); }
+    finally { setSavingServices(false); setTimeout(() => setServiceMsg(''), 2500); }
+  }
+
+  async function saveSchedule() {
+    setSavingSchedule(true); setScheduleMsg('');
+    try {
+      await api.setProSchedule(schedule);
+      setScheduleMsg('Guardado');
+    } catch { setScheduleMsg('Error al guardar'); }
+    finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
+  }
+
+  function toggleService(id) {
+    setMyServiceIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function updateDay(dayOfWeek, field, value) {
+    setSchedule(s => s.map(d => d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d));
+  }
 
   const todayStr = new Date().toISOString().split('T')[0];
   const upcomingBookings = bookings.filter(b =>
@@ -350,6 +420,125 @@ export default function ProfessionalDashboardPage() {
         </div>
 
       </div>
+
+      {/* ── Mis Servicios ── */}
+      <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
+          <div>
+            <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mis servicios</h2>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
+              Selecciona los servicios que puedes realizar. Solo aparecerán al reservar contigo.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+            {serviceMsg && <span style={{ fontSize: 'var(--text-xs)', color: serviceMsg === 'Guardado' ? 'var(--green)' : 'var(--red)' }}>{serviceMsg}</span>}
+            <button className="btn btn-primary" onClick={saveServices} disabled={savingServices} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
+              {savingServices ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+
+        {bizServices.length === 0 ? (
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>El negocio no tiene servicios registrados aún.</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 'var(--sp-3)' }}>
+            {bizServices.map(s => {
+              const on = myServiceIds.has(s.id);
+              return (
+                <button key={s.id} type="button" onClick={() => toggleService(s.id)} style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-3)',
+                  padding: 'var(--sp-3)',
+                  borderRadius: 'var(--r-md)',
+                  border: `1px solid ${on ? 'var(--violet)' : 'var(--border)'}`,
+                  background: on ? 'var(--violet-subtle)' : 'var(--surface)',
+                  cursor: 'pointer', textAlign: 'left', transition: 'all .15s',
+                }}>
+                  <div style={{
+                    width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                    border: `2px solid ${on ? 'var(--violet)' : 'var(--border)'}`,
+                    background: on ? 'var(--violet)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {on && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: on ? 'var(--violet)' : 'var(--text)', marginBottom: 2 }}>{s.name}</p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{s.duration} min · ${Number(s.price).toLocaleString('es-CO')}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Mi Disponibilidad ── */}
+      <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
+          <div>
+            <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mi disponibilidad</h2>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
+              Activa los días que atiendes y configura tu horario.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+            {scheduleMsg && <span style={{ fontSize: 'var(--text-xs)', color: scheduleMsg === 'Guardado' ? 'var(--green)' : 'var(--red)' }}>{scheduleMsg}</span>}
+            <button className="btn btn-primary" onClick={saveSchedule} disabled={savingSchedule} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
+              {savingSchedule ? 'Guardando…' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+          {schedule.map(day => (
+            <div key={day.dayOfWeek} style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-4)',
+              padding: 'var(--sp-3) var(--sp-4)',
+              borderRadius: 'var(--r-md)',
+              border: `1px solid ${day.isActive ? 'var(--violet)' : 'var(--border)'}`,
+              background: day.isActive ? 'var(--violet-subtle)' : 'var(--surface)',
+              transition: 'all .15s',
+              flexWrap: 'wrap',
+            }}>
+              {/* Toggle */}
+              <button type="button" onClick={() => updateDay(day.dayOfWeek, 'isActive', !day.isActive)} style={{
+                width: 38, height: 22, borderRadius: 11, flexShrink: 0, border: 'none',
+                background: day.isActive ? 'var(--violet)' : 'var(--border)',
+                position: 'relative', cursor: 'pointer', transition: 'background .2s',
+              }}>
+                <span style={{
+                  position: 'absolute', top: 3, left: day.isActive ? 19 : 3,
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: '#fff', transition: 'left .2s',
+                }} />
+              </button>
+
+              {/* Day name */}
+              <span style={{ width: 90, fontSize: 'var(--text-sm)', fontWeight: day.isActive ? 600 : 400, color: day.isActive ? 'var(--text)' : 'var(--text-muted)' }}>
+                {DAYS_LABEL[day.dayOfWeek]}
+              </span>
+
+              {/* Time inputs */}
+              {day.isActive ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+                  <input type="time" value={day.startTime}
+                    onChange={e => updateDay(day.dayOfWeek, 'startTime', e.target.value)}
+                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
+                  />
+                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>a</span>
+                  <input type="time" value={day.endTime}
+                    onChange={e => updateDay(day.dayOfWeek, 'endTime', e.target.value)}
+                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
+                  />
+                </div>
+              ) : (
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>No disponible</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
