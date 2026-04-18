@@ -26,9 +26,15 @@ function SectionCard({ title, action, children }) {
   );
 }
 
+const TABS = [
+  { key: 'panel',    label: 'Panel' },
+  { key: 'finanzas', label: 'Finanzas' },
+];
+
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [tab, setTab] = useState('panel');
   const [business, setBusiness] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -56,25 +62,15 @@ export default function BusinessDashboardPage() {
   useEffect(() => {
     if (!business) return;
     setShowRevenue(business.showRevenueToProf ?? false);
-    api.getBusinessJoinCode()
-      .then(d => setJoinCode(d.joinCode))
-      .catch(() => {});
-    api.getBusinessJoinRequests()
-      .then(r => setJoinRequests(Array.isArray(r) ? r : []))
-      .catch(() => {});
-    api.getBusinessRevenue()
-      .then(d => setRevenue(d))
-      .catch(() => {});
+    api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
+    api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
+    api.getBusinessRevenue().then(d => setRevenue(d)).catch(() => {});
   }, [business?.id]);
 
   async function handleApprove(id) {
     try {
       await api.approveJoinRequest(id);
       setJoinRequests(prev => prev.filter(r => r.id !== id));
-      setBusiness(b => ({
-        ...b,
-        professionals: [...(b.professionals ?? []), joinRequests.find(r => r.id === id)?.professional].filter(Boolean),
-      }));
       setActionMsg('Profesional aprobado');
     } catch (err) { setActionMsg(err.message); }
     finally { setTimeout(() => setActionMsg(''), 3000); }
@@ -201,24 +197,9 @@ export default function BusinessDashboardPage() {
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
               </svg>
               {business.address}, {business.city}
-              {business.phone && (
-                <>
-                  <span style={{ color: 'var(--border)' }}>·</span>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.23h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.09 6.09l.98-.89a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                  </svg>
-                  {business.phone}
-                </>
-              )}
             </p>
-            {business.description && (
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', marginTop: 6, maxWidth: 480 }}>
-                {business.description}
-              </p>
-            )}
           </div>
         </div>
-
         <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
           <Link to="/agenda" className="btn btn-primary btn-sm">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -249,308 +230,354 @@ export default function BusinessDashboardPage() {
         ))}
       </div>
 
-      {/* ── Services + Professionals ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+      {/* ── Tab bar ── */}
+      <div style={{
+        display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)',
+        borderBottom: '1px solid var(--border)', paddingBottom: 0,
+      }}>
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              padding: 'var(--sp-2) var(--sp-4)',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 'var(--text-sm)', fontWeight: tab === t.key ? 700 : 500,
+              color: tab === t.key ? 'var(--text)' : 'var(--text-muted)',
+              borderBottom: tab === t.key ? '2px solid var(--gold)' : '2px solid transparent',
+              marginBottom: -1, transition: 'color .15s',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        {/* Services */}
-        <SectionCard
-          title="Servicios"
-          action={
-            <Link to="/agenda" style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Agregar
-            </Link>
-          }
-        >
-          {!business.services?.length ? (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
-              Sin servicios.{' '}<Link to="/agenda" style={{ color: 'var(--gold)' }}>Agregar uno</Link>
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-              {business.services.map(s => (
-                <div key={s.id} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: 'var(--sp-3)', background: 'var(--surface-3)',
-                  borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
-                }}>
-                  <div>
-                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{s.name}</p>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>
-                      {s.duration} min
-                      {s.description && ` · ${s.description}`}
-                    </p>
-                  </div>
-                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--gold)', whiteSpace: 'nowrap', marginLeft: 'var(--sp-3)' }}>
-                    ${Number(s.price).toLocaleString('es-CO')}
+      {/* ══════════ PANEL TAB ══════════ */}
+      {tab === 'panel' && (
+        <>
+          {/* Services + Professionals */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+            <SectionCard
+              title="Servicios"
+              action={
+                <Link to="/agenda" style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Agregar
+                </Link>
+              }
+            >
+              {!business.services?.length ? (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
+                  Sin servicios.{' '}<Link to="/agenda" style={{ color: 'var(--gold)' }}>Agregar uno</Link>
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                  {business.services.map(s => (
+                    <div key={s.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: 'var(--sp-3)', background: 'var(--surface-3)',
+                      borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                    }}>
+                      <div>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{s.name}</p>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>{s.duration} min</p>
+                      </div>
+                      <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--gold)', whiteSpace: 'nowrap', marginLeft: 'var(--sp-3)' }}>
+                        ${Number(s.price).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+
+            <SectionCard title="Profesionales">
+              {!business.professionals?.length ? (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
+                  Sin profesionales registrados.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                  {business.professionals.map(p => (
+                    <div key={p.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                      padding: 'var(--sp-3)', background: 'var(--surface-3)',
+                      borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                    }}>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                        background: `${catColor}18`, color: catColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'var(--text-sm)', fontWeight: 700,
+                      }}>
+                        {p.name[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{p.name}</p>
+                        {p.bio && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>{p.bio}</p>}
+                      </div>
+                      <Link to={`/professionals/${p.id}`} style={{ color: 'var(--text-subtle)', textDecoration: 'none' }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+          </div>
+
+          {/* Join code + pending requests */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+            <SectionCard title="Código de vinculación">
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
+                Comparte este código con los profesionales que quieras añadir.
+              </p>
+              {joinCode ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                  <span style={{
+                    flex: 1, textAlign: 'center',
+                    fontSize: 28, fontWeight: 800, letterSpacing: '0.25em',
+                    padding: 'var(--sp-3)', borderRadius: 'var(--r-lg)',
+                    background: 'var(--surface-3)', border: '1px dashed var(--border)',
+                    color: 'var(--violet)', fontFamily: 'monospace',
+                  }}>
+                    {joinCode}
                   </span>
+                  <button onClick={copyCode} className="btn btn-ghost btn-sm" style={{ flexShrink: 0, padding: '8px 12px' }}>
+                    {copied
+                      ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    }
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-
-        {/* Professionals */}
-        <SectionCard title="Profesionales">
-          {!business.professionals?.length ? (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
-              Sin profesionales registrados.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-              {business.professionals.map(p => (
-                <div key={p.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
-                  padding: 'var(--sp-3)', background: 'var(--surface-3)',
-                  borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
-                }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                    background: `${catColor}18`, color: catColor,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 'var(--text-sm)', fontWeight: 700,
-                  }}>
-                    {p.name[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{p.name}</p>
-                    {p.bio && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>{p.bio}</p>}
-                  </div>
-                  <Link
-                    to={`/professionals/${p.id}`}
-                    style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', textDecoration: 'none' }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </Link>
+              ) : (
+                <div style={{ textAlign: 'center', padding: 'var(--sp-4)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                  Cargando código…
                 </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-      </div>
+              )}
+            </SectionCard>
 
-      {/* ── Join code + pending requests ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
-
-        {/* Join code card */}
-        <SectionCard title="Código de vinculación">
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
-            Comparte este código con los profesionales que quieras añadir a tu negocio.
-          </p>
-          {joinCode ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-              <span style={{
-                flex: 1, textAlign: 'center',
-                fontSize: 28, fontWeight: 800, letterSpacing: '0.25em',
-                padding: 'var(--sp-3)', borderRadius: 'var(--r-lg)',
-                background: 'var(--surface-3)', border: '1px dashed var(--border)',
-                color: 'var(--violet)',
-                fontFamily: 'monospace',
-              }}>
-                {joinCode}
-              </span>
-              <button
-                onClick={copyCode}
-                className="btn btn-ghost btn-sm"
-                style={{ flexShrink: 0, padding: '8px 12px' }}
-                title="Copiar código"
-              >
-                {copied
-                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                }
-              </button>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: 'var(--sp-4)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-              Cargando código…
-            </div>
-          )}
-        </SectionCard>
-
-        {/* Pending join requests */}
-        <SectionCard
-          title={`Solicitudes pendientes${joinRequests.length ? ` (${joinRequests.length})` : ''}`}
-          action={actionMsg ? <span style={{ fontSize: 'var(--text-xs)', color: actionMsg.includes('rechaz') || actionMsg.includes('Error') ? 'var(--red)' : 'var(--green)' }}>{actionMsg}</span> : null}
-        >
-          {joinRequests.length === 0 ? (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
-              Sin solicitudes pendientes.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
-              {joinRequests.map(r => (
-                <div key={r.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
-                  padding: 'var(--sp-3)', background: 'var(--surface-3)',
-                  borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
-                  flexWrap: 'wrap',
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: 'var(--violet-subtle)', color: 'var(--violet)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 'var(--text-sm)', fontWeight: 700,
-                  }}>
-                    {r.professional.name[0].toUpperCase()}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 120 }}>
-                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{r.professional.name}</p>
-                    {r.professional.specialty && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{r.professional.specialty}</p>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-                    <button onClick={() => handleReject(r.id)} className="btn btn-ghost btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', color: 'var(--red)' }}>
-                      Rechazar
-                    </button>
-                    <button onClick={() => handleApprove(r.id)} className="btn btn-primary btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', background: 'var(--violet)' }}>
-                      Aprobar
-                    </button>
-                  </div>
+            <SectionCard
+              title={`Solicitudes pendientes${joinRequests.length ? ` (${joinRequests.length})` : ''}`}
+              action={actionMsg ? <span style={{ fontSize: 'var(--text-xs)', color: actionMsg.includes('rechaz') ? 'var(--red)' : 'var(--green)' }}>{actionMsg}</span> : null}
+            >
+              {joinRequests.length === 0 ? (
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
+                  Sin solicitudes pendientes.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+                  {joinRequests.map(r => (
+                    <div key={r.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                      padding: 'var(--sp-3)', background: 'var(--surface-3)',
+                      borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                      flexWrap: 'wrap',
+                    }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                        background: 'var(--violet-subtle)', color: 'var(--violet)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'var(--text-sm)', fontWeight: 700,
+                      }}>
+                        {r.professional.name[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 120 }}>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{r.professional.name}</p>
+                        {r.professional.specialty && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{r.professional.specialty}</p>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                        <button onClick={() => handleReject(r.id)} className="btn btn-ghost btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', color: 'var(--red)' }}>
+                          Rechazar
+                        </button>
+                        <button onClick={() => handleApprove(r.id)} className="btn btn-primary btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', background: 'var(--violet)' }}>
+                          Aprobar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-      </div>
+              )}
+            </SectionCard>
+          </div>
 
-      {/* ── Contabilidad ── */}
-      <div style={{ marginBottom: 'var(--sp-4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-3)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
-          <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Contabilidad</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              Profesionales ven ingresos
-            </span>
+          {/* Today's bookings */}
+          <SectionCard
+            title={`Citas de hoy · ${new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+            action={
+              <Link to="/agenda" style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600, textDecoration: 'none' }}>
+                Ver agenda →
+              </Link>
+            }
+          >
+            {!bookings.length ? (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-8) 0' }}>
+                No hay citas programadas para hoy.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                {[...bookings].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(b => {
+                  const statusColor = { CONFIRMED: 'var(--success)', PENDING: 'var(--warning)', CANCELLED: 'var(--text-subtle)' }[b.status];
+                  const statusLabel = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada' }[b.status];
+                  return (
+                    <div key={b.id} style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                      padding: 'var(--sp-3) var(--sp-4)', background: 'var(--surface-3)',
+                      borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                      opacity: b.status === 'CANCELLED' ? 0.5 : 1,
+                    }}>
+                      <div style={{ width: 4, height: 36, borderRadius: 2, background: statusColor, flexShrink: 0 }} />
+                      <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-muted)', minWidth: 44 }}>{b.startTime}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {b.service.name}
+                        </p>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>
+                          {b.client.name} · {b.professional.name}
+                        </p>
+                      </div>
+                      <span style={{
+                        fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 10px',
+                        borderRadius: 'var(--r-full)', whiteSpace: 'nowrap',
+                        background: `${statusColor}18`, color: statusColor,
+                      }}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </SectionCard>
+        </>
+      )}
+
+      {/* ══════════ FINANZAS TAB ══════════ */}
+      {tab === 'finanzas' && (
+        <>
+          {/* Toggle visibilidad profesionales */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: 'var(--sp-4) var(--sp-5)',
+            background: 'var(--surface-2)', border: '1px solid var(--border)',
+            borderRadius: 'var(--r-xl)', marginBottom: 'var(--sp-4)',
+            flexWrap: 'wrap', gap: 'var(--sp-3)',
+          }}>
+            <div>
+              <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 2 }}>
+                Profesionales ven sus ingresos
+              </p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                Cuando está activo, cada profesional puede ver sus propios totales.
+              </p>
+            </div>
             <button
               onClick={toggleRevenuePerm}
               disabled={togglingRevenue}
               style={{
-                width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                width: 46, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
                 background: showRevenue ? 'var(--violet)' : 'var(--border)',
                 position: 'relative', transition: 'background .2s', flexShrink: 0,
               }}
             >
               <span style={{
-                position: 'absolute', top: 4, left: showRevenue ? 22 : 4,
-                width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left .2s',
+                position: 'absolute', top: 4, left: showRevenue ? 24 : 4,
+                width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s',
               }} />
             </button>
           </div>
-        </div>
 
-        {/* Summary row */}
-        {revenue && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
-            {[
-              { label: 'Hoy',       val: revenue.totals.day   },
-              { label: 'Esta semana', val: revenue.totals.week },
-              { label: 'Este mes',  val: revenue.totals.month  },
-            ].map(({ label, val }) => (
-              <div key={label} style={{
-                padding: 'var(--sp-4)', borderRadius: 'var(--r-xl)',
-                background: 'var(--surface-2)', border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}>
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
-                <p style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>
-                  ${val.toLocaleString('es-CO')}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Per-professional table */}
-        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', overflow: 'hidden' }}>
-          {!revenue || revenue.professionals.length === 0 ? (
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-8) 0' }}>
-              Sin ingresos registrados este mes.
-            </p>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-3)' }}>
-                  {['Profesional', 'Hoy', 'Semana', 'Mes'].map(h => (
-                    <th key={h} style={{ padding: 'var(--sp-3) var(--sp-4)', textAlign: h === 'Profesional' ? 'left' : 'right', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {revenue.professionals.map((p, i) => (
-                  <tr key={p.id} style={{ borderBottom: i < revenue.professionals.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <td style={{ padding: 'var(--sp-3) var(--sp-4)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${catColor}18`, color: catColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)', fontWeight: 700, flexShrink: 0 }}>
-                          {p.name[0].toUpperCase()}
-                        </div>
-                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{p.name}</span>
-                      </div>
-                    </td>
-                    {[p.day, p.week, p.month].map((v, j) => (
-                      <td key={j} style={{ padding: 'var(--sp-3) var(--sp-4)', textAlign: 'right', fontSize: 'var(--text-sm)', fontWeight: v > 0 ? 700 : 400, color: v > 0 ? 'var(--gold)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                        ${v.toLocaleString('es-CO')}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* ── Today's bookings ── */}
-      <SectionCard
-        title={`Citas de hoy · ${new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}`}
-        action={
-          <Link to="/agenda" style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600, textDecoration: 'none' }}>
-            Ver agenda completa →
-          </Link>
-        }
-      >
-        {!bookings.length ? (
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-8) 0' }}>
-            No hay citas programadas para hoy.
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-            {[...bookings]
-              .sort((a, b) => a.startTime.localeCompare(b.startTime))
-              .map(b => {
-                const statusColor = { CONFIRMED: 'var(--success)', PENDING: 'var(--warning)', CANCELLED: 'var(--text-subtle)' }[b.status];
-                const statusLabel = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada' }[b.status];
-                return (
-                  <div key={b.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
-                    padding: 'var(--sp-3) var(--sp-4)', background: 'var(--surface-3)',
-                    borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
-                    opacity: b.status === 'CANCELLED' ? 0.5 : 1,
+          {/* Resumen general */}
+          {revenue ? (
+            <>
+              <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 'var(--sp-3)' }}>
+                Resumen del negocio
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
+                {[
+                  { label: 'Hoy',         val: revenue.totals.day,   icon: '☀️' },
+                  { label: 'Esta semana', val: revenue.totals.week,  icon: '📅' },
+                  { label: 'Este mes',    val: revenue.totals.month, icon: '📆' },
+                ].map(({ label, val, icon }) => (
+                  <div key={label} style={{
+                    padding: 'var(--sp-5)', borderRadius: 'var(--r-xl)',
+                    background: 'var(--surface-2)', border: '1px solid var(--border)',
+                    textAlign: 'center',
                   }}>
-                    <div style={{ width: 4, height: 36, borderRadius: 2, background: statusColor, flexShrink: 0 }} />
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-muted)', minWidth: 44 }}>{b.startTime}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {b.service.name}
-                      </p>
-                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>
-                        {b.client.name} · {b.professional.name}
-                      </p>
-                    </div>
-                    <span style={{
-                      fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 10px',
-                      borderRadius: 'var(--r-full)', whiteSpace: 'nowrap',
-                      background: `${statusColor}18`, color: statusColor,
-                    }}>
-                      {statusLabel}
-                    </span>
+                    <p style={{ fontSize: 18, marginBottom: 6 }}>{icon}</p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600 }}>{label}</p>
+                    <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>
+                      ${val.toLocaleString('es-CO')}
+                    </p>
                   </div>
-                );
-              })}
-          </div>
-        )}
-      </SectionCard>
+                ))}
+              </div>
+
+              {/* Per-professional */}
+              <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 'var(--sp-3)' }}>
+                Ingresos por profesional
+              </p>
+              {revenue.professionals.length === 0 ? (
+                <div style={{
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-xl)', padding: 'var(--sp-8)',
+                  textAlign: 'center', color: 'var(--text-subtle)', fontSize: 'var(--text-sm)',
+                }}>
+                  Sin ingresos registrados aún.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+                  {revenue.professionals.map(p => (
+                    <div key={p.id} style={{
+                      background: 'var(--surface-2)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--r-xl)', padding: 'var(--sp-4) var(--sp-5)',
+                      display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap',
+                    }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                        background: `${catColor}18`, color: catColor,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 'var(--text-base)', fontWeight: 700,
+                      }}>
+                        {p.name[0].toUpperCase()}
+                      </div>
+                      <div style={{ minWidth: 120, flex: 1 }}>
+                        <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--text-sm)' }}>{p.name}</p>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>{p.bookingCount ?? 0} citas confirmadas este mes</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+                        {[
+                          { label: 'Hoy',    val: p.day },
+                          { label: 'Semana', val: p.week },
+                          { label: 'Mes',    val: p.month },
+                        ].map(({ label, val }) => (
+                          <div key={label} style={{ textAlign: 'center', minWidth: 72 }}>
+                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 3, fontWeight: 600 }}>{label}</p>
+                            <p style={{
+                              fontSize: 'var(--text-base)', fontWeight: 800,
+                              color: val > 0 ? 'var(--gold)' : 'var(--text-subtle)',
+                              fontFamily: 'var(--font-heading)',
+                            }}>
+                              ${val.toLocaleString('es-CO')}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+              {[1,2,3].map(n => <div key={n} className="skeleton" style={{ height: 80, borderRadius: 'var(--r-xl)' }} />)}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
