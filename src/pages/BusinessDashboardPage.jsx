@@ -36,6 +36,9 @@ export default function BusinessDashboardPage() {
   const [joinRequests, setJoinRequests] = useState([]);
   const [copied, setCopied] = useState(false);
   const [actionMsg, setActionMsg] = useState('');
+  const [revenue, setRevenue] = useState(null);
+  const [showRevenue, setShowRevenue] = useState(false);
+  const [togglingRevenue, setTogglingRevenue] = useState(false);
 
   useEffect(() => {
     api.getBusinesses()
@@ -52,11 +55,15 @@ export default function BusinessDashboardPage() {
 
   useEffect(() => {
     if (!business) return;
+    setShowRevenue(business.showRevenueToProf ?? false);
     api.getBusinessJoinCode()
       .then(d => setJoinCode(d.joinCode))
       .catch(() => {});
     api.getBusinessJoinRequests()
       .then(r => setJoinRequests(Array.isArray(r) ? r : []))
+      .catch(() => {});
+    api.getBusinessRevenue()
+      .then(d => setRevenue(d))
       .catch(() => {});
   }, [business?.id]);
 
@@ -80,6 +87,16 @@ export default function BusinessDashboardPage() {
       setActionMsg('Solicitud rechazada');
     } catch (err) { setActionMsg(err.message); }
     finally { setTimeout(() => setActionMsg(''), 3000); }
+  }
+
+  async function toggleRevenuePerm() {
+    setTogglingRevenue(true);
+    try {
+      const next = !showRevenue;
+      await api.updateBusinessSettings({ showRevenueToProf: next });
+      setShowRevenue(next);
+    } catch {}
+    finally { setTogglingRevenue(false); }
   }
 
   function copyCode() {
@@ -396,6 +413,92 @@ export default function BusinessDashboardPage() {
             </div>
           )}
         </SectionCard>
+      </div>
+
+      {/* ── Contabilidad ── */}
+      <div style={{ marginBottom: 'var(--sp-4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-3)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
+          <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Contabilidad</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              Profesionales ven ingresos
+            </span>
+            <button
+              onClick={toggleRevenuePerm}
+              disabled={togglingRevenue}
+              style={{
+                width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: showRevenue ? 'var(--violet)' : 'var(--border)',
+                position: 'relative', transition: 'background .2s', flexShrink: 0,
+              }}
+            >
+              <span style={{
+                position: 'absolute', top: 4, left: showRevenue ? 22 : 4,
+                width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left .2s',
+              }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Summary row */}
+        {revenue && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
+            {[
+              { label: 'Hoy',       val: revenue.totals.day   },
+              { label: 'Esta semana', val: revenue.totals.week },
+              { label: 'Este mes',  val: revenue.totals.month  },
+            ].map(({ label, val }) => (
+              <div key={label} style={{
+                padding: 'var(--sp-4)', borderRadius: 'var(--r-xl)',
+                background: 'var(--surface-2)', border: '1px solid var(--border)',
+                textAlign: 'center',
+              }}>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
+                <p style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--gold)', fontFamily: 'var(--font-heading)' }}>
+                  ${val.toLocaleString('es-CO')}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Per-professional table */}
+        <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', overflow: 'hidden' }}>
+          {!revenue || revenue.professionals.length === 0 ? (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-8) 0' }}>
+              Sin ingresos registrados este mes.
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-3)' }}>
+                  {['Profesional', 'Hoy', 'Semana', 'Mes'].map(h => (
+                    <th key={h} style={{ padding: 'var(--sp-3) var(--sp-4)', textAlign: h === 'Profesional' ? 'left' : 'right', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {revenue.professionals.map((p, i) => (
+                  <tr key={p.id} style={{ borderBottom: i < revenue.professionals.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <td style={{ padding: 'var(--sp-3) var(--sp-4)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${catColor}18`, color: catColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)', fontWeight: 700, flexShrink: 0 }}>
+                          {p.name[0].toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{p.name}</span>
+                      </div>
+                    </td>
+                    {[p.day, p.week, p.month].map((v, j) => (
+                      <td key={j} style={{ padding: 'var(--sp-3) var(--sp-4)', textAlign: 'right', fontSize: 'var(--text-sm)', fontWeight: v > 0 ? 700 : 400, color: v > 0 ? 'var(--gold)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        ${v.toLocaleString('es-CO')}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       {/* ── Today's bookings ── */}
