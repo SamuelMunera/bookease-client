@@ -178,7 +178,7 @@ export default function BookingPage() {
   const professionalId = params.get('professionalId');
   const serviceId      = params.get('serviceId');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
   const [date,       setDate]       = useState(today);
   const [slots,      setSlots]      = useState([]);
   const [selected,   setSelected]   = useState(null);
@@ -194,8 +194,9 @@ export default function BookingPage() {
     api.getSlots({ professionalId, serviceId, date })
       .then(d  => {
         let slots = d.slots || [];
-        const today = new Date().toISOString().split('T')[0];
-        if (date === today) {
+        const now2 = new Date();
+        const localToday = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}-${String(now2.getDate()).padStart(2,'0')}`;
+        if (date === localToday) {
           const now = new Date();
           const nowMins = now.getHours() * 60 + now.getMinutes();
           slots = slots.filter(s => {
