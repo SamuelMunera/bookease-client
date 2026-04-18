@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
-const STEPS = ['Cuenta', 'Perfil', 'Negocio'];
+const STEPS = ['Cuenta', 'Perfil', 'Código'];
 
 const SPECIALTIES = [
   'Barbería', 'Peluquería', 'Colorimetría', 'Estética facial',
@@ -16,20 +16,13 @@ export default function ProRegisterPage() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
-  const [businesses, setBusinesses] = useState([]);
   const [form, setForm] = useState({
     name: '', email: '', password: '', phone: '',
-    specialty: '', bio: '', experience: '', businessId: '',
+    specialty: '', bio: '', experience: '', joinCode: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
-
-  useEffect(() => {
-    api.getBusinesses({ limit: 100 })
-      .then(data => setBusinesses(Array.isArray(data) ? data : data.businesses ?? []))
-      .catch(() => {});
-  }, []);
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
@@ -47,7 +40,7 @@ export default function ProRegisterPage() {
       if (!form.specialty) e.specialty = 'Elige tu especialidad';
     }
     if (s === 2) {
-      if (!form.businessId) e.businessId = 'Selecciona el negocio al que perteneces';
+      if (!form.joinCode.trim()) e.joinCode = 'Ingresa el código del negocio';
     }
     return e;
   }
@@ -67,8 +60,14 @@ export default function ProRegisterPage() {
     setApiError('');
     setLoading(true);
     try {
-      const data = await api.registerProfessional(form);
+      const { name, email, password, phone, specialty, bio, experience, joinCode } = form;
+      const data = await api.registerProfessional({ name, email, password, phone, specialty, bio, experience });
       login(data);
+      try {
+        await api.submitJoinRequest(joinCode);
+      } catch {
+        // registro OK, la solicitud puede reintentarse desde el dashboard
+      }
       navigate('/pro/dashboard');
     } catch (err) {
       setApiError(err.message);
@@ -132,7 +131,7 @@ export default function ProRegisterPage() {
 
           <div style={{ marginTop: 'var(--sp-8)', padding: 'var(--sp-4)', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-lg)', border: '1px solid rgba(255,255,255,0.07)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              Al registrarte, formarás parte de un negocio existente. Si quieres abrir tu propio local,
+              El dueño del negocio debe aprobarte antes de que quedes vinculado. Si quieres abrir tu propio local,
               <Link to="/register" style={{ color: 'var(--gold)', marginLeft: 4 }}>regístrate como dueño de negocio.</Link>
             </p>
           </div>
@@ -154,7 +153,7 @@ export default function ProRegisterPage() {
           <p className="auth-form-sub">
             {step === 0 && 'Crea tus credenciales de acceso'}
             {step === 1 && 'Cuéntanos sobre tu perfil profesional'}
-            {step === 2 && 'Asocia tu cuenta a un negocio'}
+            {step === 2 && 'Ingresa el código del negocio donde trabajas'}
           </p>
 
           <form className="auth-form-fields" onSubmit={step < 2 ? (e) => { e.preventDefault(); next(); } : handleSubmit}>
@@ -239,59 +238,35 @@ export default function ProRegisterPage() {
               </>
             )}
 
-            {/* ── Step 2: Business ── */}
+            {/* ── Step 2: Join Code ── */}
             {step === 2 && (
               <>
                 <div className="form-group">
-                  <label className="form-label">Negocio al que perteneces</label>
+                  <label className="form-label" htmlFor="pro-joincode">Código del negocio</label>
                   <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
-                    Elige el negocio donde trabajas. Si no aparece en la lista, pide al dueño que lo registre primero.
+                    Pídele al dueño del negocio su código de vinculación de 6 caracteres.
                   </p>
+                  <input
+                    id="pro-joincode"
+                    className={`input${errors.joinCode ? ' input-error' : ''}`}
+                    type="text"
+                    placeholder="Ej. AB3X9K"
+                    value={form.joinCode}
+                    onChange={e => set('joinCode', e.target.value.toUpperCase())}
+                    maxLength={6}
+                    style={{ letterSpacing: '0.2em', fontWeight: 700, fontSize: 'var(--text-lg)', textAlign: 'center' }}
+                  />
+                  {errors.joinCode && <p className="field-error">{errors.joinCode}</p>}
 
-                  {businesses.length === 0 ? (
-                    <div style={{ padding: 'var(--sp-4)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                      No hay negocios registrados aún.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', maxHeight: 260, overflowY: 'auto', paddingRight: 4 }}>
-                      {businesses.map(b => (
-                        <button
-                          key={b.id} type="button"
-                          onClick={() => set('businessId', b.id)}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
-                            padding: 'var(--sp-3) var(--sp-4)',
-                            borderRadius: 'var(--r-md)',
-                            border: `1px solid ${form.businessId === b.id ? 'var(--violet)' : 'var(--border)'}`,
-                            background: form.businessId === b.id ? 'var(--violet-subtle)' : 'var(--surface-raised)',
-                            cursor: 'pointer', textAlign: 'left', transition: 'all .15s',
-                          }}
-                        >
-                          <div style={{
-                            width: 36, height: 36, borderRadius: 'var(--r-md)', flexShrink: 0,
-                            background: form.businessId === b.id ? 'var(--violet)' : 'var(--surface)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: form.businessId === b.id ? '#fff' : 'var(--text-muted)',
-                            fontWeight: 700, fontSize: 'var(--text-sm)',
-                          }}>
-                            {b.name?.[0]?.toUpperCase() ?? '?'}
-                          </div>
-                          <div>
-                            <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: form.businessId === b.id ? 'var(--violet)' : 'var(--text)', marginBottom: 2 }}>{b.name}</p>
-                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{b.city || b.category || '—'}</p>
-                          </div>
-                          {form.businessId === b.id && (
-                            <div style={{ marginLeft: 'auto', color: 'var(--violet)' }}>
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <polyline points="20 6 9 17 4 12"/>
-                              </svg>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {errors.businessId && <p className="field-error" style={{ marginTop: 'var(--sp-2)' }}>{errors.businessId}</p>}
+                  <div style={{
+                    marginTop: 'var(--sp-4)', padding: 'var(--sp-3) var(--sp-4)',
+                    borderRadius: 'var(--r-md)', background: 'var(--violet-subtle)',
+                    border: '1px solid rgba(124,92,252,0.2)',
+                    fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6,
+                  }}>
+                    Tu solicitud quedará pendiente hasta que el dueño del negocio la apruebe.
+                    Podrás ver el estado desde tu dashboard.
+                  </div>
                 </div>
 
                 {apiError && (

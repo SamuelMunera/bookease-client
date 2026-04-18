@@ -55,6 +55,14 @@ const api = {
   deleteWeekSchedule: (ws) => request(`/pro/me/schedule/week/${ws}`, { method: 'DELETE' }),
   getProfessionalServices: (id) => request(`/professionals/${id}/services`),
 
+  // Join requests
+  submitJoinRequest: (code) => request('/pro/join', { method: 'POST', body: JSON.stringify({ code }) }),
+  getMyJoinRequest: () => request('/pro/me/join-request'),
+  getBusinessJoinCode: () => request('/businesses/me/join-code'),
+  getBusinessJoinRequests: () => request('/businesses/me/join-requests'),
+  approveJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/approve`, { method: 'PATCH' }),
+  rejectJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/reject`, { method: 'PATCH' }),
+
   // Slots
   getSlots: (params) => request(`/slots?${new URLSearchParams(params)}`),
 

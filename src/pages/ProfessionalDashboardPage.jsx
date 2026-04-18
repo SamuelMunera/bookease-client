@@ -3,6 +3,40 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
+function JoinCodeForm({ joinCode, setJoinCode, onSend, loading, error }) {
+  return (
+    <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+      <input
+        type="text"
+        value={joinCode}
+        onChange={e => setJoinCode(e.target.value.toUpperCase())}
+        maxLength={6}
+        placeholder="Ej. AB3X9K"
+        style={{
+          flex: 1, minWidth: 140,
+          padding: '8px 12px',
+          borderRadius: 'var(--r-md)',
+          border: `1px solid ${error ? 'var(--red)' : 'var(--border)'}`,
+          background: 'var(--surface)',
+          color: 'var(--text)',
+          letterSpacing: '0.15em',
+          fontWeight: 700,
+          fontSize: 'var(--text-sm)',
+        }}
+      />
+      <button
+        onClick={onSend}
+        disabled={loading || !joinCode.trim()}
+        className="btn btn-primary"
+        style={{ background: 'var(--violet)', padding: '8px 20px', flexShrink: 0 }}
+      >
+        {loading ? 'Enviando…' : 'Enviar solicitud'}
+      </button>
+      {error && <p style={{ width: '100%', fontSize: 'var(--text-xs)', color: 'var(--red)', marginTop: 4 }}>{error}</p>}
+    </div>
+  );
+}
+
 const STATUS_META = {
   PENDING:   { label: 'Pendiente',   color: 'var(--gold)',    bg: 'rgba(255,184,0,0.1)' },
   CONFIRMED: { label: 'Confirmada',  color: 'var(--green)',   bg: 'rgba(34,197,94,0.1)' },
@@ -101,6 +135,10 @@ export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [joinRequest, setJoinRequest] = useState(undefined); // undefined = loading
+  const [joinCode, setJoinCode] = useState('');
+  const [joinCodeError, setJoinCodeError] = useState('');
+  const [joinCodeLoading, setJoinCodeLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
@@ -121,11 +159,14 @@ export default function ProfessionalDashboardPage() {
     api.getProMe()
       .then(data => {
         setProfile(data);
-        // load business services once we know businessId
         if (data?.businessId) {
           api.getBusinessServices(data.businessId)
             .then(s => setBizServices(Array.isArray(s) ? s : []))
             .catch(() => {});
+        } else {
+          api.getMyJoinRequest()
+            .then(r => setJoinRequest(r))
+            .catch(() => setJoinRequest(null));
         }
       })
       .catch(() => {})
@@ -152,6 +193,20 @@ export default function ProfessionalDashboardPage() {
       })
       .catch(() => {});
   }, [weekOffset]);
+
+  async function sendJoinRequest() {
+    if (!joinCode.trim()) return;
+    setJoinCodeLoading(true); setJoinCodeError('');
+    try {
+      const result = await api.submitJoinRequest(joinCode);
+      setJoinRequest(result);
+      setJoinCode('');
+    } catch (err) {
+      setJoinCodeError(err.message);
+    } finally {
+      setJoinCodeLoading(false);
+    }
+  }
 
   async function saveServices() {
     setSavingServices(true); setServiceMsg('');
@@ -303,6 +358,78 @@ export default function ProfessionalDashboardPage() {
         )}
       </div>
 
+      {/* ── Join request banner (only when not linked to a business) ── */}
+      {!loadingProfile && !pro.businessId && (
+        <div style={{
+          marginBottom: 'var(--sp-6)',
+          padding: 'var(--sp-5)',
+          borderRadius: 'var(--r-xl)',
+          border: `1px solid ${
+            joinRequest?.status === 'APPROVED' ? 'rgba(34,197,94,0.4)' :
+            joinRequest?.status === 'REJECTED' ? 'rgba(239,68,68,0.4)' :
+            joinRequest?.status === 'PENDING'  ? 'rgba(255,184,0,0.4)' :
+            'var(--border)'
+          }`,
+          background: joinRequest?.status === 'APPROVED' ? 'rgba(34,197,94,0.06)' :
+                      joinRequest?.status === 'REJECTED' ? 'rgba(239,68,68,0.06)' :
+                      joinRequest?.status === 'PENDING'  ? 'rgba(255,184,0,0.06)' :
+                      'var(--surface-raised)',
+        }}>
+          {joinRequest?.status === 'PENDING' && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-2)' }}>
+                <span style={{ fontSize: 20 }}>⏳</span>
+                <div>
+                  <p style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 'var(--text-sm)' }}>Solicitud pendiente</p>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                    Enviaste una solicitud a <strong>{joinRequest.business?.name}</strong>. Espera a que el dueño la apruebe.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {joinRequest?.status === 'APPROVED' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+              <span style={{ fontSize: 20 }}>✅</span>
+              <div>
+                <p style={{ fontWeight: 700, color: 'var(--green)', fontSize: 'var(--text-sm)' }}>Aprobado — recarga la página</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                  Fuiste aceptado en <strong>{joinRequest.business?.name}</strong>.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {joinRequest?.status === 'REJECTED' && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
+                <span style={{ fontSize: 20 }}>❌</span>
+                <div>
+                  <p style={{ fontWeight: 700, color: 'var(--red)', fontSize: 'var(--text-sm)' }}>Solicitud rechazada</p>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                    Tu solicitud para <strong>{joinRequest.business?.name}</strong> fue rechazada. Puedes intentar con otro código.
+                  </p>
+                </div>
+              </div>
+              <JoinCodeForm joinCode={joinCode} setJoinCode={setJoinCode} onSend={sendJoinRequest} loading={joinCodeLoading} error={joinCodeError} />
+            </>
+          )}
+
+          {!joinRequest && (
+            <>
+              <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-2)' }}>
+                No estás vinculado a ningún negocio
+              </p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-4)' }}>
+                Ingresa el código de 6 caracteres que te dio el dueño del negocio.
+              </p>
+              <JoinCodeForm joinCode={joinCode} setJoinCode={setJoinCode} onSend={sendJoinRequest} loading={joinCodeLoading} error={joinCodeError} />
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Stats row ── */}
       <div style={{
         display: 'grid',
@@ -453,7 +580,8 @@ export default function ProfessionalDashboardPage() {
 
       </div>
 
-      {/* ── Mis Servicios ── */}
+      {/* ── Mis Servicios (solo si está vinculado) ── */}
+      {pro.businessId &&
       <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
           <div>
@@ -504,7 +632,10 @@ export default function ProfessionalDashboardPage() {
         )}
       </div>
 
-      {/* ── Mi Disponibilidad ── */}
+      }
+
+      {/* ── Mi Disponibilidad (solo si está vinculado) ── */}
+      {pro.businessId &&
       <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
         <div style={{ marginBottom: 'var(--sp-4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' }}>
@@ -592,6 +723,7 @@ export default function ProfessionalDashboardPage() {
           ))}
         </div>
       </div>
+      }
 
     </div>
   );
