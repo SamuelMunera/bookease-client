@@ -192,7 +192,19 @@ export default function BookingPage() {
     setError('');
     setLoading(true);
     api.getSlots({ professionalId, serviceId, date })
-      .then(d  => setSlots(d.slots || []))
+      .then(d  => {
+        let slots = d.slots || [];
+        const today = new Date().toISOString().split('T')[0];
+        if (date === today) {
+          const now = new Date();
+          const nowMins = now.getHours() * 60 + now.getMinutes();
+          slots = slots.filter(s => {
+            const [h, m] = s.startTime.split(':').map(Number);
+            return h * 60 + m > nowMins;
+          });
+        }
+        setSlots(slots);
+      })
       .catch(e => setError(e.message))
       .finally(()  => setLoading(false));
   }, [date, professionalId, serviceId]);
