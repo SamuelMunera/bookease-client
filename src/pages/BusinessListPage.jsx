@@ -451,7 +451,7 @@ export default function BusinessListPage() {
                     )}
                     <div className={`biz-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
                       <span className="biz-card-img-letter">{b.name[0]}</span>
-                      <span className="biz-card-img-label">{CAT_LABEL[b.category] || b.category}</span>
+                      <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
                     </div>
                     <div className="biz-card-body">
                       <h3 className="biz-card-name">{b.name}</h3>
