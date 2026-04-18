@@ -18,11 +18,19 @@ import ProLoginPage from './pages/ProLoginPage';
 import ProRegisterPage from './pages/ProRegisterPage';
 import ProfessionalDashboardPage from './pages/ProfessionalDashboardPage';
 
+import AdminLoginPage from './pages/admin/AdminLoginPage';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminFinancesPage from './pages/admin/AdminFinancesPage';
+import AdminBusinessesPage from './pages/admin/AdminBusinessesPage';
+import AdminProfessionalsPage from './pages/admin/AdminProfessionalsPage';
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* ── Main app ── */}
           <Route element={<Layout />}>
             <Route index element={<BusinessListPage />} />
             <Route path="businesses" element={<BusinessesPage />} />
@@ -52,6 +60,18 @@ export default function App() {
               <ProtectedRoute role="PROFESSIONAL"><ProfessionalDashboardPage /></ProtectedRoute>
             } />
             <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+
+          {/* ── Admin panel ── */}
+          <Route path="admin/login" element={<AdminLoginPage />} />
+          <Route path="admin" element={
+            <ProtectedRoute role="ADMIN"><AdminLayout /></ProtectedRoute>
+          }>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="businesses" element={<AdminBusinessesPage />} />
+            <Route path="professionals" element={<AdminProfessionalsPage />} />
+            <Route path="finances" element={<AdminFinancesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

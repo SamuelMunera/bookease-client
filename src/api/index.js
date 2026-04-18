@@ -73,6 +73,11 @@ const api = {
   approveJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/approve`, { method: 'PATCH' }),
   rejectJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/reject`, { method: 'PATCH' }),
 
+  // Admin
+  adminStats:         () => request('/admin/stats'),
+  adminBusinesses:    () => request('/admin/businesses'),
+  adminProfessionals: () => request('/admin/professionals'),
+
   // Categories
   getCategories: () => request('/categories'),
 
