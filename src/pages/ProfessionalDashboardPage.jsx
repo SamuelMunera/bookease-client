@@ -135,6 +135,7 @@ export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
+  const [proRevenue, setProRevenue] = useState(null);
   const [joinRequest, setJoinRequest] = useState(undefined); // undefined = loading
   const [joinCode, setJoinCode] = useState('');
   const [joinCodeError, setJoinCodeError] = useState('');
@@ -162,6 +163,9 @@ export default function ProfessionalDashboardPage() {
         if (data?.businessId) {
           api.getBusinessServices(data.businessId)
             .then(s => setBizServices(Array.isArray(s) ? s : []))
+            .catch(() => {});
+          api.getProRevenue()
+            .then(r => setProRevenue(r))
             .catch(() => {});
         } else {
           api.getMyJoinRequest()
@@ -579,6 +583,27 @@ export default function ProfessionalDashboardPage() {
         </div>
 
       </div>
+
+      {/* ── Mis ingresos (si el negocio lo permite) ── */}
+      {proRevenue && pro.businessId && (
+        <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: '0 0 var(--sp-4)' }}>Mis ingresos</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-3)' }}>
+            {[
+              { label: 'Hoy',         val: proRevenue.day   },
+              { label: 'Esta semana', val: proRevenue.week  },
+              { label: 'Este mes',    val: proRevenue.month },
+            ].map(({ label, val }) => (
+              <div key={label} style={{ textAlign: 'center', padding: 'var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 6 }}>{label}</p>
+                <p style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--gold)' }}>
+                  ${val.toLocaleString('es-CO')}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Mis Servicios (solo si está vinculado) ── */}
       {pro.businessId &&
