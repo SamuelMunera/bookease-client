@@ -4,13 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 /* ─── constants ─────────────────────────────────────────── */
-const CATEGORIES = [
-  { value: '', label: 'Todos' },
-  { value: 'BARBERSHOP', label: 'Barberías' },
-  { value: 'SPA', label: 'Spa' },
-  { value: 'SALON', label: 'Salones' },
-];
-const CAT_LABEL     = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
 /* ─── category showcase data ────────────────────────────── */
@@ -60,7 +53,7 @@ function FeaturedCard({ b, badge, onClick }) {
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}>
       <div className={`feat-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
         <span className="biz-card-img-letter">{b.name[0]}</span>
-        <span className="biz-card-img-label">{CAT_LABEL[b.category]}</span>
+        <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
         {badge}
         {/* hover reveal */}
         <div className="card-reveal">
@@ -168,6 +161,7 @@ export default function BusinessListPage() {
   const [businesses, setBusinesses]   = useState([]);
   // category only filters "Explorar todos los negocios"; trending/newest are always unfiltered
   const [category, setCategory]       = useState('');
+  const [categories, setCategories]   = useState([]);
   const [city, setCity]               = useState('');
   const [cityInput, setCityInput]     = useState('');
   const [loading, setLoading]         = useState(false);
@@ -185,6 +179,8 @@ export default function BusinessListPage() {
     { num: `${c3}K+`,                  label: 'Reservas' },
     { num: `${(c4/10).toFixed(1)}★`,   label: 'Valoración' },
   ];
+
+  useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);
 
   // Fetch all businesses for city (no category filter — category is applied locally to the grid only)
   useEffect(() => {
@@ -381,8 +377,9 @@ export default function BusinessListPage() {
       <div className="filters-bar" id="businesses">
         <span className="filters-title">Categoría</span>
         <div className="chip-group">
-          {CATEGORIES.map(c => (
-            <button key={c.value} className={`chip${category === c.value ? ' active' : ''}`} onClick={() => setCategory(c.value)}>{c.label}</button>
+          <button className={`chip${category === '' ? ' active' : ''}`} onClick={() => setCategory('')}>Todos</button>
+          {categories.map(c => (
+            <button key={c.slug} className={`chip${category === c.slug ? ' active' : ''}`} onClick={() => setCategory(c.slug)}>{c.name}</button>
           ))}
         </div>
         {city && (

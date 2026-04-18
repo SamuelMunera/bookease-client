@@ -1,30 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 
-const CATEGORIES = [
-  {
-    value: 'BARBERSHOP', label: 'Barbería',
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M6 3v12M6 9c3.5 0 6-1.5 6-3s-2.5-3-6-3"/><path d="M6 21v-3"/><path d="M18 3v18"/><path d="M15 8l6-5"/><path d="M15 16l6 5"/></svg>,
-  },
-  {
-    value: 'SPA', label: 'Spa & Wellness',
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/><path d="M12 6v6l4 2"/></svg>,
-  },
-  {
-    value: 'SALON', label: 'Salón de belleza',
-    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
-  },
-];
-
 export default function RegisterBusinessPage() {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({
-    name: '', category: 'BARBERSHOP', description: '',
+    name: '', category: '', description: '',
     city: '', address: '', phone: '',
   });
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api.getCategories().then(cats => {
+      setCategories(cats);
+      if (cats.length && !form.category) setForm(p => ({ ...p, category: cats[0].slug }));
+    }).catch(() => {});
+  }, []);
 
   const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
 
@@ -124,22 +117,22 @@ export default function RegisterBusinessPage() {
             <div className="form-group">
               <label className="form-label">Categoría *</label>
               <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-                {CATEGORIES.map(c => (
+                {categories.map(c => (
                   <div
-                    key={c.value}
-                    onClick={() => setForm(p => ({ ...p, category: c.value }))}
+                    key={c.slug}
+                    onClick={() => setForm(p => ({ ...p, category: c.slug }))}
                     style={{
                       flex: 1, padding: 'var(--sp-3) var(--sp-2)',
-                      border: `1.5px solid ${form.category === c.value ? 'var(--gold)' : 'var(--border)'}`,
+                      border: `1.5px solid ${form.category === c.slug ? 'var(--gold)' : 'var(--border)'}`,
                       borderRadius: 'var(--r-lg)', cursor: 'pointer',
-                      background: form.category === c.value ? 'var(--gold-subtle)' : 'var(--surface-2)',
+                      background: form.category === c.slug ? 'var(--gold-subtle)' : 'var(--surface-2)',
                       textAlign: 'center',
-                      color: form.category === c.value ? 'var(--gold)' : 'var(--text-muted)',
+                      color: form.category === c.slug ? 'var(--gold)' : 'var(--text-muted)',
                       transition: 'all 0.15s',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>{c.icon}</div>
-                    <p style={{ fontSize: 'var(--text-xs)', fontWeight: form.category === c.value ? 700 : 500 }}>{c.label}</p>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>{c.icon}</div>
+                    <p style={{ fontSize: 'var(--text-xs)', fontWeight: form.category === c.slug ? 700 : 500 }}>{c.name}</p>
                   </div>
                 ))}
               </div>

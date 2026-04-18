@@ -2,13 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
-const CATEGORIES = [
-  { value: '', label: 'Todos' },
-  { value: 'BARBERSHOP', label: 'Barberías' },
-  { value: 'SPA', label: 'Spa' },
-  { value: 'SALON', label: 'Salones' },
-];
-const CAT_LABEL     = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
 function Stars({ rating }) {
@@ -23,12 +16,15 @@ export default function BusinessesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [businesses, setBusinesses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [apiError,   setApiError]   = useState(false);
 
   const category  = searchParams.get('category')  || '';
   const city      = searchParams.get('city')       || '';
   const [cityInput, setCityInput] = useState(city);
+
+  useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -99,13 +95,14 @@ export default function BusinessesPage() {
         <div className="filters-bar" style={{ paddingTop: 0, borderTop: 'none' }}>
           <span className="filters-title">Categoría</span>
           <div className="chip-group">
-            {CATEGORIES.map(c => (
+            <button className={`chip${category === '' ? ' active' : ''}`} onClick={() => setCategory('')}>Todos</button>
+            {categories.map(c => (
               <button
-                key={c.value}
-                className={`chip${category === c.value ? ' active' : ''}`}
-                onClick={() => setCategory(c.value)}
+                key={c.slug}
+                className={`chip${category === c.slug ? ' active' : ''}`}
+                onClick={() => setCategory(c.slug)}
               >
-                {c.label}
+                {c.name}
               </button>
             ))}
           </div>
@@ -194,7 +191,7 @@ export default function BusinessesPage() {
                 )}
                 <div className={`biz-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
                   <span className="biz-card-img-letter">{b.name[0]}</span>
-                  <span className="biz-card-img-label">{CAT_LABEL[b.category] || b.category}</span>
+                  <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
                 </div>
                 <div className="biz-card-body">
                   <h3 className="biz-card-name">{b.name}</h3>

@@ -73,6 +73,9 @@ const api = {
   approveJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/approve`, { method: 'PATCH' }),
   rejectJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/reject`, { method: 'PATCH' }),
 
+  // Categories
+  getCategories: () => request('/categories'),
+
   // Slots
   getSlots: (params) => request(`/slots?${new URLSearchParams(params)}`),
 
