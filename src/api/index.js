@@ -60,6 +60,11 @@ const api = {
   updateBusinessSettings: (body) => request('/businesses/me/settings', { method: 'PATCH', body: JSON.stringify(body) }),
   getProRevenue: () => request('/pro/me/revenue'),
 
+  // Professional service configs & buffer
+  getProServiceConfigs: () => request('/pro/me/service-configs'),
+  saveProServiceConfigs: (configs) => request('/pro/me/service-configs', { method: 'PUT', body: JSON.stringify({ configs }) }),
+  updateProBuffer: (bufferTime) => request('/pro/me/buffer', { method: 'PATCH', body: JSON.stringify({ bufferTime }) }),
+
   // Join requests
   submitJoinRequest: (code) => request('/pro/join', { method: 'POST', body: JSON.stringify({ code }) }),
   getMyJoinRequest: () => request('/pro/me/join-request'),

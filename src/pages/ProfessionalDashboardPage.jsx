@@ -149,6 +149,16 @@ export default function ProfessionalDashboardPage() {
   const [savingServices, setSavingServices] = useState(false);
   const [serviceMsg, setServiceMsg]     = useState('');
 
+  // Duration configs per service
+  const [durationConfigs, setDurationConfigs] = useState({}); // { serviceId: customDuration }
+  const [savingDurations, setSavingDurations]  = useState(false);
+  const [durationMsg, setDurationMsg]          = useState('');
+
+  // Buffer time
+  const [bufferTime, setBufferTime]       = useState(0);
+  const [savingBuffer, setSavingBuffer]   = useState(false);
+  const [bufferMsg, setBufferMsg]         = useState('');
+
   // Schedule
   const [weekOffset, setWeekOffset]     = useState(0);
   const [weekStart, setWeekStartState]  = useState(() => getWeekStart(0));
@@ -160,6 +170,7 @@ export default function ProfessionalDashboardPage() {
     api.getProMe()
       .then(data => {
         setProfile(data);
+        setBufferTime(data?.bufferTime ?? 0);
         if (data?.businessId) {
           api.getBusinessServices(data.businessId)
             .then(s => setBizServices(Array.isArray(s) ? s : []))
@@ -175,6 +186,14 @@ export default function ProfessionalDashboardPage() {
       })
       .catch(() => {})
       .finally(() => setLoadingProfile(false));
+
+    api.getProServiceConfigs()
+      .then(cfgs => {
+        const map = {};
+        (Array.isArray(cfgs) ? cfgs : []).forEach(c => { map[c.serviceId] = c.customDuration ?? ''; });
+        setDurationConfigs(map);
+      })
+      .catch(() => {});
 
     api.getProBookings()
       .then(data => setBookings(Array.isArray(data) ? data : data.bookings ?? []))
@@ -219,6 +238,31 @@ export default function ProfessionalDashboardPage() {
       setServiceMsg('Guardado');
     } catch { setServiceMsg('Error al guardar'); }
     finally { setSavingServices(false); setTimeout(() => setServiceMsg(''), 2500); }
+  }
+
+  async function saveDurations() {
+    setSavingDurations(true); setDurationMsg('');
+    try {
+      const configs = Object.entries(durationConfigs)
+        .filter(([, v]) => myServiceIds.has /* only configured services */ || true)
+        .map(([serviceId, customDuration]) => ({
+          serviceId,
+          customDuration: customDuration !== '' ? Number(customDuration) : null,
+        }))
+        .filter(c => c.customDuration === null || (c.customDuration > 0));
+      await api.saveProServiceConfigs(configs);
+      setDurationMsg('Guardado');
+    } catch { setDurationMsg('Error al guardar'); }
+    finally { setSavingDurations(false); setTimeout(() => setDurationMsg(''), 2500); }
+  }
+
+  async function saveBuffer() {
+    setSavingBuffer(true); setBufferMsg('');
+    try {
+      await api.updateProBuffer(bufferTime);
+      setBufferMsg('Guardado');
+    } catch { setBufferMsg('Error al guardar'); }
+    finally { setSavingBuffer(false); setTimeout(() => setBufferMsg(''), 2500); }
   }
 
   async function saveSchedule() {
@@ -657,6 +701,120 @@ export default function ProfessionalDashboardPage() {
         )}
       </div>
 
+      }
+
+      {/* ── Duración por servicio + buffer (solo si está vinculado) ── */}
+      {pro.businessId && bizServices.length > 0 &&
+      <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+
+        {/* Duración por servicio */}
+        <div style={{ marginBottom: 'var(--sp-6)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
+            <div>
+              <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Duración real por servicio</h2>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
+                Cuánto tardas tú realmente. Si lo dejas vacío, se usa la duración base del negocio.
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+              {durationMsg && <span style={{ fontSize: 'var(--text-xs)', color: durationMsg === 'Guardado' ? 'var(--green)' : 'var(--red)' }}>{durationMsg}</span>}
+              <button className="btn btn-primary" onClick={saveDurations} disabled={savingDurations} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
+                {savingDurations ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+            {bizServices.map(s => (
+              <div key={s.id} style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--sp-4)',
+                padding: 'var(--sp-3) var(--sp-4)',
+                borderRadius: 'var(--r-md)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                flexWrap: 'wrap',
+              }}>
+                <div style={{ flex: 1, minWidth: 140 }}>
+                  <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>{s.name}</p>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                    Base del negocio: <strong>{s.duration} min</strong>
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="480"
+                    placeholder={String(s.duration)}
+                    value={durationConfigs[s.id] ?? ''}
+                    onChange={e => setDurationConfigs(prev => ({ ...prev, [s.id]: e.target.value }))}
+                    style={{
+                      width: 80, padding: '5px 8px', borderRadius: 'var(--r-sm)',
+                      border: '1px solid var(--border)', background: 'var(--surface-raised)',
+                      color: 'var(--text)', fontSize: 'var(--text-sm)', textAlign: 'right',
+                    }}
+                  />
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>min</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Buffer entre citas */}
+        <div style={{ paddingTop: 'var(--sp-5)', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
+            <div>
+              <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Tiempo entre citas</h2>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3, maxWidth: 380 }}>
+                Minutos de pausa entre una cita y la siguiente. Ese tiempo se bloquea en la agenda para que no te queden citas seguidas sin margen.
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexShrink: 0 }}>
+              {bufferMsg && <span style={{ fontSize: 'var(--text-xs)', color: bufferMsg === 'Guardado' ? 'var(--green)' : 'var(--red)' }}>{bufferMsg}</span>}
+              <button className="btn btn-primary" onClick={saveBuffer} disabled={savingBuffer} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
+                {savingBuffer ? 'Guardando…' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
+            {[0, 5, 10, 15, 20, 30].map(val => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setBufferTime(val)}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 'var(--r-md)',
+                  border: `1.5px solid ${bufferTime === val ? 'var(--violet)' : 'var(--border)'}`,
+                  background: bufferTime === val ? 'var(--violet-subtle)' : 'var(--surface)',
+                  color: bufferTime === val ? 'var(--violet)' : 'var(--text-muted)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: bufferTime === val ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all .12s',
+                }}
+              >
+                {val === 0 ? 'Sin pausa' : `${val} min`}
+              </button>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginLeft: 'auto' }}>
+              <input
+                type="number"
+                min="0"
+                max="120"
+                value={bufferTime}
+                onChange={e => setBufferTime(Math.max(0, parseInt(e.target.value) || 0))}
+                style={{
+                  width: 70, padding: '5px 8px', borderRadius: 'var(--r-sm)',
+                  border: '1px solid var(--border)', background: 'var(--surface-raised)',
+                  color: 'var(--text)', fontSize: 'var(--text-sm)', textAlign: 'right',
+                }}
+              />
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>min</span>
+            </div>
+          </div>
+        </div>
+      </div>
       }
 
       {/* ── Mi Disponibilidad (solo si está vinculado) ── */}
