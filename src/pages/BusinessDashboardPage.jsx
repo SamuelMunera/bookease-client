@@ -32,6 +32,10 @@ export default function BusinessDashboardPage() {
   const [business, setBusiness] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
+  const [joinCode, setJoinCode] = useState(null);
+  const [joinRequests, setJoinRequests] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [actionMsg, setActionMsg] = useState('');
 
   useEffect(() => {
     api.getBusinesses()
@@ -45,6 +49,46 @@ export default function BusinessDashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user.id]);
+
+  useEffect(() => {
+    if (!business) return;
+    api.getBusinessJoinCode()
+      .then(d => setJoinCode(d.joinCode))
+      .catch(() => {});
+    api.getBusinessJoinRequests()
+      .then(r => setJoinRequests(Array.isArray(r) ? r : []))
+      .catch(() => {});
+  }, [business?.id]);
+
+  async function handleApprove(id) {
+    try {
+      await api.approveJoinRequest(id);
+      setJoinRequests(prev => prev.filter(r => r.id !== id));
+      setBusiness(b => ({
+        ...b,
+        professionals: [...(b.professionals ?? []), joinRequests.find(r => r.id === id)?.professional].filter(Boolean),
+      }));
+      setActionMsg('Profesional aprobado');
+    } catch (err) { setActionMsg(err.message); }
+    finally { setTimeout(() => setActionMsg(''), 3000); }
+  }
+
+  async function handleReject(id) {
+    try {
+      await api.rejectJoinRequest(id);
+      setJoinRequests(prev => prev.filter(r => r.id !== id));
+      setActionMsg('Solicitud rechazada');
+    } catch (err) { setActionMsg(err.message); }
+    finally { setTimeout(() => setActionMsg(''), 3000); }
+  }
+
+  function copyCode() {
+    if (!joinCode) return;
+    navigator.clipboard.writeText(joinCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   if (loading) {
     return (
@@ -263,6 +307,90 @@ export default function BusinessDashboardPage() {
                       <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
                   </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      </div>
+
+      {/* ── Join code + pending requests ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
+
+        {/* Join code card */}
+        <SectionCard title="Código de vinculación">
+          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
+            Comparte este código con los profesionales que quieras añadir a tu negocio.
+          </p>
+          {joinCode ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+              <span style={{
+                flex: 1, textAlign: 'center',
+                fontSize: 28, fontWeight: 800, letterSpacing: '0.25em',
+                padding: 'var(--sp-3)', borderRadius: 'var(--r-lg)',
+                background: 'var(--surface-3)', border: '1px dashed var(--border)',
+                color: 'var(--violet)',
+                fontFamily: 'monospace',
+              }}>
+                {joinCode}
+              </span>
+              <button
+                onClick={copyCode}
+                className="btn btn-ghost btn-sm"
+                style={{ flexShrink: 0, padding: '8px 12px' }}
+                title="Copiar código"
+              >
+                {copied
+                  ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                }
+              </button>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: 'var(--sp-4)', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+              Cargando código…
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Pending join requests */}
+        <SectionCard
+          title={`Solicitudes pendientes${joinRequests.length ? ` (${joinRequests.length})` : ''}`}
+          action={actionMsg ? <span style={{ fontSize: 'var(--text-xs)', color: actionMsg.includes('rechaz') || actionMsg.includes('Error') ? 'var(--red)' : 'var(--green)' }}>{actionMsg}</span> : null}
+        >
+          {joinRequests.length === 0 ? (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
+              Sin solicitudes pendientes.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+              {joinRequests.map(r => (
+                <div key={r.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                  padding: 'var(--sp-3)', background: 'var(--surface-3)',
+                  borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                  flexWrap: 'wrap',
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                    background: 'var(--violet-subtle)', color: 'var(--violet)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 'var(--text-sm)', fontWeight: 700,
+                  }}>
+                    {r.professional.name[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 120 }}>
+                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{r.professional.name}</p>
+                    {r.professional.specialty && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{r.professional.specialty}</p>}
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <button onClick={() => handleReject(r.id)} className="btn btn-ghost btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', color: 'var(--red)' }}>
+                      Rechazar
+                    </button>
+                    <button onClick={() => handleApprove(r.id)} className="btn btn-primary btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', background: 'var(--violet)' }}>
+                      Aprobar
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
