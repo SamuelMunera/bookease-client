@@ -32,6 +32,54 @@ const IconBuilding = () => (
   </svg>
 );
 
+function formatBookingCount(n) {
+  if (n < 100) return String(n);
+  return `${Math.floor(n / 100) * 100}+`;
+}
+
+function StarPickerPro({ value, onChange }) {
+  return (
+    <div style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
+      {[1,2,3,4,5].map(n => (
+        <span key={n} onClick={() => onChange(n)}
+          style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}>★</span>
+      ))}
+    </div>
+  );
+}
+
+function ReviewCardPro({ review }) {
+  return (
+    <div style={{
+      background:'var(--surface)', border:'1px solid var(--border)',
+      borderRadius:'var(--r-xl)', padding:'var(--sp-4) var(--sp-5)',
+    }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginBottom:'var(--sp-2)' }}>
+        <div style={{
+          width:36, height:36, borderRadius:'50%',
+          background:'linear-gradient(135deg,#D4A853,#A8833F)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontFamily:'var(--font-heading)', fontWeight:700, fontSize:14, color:'#0A0808', flexShrink:0,
+        }}>
+          {review.author?.name?.[0]?.toUpperCase() ?? '?'}
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <p style={{ margin:0, fontWeight:600, fontSize:'var(--text-sm)', color:'var(--text)' }}>{review.author?.name}</p>
+          <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)' }}>
+            <span style={{ color:'#D4A853', fontSize:13 }}>{'★'.repeat(review.rating)}{'☆'.repeat(5-review.rating)}</span>
+            <span style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>
+              {new Date(review.createdAt).toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' })}
+            </span>
+          </div>
+        </div>
+      </div>
+      {review.comment && (
+        <p style={{ margin:0, fontSize:'var(--text-sm)', color:'var(--text-muted)', lineHeight:1.6 }}>{review.comment}</p>
+      )}
+    </div>
+  );
+}
+
 function NotFound() {
   return (
     <div className="page" style={{ textAlign:'center', paddingTop:'var(--sp-16)', paddingBottom:'var(--sp-16)' }}>
@@ -60,14 +108,35 @@ export default function ProfessionalProfilePage() {
   const [prof,    setProf]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [stats,    setStats]   = useState(null);
+  const [reviews,  setReviews] = useState([]);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    api.getProfessional(id)
-      .then(data => { setProf(data); })
+    Promise.all([
+      api.getProfessional(id),
+      api.getProfessionalStats(id),
+      api.getProfessionalReviews(id),
+    ])
+      .then(([data, profStats, profReviews]) => {
+        setProf(data);
+        setStats(profStats);
+        setReviews(profReviews || []);
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (user?.role === 'CLIENT') {
+      api.canReviewProfessional(id).then(r => setCanReview(r.canReview)).catch(() => {});
+    }
+  }, [id, user]);
 
   if (loading) {
     return (
@@ -121,6 +190,31 @@ export default function ProfessionalProfilePage() {
               )}
             </div>
           </div>
+
+          {/* Stats row */}
+          {stats && (
+            <div className="biz-hero-stats" style={{ marginTop:'var(--sp-5)' }}>
+              {stats.avgRating !== null ? (
+                <div className="biz-hero-stat">
+                  <span className="biz-hero-stat-num">{stats.avgRating.toFixed(1)}</span>
+                  <span className="biz-hero-stat-label">
+                    <span style={{ color:'#D4A853' }}>{'★'.repeat(Math.round(stats.avgRating))}{'☆'.repeat(5-Math.round(stats.avgRating))}</span>
+                    {' '}{stats.reviewCount} reseña{stats.reviewCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              ) : (
+                <div className="biz-hero-stat">
+                  <span className="biz-hero-stat-num" style={{ fontSize:'var(--text-base)', color:'var(--text-muted)' }}>Sin reseñas</span>
+                  <span className="biz-hero-stat-label">Calificación</span>
+                </div>
+              )}
+              <div className="biz-hero-stat-sep" />
+              <div className="biz-hero-stat">
+                <span className="biz-hero-stat-num">{formatBookingCount(stats.bookingCount)}</span>
+                <span className="biz-hero-stat-label">Reservas</span>
+              </div>
+            </div>
+          )}
 
           <div className="prof-profile-hero-cta">
             <button
@@ -183,6 +277,75 @@ export default function ProfessionalProfilePage() {
             </div>
           </section>
         )}
+
+        {/* ── Reviews ── */}
+        <section className="prof-profile-section">
+          <h2 className="prof-profile-section-title">Reseñas</h2>
+
+          {user?.role === 'CLIENT' && canReview && !reviewSuccess && (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setReviewError('');
+              setSubmittingReview(true);
+              try {
+                const newReview = await api.createProfessionalReview(id, reviewForm);
+                setReviews(prev => [newReview, ...prev]);
+                setReviewSuccess(true);
+                setCanReview(false);
+                const newStats = await api.getProfessionalStats(id);
+                setStats(newStats);
+              } catch (err) {
+                setReviewError(err.message);
+              } finally {
+                setSubmittingReview(false);
+              }
+            }} style={{
+              background:'var(--surface)', border:'1px solid var(--border)',
+              borderRadius:'var(--r-xl)', padding:'var(--sp-5)', marginBottom:'var(--sp-5)',
+            }}>
+              <p style={{ margin:'0 0 var(--sp-3)', fontWeight:600, fontSize:'var(--text-sm)', color:'var(--text)' }}>
+                Deja tu reseña
+              </p>
+              <StarPickerPro value={reviewForm.rating} onChange={r => setReviewForm(f => ({ ...f, rating: r }))} />
+              <textarea
+                value={reviewForm.comment}
+                onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
+                placeholder="Cuéntanos sobre tu experiencia (opcional)"
+                rows={3}
+                style={{
+                  width:'100%', marginTop:'var(--sp-3)',
+                  background:'var(--bg)', border:'1px solid var(--border)',
+                  borderRadius:'var(--r-md)', padding:'var(--sp-3)',
+                  color:'var(--text)', fontSize:'var(--text-sm)', resize:'vertical',
+                  outline:'none', boxSizing:'border-box',
+                }}
+              />
+              {reviewError && <p style={{ color:'var(--error)', fontSize:'var(--text-sm)', margin:'var(--sp-2) 0 0' }}>{reviewError}</p>}
+              <button type="submit" className="btn btn-primary" disabled={submittingReview}
+                style={{ marginTop:'var(--sp-3)', height:40, fontSize:'var(--text-sm)' }}>
+                {submittingReview ? 'Enviando…' : 'Publicar reseña'}
+              </button>
+            </form>
+          )}
+
+          {reviewSuccess && (
+            <div style={{
+              background:'rgba(34,197,94,.08)', border:'1px solid rgba(34,197,94,.2)',
+              borderRadius:'var(--r-xl)', padding:'var(--sp-4)', marginBottom:'var(--sp-5)',
+              color:'var(--text)', fontSize:'var(--text-sm)',
+            }}>
+              Tu reseña fue publicada. ¡Gracias!
+            </div>
+          )}
+
+          {reviews.length === 0 ? (
+            <p style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)' }}>Sin reseñas aún.</p>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-3)' }}>
+              {reviews.map(r => <ReviewCardPro key={r.id} review={r} />)}
+            </div>
+          )}
+        </section>
 
         {/* ── Bottom CTA ── */}
         <div className="prof-profile-bottom-cta">
