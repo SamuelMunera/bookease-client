@@ -173,6 +173,11 @@ export default function ProfessionalDashboardPage() {
   // Unlink business
   const [unlinkConfirm, setUnlinkConfirm] = useState(false);
   const [unlinkLoading, setUnlinkLoading] = useState(false);
+  // Gallery
+  const [photos, setPhotos] = useState([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState('');
+  const galleryInputRef = useRef(null);
 
   // Schedule
   const [weekOffset, setWeekOffset]     = useState(0);
@@ -187,6 +192,7 @@ export default function ProfessionalDashboardPage() {
         setProfile(data);
         setBufferTime(data?.bufferTime ?? 0);
         setProfileForm({ name: data?.name || '', bio: data?.bio || '', phone: data?.phone || '', specialty: data?.specialty || '', experience: data?.experience || '' });
+        api.getProPhotos().then(p => setPhotos(Array.isArray(p) ? p : [])).catch(() => {});
         if (data?.businessId) {
           api.getBusinessServices(data.businessId)
             .then(s => setBizServices(Array.isArray(s) ? s : []))
@@ -350,6 +356,29 @@ export default function ProfessionalDashboardPage() {
       setPwMsg('✓ Contraseña actualizada');
     } catch (err) { setPwMsg('Error: ' + err.message); }
     finally { setPwSaving(false); setTimeout(() => setPwMsg(''), 4000); }
+  }
+
+  async function handlePhotoUpload(e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setPhotoUploading(true);
+    setPhotoMsg('');
+    try {
+      for (const file of files) {
+        const res = await api.uploadProPhoto(file, '');
+        if (res.error) throw new Error(res.error);
+        setPhotos(prev => [res, ...prev]);
+      }
+      setPhotoMsg('✓ Fotos subidas');
+    } catch (err) { setPhotoMsg('Error: ' + err.message); }
+    finally { setPhotoUploading(false); e.target.value = ''; setTimeout(() => setPhotoMsg(''), 3000); }
+  }
+
+  async function handleDeletePhoto(id) {
+    try {
+      await api.deleteProPhoto(id);
+      setPhotos(prev => prev.filter(p => p.id !== id));
+    } catch (err) { setPhotoMsg('Error al eliminar: ' + err.message); }
   }
 
   async function handleUnlink() {
@@ -1072,6 +1101,84 @@ export default function ProfessionalDashboardPage() {
                 )}
               </div>
             </form>
+          </div>
+
+          {/* Sección Galería */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-5)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              <div>
+                <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: 0 }}>Galería de trabajo</h3>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
+                  Muestra tu trabajo · {photos.length} foto{photos.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                {photoMsg && <span style={{ fontSize: 'var(--text-xs)', color: photoMsg.startsWith('✓') ? 'var(--success)' : 'var(--red)' }}>{photoMsg}</span>}
+                <input ref={galleryInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handlePhotoUpload} />
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={photoUploading}
+                  style={{ background: 'var(--violet-subtle)', color: 'var(--violet)', borderColor: 'rgba(124,92,252,0.3)' }}
+                >
+                  {photoUploading ? 'Subiendo…' : '+ Añadir fotos'}
+                </button>
+              </div>
+            </div>
+
+            {photos.length === 0 ? (
+              <div
+                onClick={() => galleryInputRef.current?.click()}
+                style={{
+                  border: '2px dashed var(--border)', borderRadius: 'var(--r-lg)',
+                  padding: 'var(--sp-10)', textAlign: 'center', cursor: 'pointer',
+                  transition: 'border-color .15s',
+                }}
+              >
+                <div style={{ fontSize: 36, marginBottom: 'var(--sp-2)' }}>📷</div>
+                <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Sube tus primeras fotos</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                  Haz clic para seleccionar una o varias imágenes
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 'var(--sp-3)' }}>
+                {photos.map(photo => (
+                  <div key={photo.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 'var(--r-lg)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <img
+                      src={photo.url}
+                      alt="trabajo"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                    <button
+                      onClick={() => handleDeletePhoto(photo.id)}
+                      style={{
+                        position: 'absolute', top: 6, right: 6,
+                        width: 26, height: 26, borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.65)', border: 'none',
+                        color: '#fff', cursor: 'pointer', fontSize: 14,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                      title="Eliminar"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <div
+                  onClick={() => galleryInputRef.current?.click()}
+                  style={{
+                    aspectRatio: '1', borderRadius: 'var(--r-lg)',
+                    border: '2px dashed var(--border)', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--text-muted)', fontSize: 'var(--text-xs)', gap: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 24 }}>+</span>
+                  Añadir
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sección Seguridad */}

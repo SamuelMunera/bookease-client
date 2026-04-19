@@ -106,6 +106,21 @@ const api = {
   },
   unlinkFromBusiness: () => request('/pro/me/business', { method: 'DELETE' }),
 
+  // Professional gallery
+  getProPhotos: () => request('/pro/me/photos'),
+  uploadProPhoto: (file, caption) => {
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('file', file);
+    if (caption) form.append('caption', caption);
+    return fetch(`${BASE}/pro/me/photos`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: form,
+    }).then(r => r.json());
+  },
+  deleteProPhoto: (id) => request(`/pro/me/photos/${id}`, { method: 'DELETE' }),
+
   // Admin
   adminStats:         () => request('/admin/stats'),
   adminBusinesses:    () => request('/admin/businesses'),

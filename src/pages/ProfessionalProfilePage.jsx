@@ -152,6 +152,38 @@ export default function ProfessionalProfilePage() {
           </section>
         )}
 
+        {/* ── Galería ── */}
+        {prof.photos?.length > 0 && (
+          <section className="prof-profile-section">
+            <h2 className="prof-profile-section-title">Galería de trabajo</h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+              gap: 'var(--sp-3)',
+            }}>
+              {prof.photos.map(photo => (
+                <div key={photo.id} style={{
+                  aspectRatio: '1',
+                  borderRadius: 'var(--r-lg)',
+                  overflow: 'hidden',
+                  border: '1px solid var(--border)',
+                  cursor: 'pointer',
+                }}
+                  onClick={() => window.open(photo.url, '_blank')}
+                >
+                  <img
+                    src={photo.url}
+                    alt="trabajo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform .2s' }}
+                    onMouseEnter={e => e.target.style.transform = 'scale(1.05)'}
+                    onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ── Bottom CTA ── */}
         <div className="prof-profile-bottom-cta">
           <p className="prof-profile-bottom-cta-text">
