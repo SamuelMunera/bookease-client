@@ -146,6 +146,19 @@ const api = {
   confirmBooking: (id) => request(`/bookings/${id}/confirm`, { method: 'PATCH' }),
   rescheduleBooking: (id, body) =>
     request(`/bookings/${id}/reschedule`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  // Reviews
+  getBusinessReviews:       (id)       => request(`/businesses/${id}/reviews`),
+  getBusinessStats:         (id)       => request(`/businesses/${id}/stats`),
+  canReviewBusiness:        (id)       => request(`/businesses/${id}/reviews/can-review`),
+  createBusinessReview:     (id, body) => request(`/businesses/${id}/reviews`, { method: 'POST', body: JSON.stringify(body) }),
+  getProfessionalReviews:   (id)       => request(`/professionals/${id}/reviews`),
+  getProfessionalStats:     (id)       => request(`/professionals/${id}/stats`),
+  canReviewProfessional:    (id)       => request(`/professionals/${id}/reviews/can-review`),
+  createProfessionalReview: (id, body) => request(`/professionals/${id}/reviews`, { method: 'POST', body: JSON.stringify(body) }),
+
+  // Feedback
+  submitFeedback: (body) => request('/feedback', { method: 'POST', body: JSON.stringify(body) }),
 };
 
 export default api;

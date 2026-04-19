@@ -32,16 +32,23 @@ function Stars({ rating = 4.8 }) {
   return <span className="stars">{'★'.repeat(full)}{'½'.repeat(half)}{'☆'.repeat(empty)}</span>;
 }
 
+function formatBookingCount(n) {
+  if (n < 100) return String(n);
+  const hundreds = Math.floor(n / 100) * 100;
+  return `${hundreds}+`;
+}
+
 /* ══════════════════════════════════════════════════════════
    HERO
    ══════════════════════════════════════════════════════════ */
-function BizHero({ business }) {
+function BizHero({ business, stats }) {
+  const avgRating    = stats?.avgRating ?? null;
+  const reviewCount  = stats?.reviewCount ?? 0;
+  const bookingCount = stats?.bookingCount ?? 0;
+
   return (
     <div className="biz-hero biz-hero--detail">
-      {/* decorative grid bg is handled in CSS */}
-
       <div className="biz-hero-inner">
-        {/* Breadcrumb */}
         <Link to="/" className="biz-hero-back">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -49,19 +56,16 @@ function BizHero({ business }) {
           Inicio
         </Link>
 
-        {/* Category chip */}
         <p className="biz-hero-cat">
           <span className="biz-hero-cat-dot" />
           {CAT_LABEL[business.category] || business.category}
         </p>
 
-        {/* Name */}
         <h1 className="biz-hero-name">
           {business.name.split(' ').slice(0, -1).join(' ')}{' '}
           <em>{business.name.split(' ').slice(-1)[0]}</em>
         </h1>
 
-        {/* Address + phone */}
         <div className="biz-hero-address">
           <span>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display:'inline', verticalAlign:'middle', marginRight:4 }}>
@@ -82,28 +86,28 @@ function BizHero({ business }) {
           )}
         </div>
 
-        {/* Description */}
         {business.description && (
           <p className="biz-hero-desc">{business.description}</p>
         )}
 
-        {/* Hero stats */}
         <div className="biz-hero-stats">
-          <div className="biz-hero-stat">
-            <span className="biz-hero-stat-num">4.9</span>
-            <span className="biz-hero-stat-label">
-              <Stars rating={4.9} /> Calificación
-            </span>
-          </div>
+          {avgRating !== null ? (
+            <div className="biz-hero-stat">
+              <span className="biz-hero-stat-num">{avgRating.toFixed(1)}</span>
+              <span className="biz-hero-stat-label">
+                <Stars rating={avgRating} /> {reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          ) : (
+            <div className="biz-hero-stat">
+              <span className="biz-hero-stat-num" style={{ fontSize:'var(--text-base)', color:'var(--text-muted)' }}>Sin reseñas</span>
+              <span className="biz-hero-stat-label">Calificación</span>
+            </div>
+          )}
           <div className="biz-hero-stat-sep" />
           <div className="biz-hero-stat">
-            <span className="biz-hero-stat-num">200+</span>
+            <span className="biz-hero-stat-num">{formatBookingCount(bookingCount)}</span>
             <span className="biz-hero-stat-label">Reservas</span>
-          </div>
-          <div className="biz-hero-stat-sep" />
-          <div className="biz-hero-stat">
-            <span className="biz-hero-stat-num">~15min</span>
-            <span className="biz-hero-stat-label">Resp. media</span>
           </div>
         </div>
       </div>
@@ -249,6 +253,126 @@ function ServiceCard({ sv, selected, onSelect, category }) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   REVIEWS SECTION
+   ══════════════════════════════════════════════════════════ */
+function StarPicker({ value, onChange }) {
+  return (
+    <div style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
+      {[1,2,3,4,5].map(n => (
+        <span
+          key={n}
+          onClick={() => onChange(n)}
+          style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}
+        >★</span>
+      ))}
+    </div>
+  );
+}
+
+function ReviewCard({ review }) {
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-xl)',
+      padding: 'var(--sp-4) var(--sp-5)',
+    }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginBottom:'var(--sp-2)' }}>
+        <div style={{
+          width:36, height:36, borderRadius:'50%',
+          background:'linear-gradient(135deg,#D4A853,#A8833F)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontFamily:'var(--font-heading)', fontWeight:700, fontSize:14, color:'#0A0808', flexShrink:0,
+        }}>
+          {review.author?.name?.[0]?.toUpperCase() ?? '?'}
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <p style={{ margin:0, fontWeight:600, fontSize:'var(--text-sm)', color:'var(--text)' }}>{review.author?.name}</p>
+          <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)' }}>
+            <span style={{ color:'#D4A853', fontSize:13 }}>{'★'.repeat(review.rating)}{'☆'.repeat(5-review.rating)}</span>
+            <span style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>
+              {new Date(review.createdAt).toLocaleDateString('es-CO', { year:'numeric', month:'short', day:'numeric' })}
+            </span>
+          </div>
+        </div>
+      </div>
+      {review.comment && (
+        <p style={{ margin:0, fontSize:'var(--text-sm)', color:'var(--text-muted)', lineHeight:1.6 }}>{review.comment}</p>
+      )}
+    </div>
+  );
+}
+
+function ReviewsSection({ reviews, canReview, user, reviewForm, setReviewForm, reviewError, reviewSuccess, submitting, onSubmit }) {
+  return (
+    <section style={{ marginTop:'var(--sp-12)' }}>
+      <div className="detail-section-label" style={{ marginBottom:'var(--sp-6)' }}>
+        <div className="detail-section-label-line" />
+        <span>Reseñas</span>
+        <div className="detail-section-label-line" />
+      </div>
+
+      {/* Write review form */}
+      {user?.role === 'CLIENT' && canReview && !reviewSuccess && (
+        <form onSubmit={onSubmit} style={{
+          background:'var(--surface)', border:'1px solid var(--border)',
+          borderRadius:'var(--r-xl)', padding:'var(--sp-5)', marginBottom:'var(--sp-6)',
+        }}>
+          <p style={{ margin:'0 0 var(--sp-3)', fontWeight:600, fontSize:'var(--text-sm)', color:'var(--text)' }}>
+            Deja tu reseña
+          </p>
+          <StarPicker value={reviewForm.rating} onChange={r => setReviewForm(f => ({ ...f, rating: r }))} />
+          <textarea
+            value={reviewForm.comment}
+            onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
+            placeholder="Cuéntanos sobre tu experiencia (opcional)"
+            rows={3}
+            style={{
+              width:'100%', marginTop:'var(--sp-3)',
+              background:'var(--bg)', border:'1px solid var(--border)',
+              borderRadius:'var(--r-md)', padding:'var(--sp-3)',
+              color:'var(--text)', fontSize:'var(--text-sm)', resize:'vertical',
+              outline:'none', boxSizing:'border-box',
+            }}
+          />
+          {reviewError && <p style={{ color:'var(--error)', fontSize:'var(--text-sm)', margin:'var(--sp-2) 0 0' }}>{reviewError}</p>}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={submitting}
+            style={{ marginTop:'var(--sp-3)', height:40, fontSize:'var(--text-sm)' }}
+          >
+            {submitting ? 'Enviando…' : 'Publicar reseña'}
+          </button>
+        </form>
+      )}
+
+      {reviewSuccess && (
+        <div style={{
+          background:'rgba(34,197,94,.08)', border:'1px solid rgba(34,197,94,.2)',
+          borderRadius:'var(--r-xl)', padding:'var(--sp-4)', marginBottom:'var(--sp-6)',
+          color:'var(--text)', fontSize:'var(--text-sm)',
+        }}>
+          Tu reseña fue publicada. ¡Gracias!
+        </div>
+      )}
+
+      {reviews.length === 0 ? (
+        <div className="empty-state" style={{ padding:'var(--sp-8) 0' }}>
+          <p style={{ fontSize:'var(--text-sm)', color:'var(--text-muted)' }}>
+            {user?.role === 'CLIENT' ? 'Sin reseñas aún. ¡Sé el primero!' : 'Sin reseñas aún.'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-3)' }}>
+          {reviews.map(r => <ReviewCard key={r.id} review={r} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    STICKY BOOKING CTA
    ══════════════════════════════════════════════════════════ */
 function BookingBar({ service, error, onBook, ready }) {
@@ -308,6 +432,13 @@ export default function BusinessDetailPage() {
   const [selectedService, setSelectedService] = useState('');
   const [error, setError]             = useState('');
   const [loadError, setLoadError]     = useState('');
+  const [stats, setStats]             = useState(null);
+  const [reviews, setReviews]         = useState([]);
+  const [canReview, setCanReview]     = useState(false);
+  const [reviewForm, setReviewForm]   = useState({ rating: 5, comment: '' });
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -315,16 +446,26 @@ export default function BusinessDetailPage() {
       api.getBusiness(id),
       api.getBusinessProfessionals(id),
       api.getBusinessServices(id),
-    ]).then(([biz, profs, svcs]) => {
+      api.getBusinessStats(id),
+      api.getBusinessReviews(id),
+    ]).then(([biz, profs, svcs, bizStats, bizReviews]) => {
       if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
       setProfessionals(profs || []);
       setAllServices(svcs || []);
       setServices(svcs || []);
+      setStats(bizStats);
+      setReviews(bizReviews || []);
     }).catch((err) => {
       setLoadError(err.message || 'No se pudo cargar el negocio.');
     });
   }, [id]);
+
+  useEffect(() => {
+    if (user?.role === 'CLIENT') {
+      api.canReviewBusiness(id).then(r => setCanReview(r.canReview)).catch(() => {});
+    }
+  }, [id, user]);
 
   // When professional changes, filter services to only those they can do
   useEffect(() => {
@@ -404,7 +545,7 @@ export default function BusinessDetailPage() {
   return (
     <>
       {/* ══ Hero ══════════════════════════════════════════════ */}
-      <BizHero business={business} />
+      <BizHero business={business} stats={stats} />
 
       {/* ══ Content ═══════════════════════════════════════════ */}
       <div className="page detail-page" ref={contentRef}>
@@ -559,6 +700,35 @@ export default function BusinessDetailPage() {
             {error && <span style={{ color: 'var(--error)', marginLeft: 'var(--sp-2)' }}>— {error}</span>}
           </div>
         )}
+
+        {/* ══ Reviews section ═══════════════════════════════ */}
+        <ReviewsSection
+          reviews={reviews}
+          canReview={canReview}
+          user={user}
+          reviewForm={reviewForm}
+          setReviewForm={setReviewForm}
+          reviewError={reviewError}
+          reviewSuccess={reviewSuccess}
+          submitting={submittingReview}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setReviewError('');
+            setSubmittingReview(true);
+            try {
+              const newReview = await api.createBusinessReview(id, reviewForm);
+              setReviews(prev => [newReview, ...prev]);
+              setReviewSuccess(true);
+              setCanReview(false);
+              const newStats = await api.getBusinessStats(id);
+              setStats(newStats);
+            } catch (err) {
+              setReviewError(err.message);
+            } finally {
+              setSubmittingReview(false);
+            }
+          }}
+        />
       </div>
 
       {/* ══ Sticky mobile bar ═════════════════════════════════ */}
