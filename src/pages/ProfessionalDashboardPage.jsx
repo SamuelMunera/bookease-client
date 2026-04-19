@@ -398,12 +398,16 @@ export default function ProfessionalDashboardPage() {
           {/* Avatar */}
           <div style={{
             width: 72, height: 72, borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--violet) 0%, #9b59f7 100%)',
+            background: profile?.avatarUrl ? 'transparent' : 'linear-gradient(135deg, var(--violet) 0%, #9b59f7 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: 700, fontSize: 28, color: '#fff', flexShrink: 0,
             boxShadow: '0 0 0 3px rgba(124,92,252,0.3)',
+            overflow: 'hidden',
           }}>
-            {user?.name?.[0]?.toUpperCase() ?? 'P'}
+            {profile?.avatarUrl
+              ? <img src={profile.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : (user?.name?.[0]?.toUpperCase() ?? 'P')
+            }
           </div>
 
           <div style={{ flex: 1 }}>

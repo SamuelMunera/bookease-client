@@ -225,11 +225,15 @@ export default function BusinessDashboardPage() {
         <div style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'center' }}>
           <div style={{
             width: 52, height: 52, borderRadius: 'var(--r-xl)', flexShrink: 0,
-            background: `${catColor}18`, color: catColor,
+            background: business.logoUrl ? 'transparent' : `${catColor}18`, color: catColor,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-heading)',
+            overflow: 'hidden', border: business.logoUrl ? `1px solid ${catColor}30` : 'none',
           }}>
-            {business.name[0]}
+            {business.logoUrl
+              ? <img src={business.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : business.name[0]
+            }
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 4, flexWrap: 'wrap' }}>
