@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import FeedbackModal from './FeedbackModal';
 
 const NAV_LINKS = [
   { to: '/', label: 'Explorar' },
@@ -74,6 +75,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   function handleLogout() {
     logout();
@@ -403,12 +405,30 @@ export default function Layout() {
             <span className="footer-bottom-sep">·</span>
             <a href="#" className="footer-bottom-link">Cookies</a>
           </div>
-          <div className="footer-bottom-badge">
-            <span className="footer-live-dot" />
-            Sistema activo
+          <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              style={{
+                background:'rgba(212,168,83,.1)', border:'1px solid rgba(212,168,83,.25)',
+                borderRadius:'var(--r-full)', padding:'4px 14px',
+                color:'var(--gold)', fontSize:'var(--text-xs)', fontWeight:600,
+                cursor:'pointer', letterSpacing:'.04em', textTransform:'uppercase',
+                transition:'background .15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background='rgba(212,168,83,.2)'}
+              onMouseLeave={e => e.currentTarget.style.background='rgba(212,168,83,.1)'}
+            >
+              Ayúdanos a mejorar
+            </button>
+            <div className="footer-bottom-badge">
+              <span className="footer-live-dot" />
+              Sistema activo
+            </div>
           </div>
         </div>
       </footer>
+
+      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
     </div>
   );
 }
