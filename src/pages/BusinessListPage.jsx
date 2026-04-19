@@ -51,9 +51,15 @@ function FeaturedCard({ b, badge, onClick }) {
   return (
     <div className="feat-card" onClick={onClick} role="button" tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}>
-      <div className={`feat-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
-        <span className="biz-card-img-letter">{b.name[0]}</span>
-        <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+      <div className={`feat-card-img ${b.logoUrl ? '' : (CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop')}`}
+        style={b.logoUrl ? { background: 'var(--surface-2)', overflow: 'hidden', padding: 0 } : {}}>
+        {b.logoUrl
+          ? <img src={b.logoUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <>
+              <span className="biz-card-img-letter">{b.name[0]}</span>
+              <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+            </>
+        }
         {badge}
         {/* hover reveal */}
         <div className="card-reveal">
@@ -449,9 +455,15 @@ export default function BusinessListPage() {
                         Nuevo
                       </div>
                     )}
-                    <div className={`biz-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
-                      <span className="biz-card-img-letter">{b.name[0]}</span>
-                      <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+                    <div className={`biz-card-img ${b.logoUrl ? '' : (CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop')}`}
+                      style={b.logoUrl ? { background: 'var(--surface-2)', overflow: 'hidden', padding: 0 } : {}}>
+                      {b.logoUrl
+                        ? <img src={b.logoUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        : <>
+                            <span className="biz-card-img-letter">{b.name[0]}</span>
+                            <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+                          </>
+                      }
                     </div>
                     <div className="biz-card-body">
                       <h3 className="biz-card-name">{b.name}</h3>

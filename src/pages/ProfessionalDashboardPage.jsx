@@ -93,7 +93,7 @@ function BookingRow({ booking }) {
           {booking.service?.name ?? '—'}
         </p>
         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
-          {booking.client?.name ?? 'Cliente'}
+          {booking.client?.name ?? 'Cliente'}{booking.client?.phone ? ` · ${booking.client.phone}` : ''}
         </p>
       </div>
 

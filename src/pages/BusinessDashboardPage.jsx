@@ -492,7 +492,7 @@ export default function BusinessDashboardPage() {
                           {b.service.name}
                         </p>
                         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>
-                          {b.client.name} · {b.professional.name}
+                          {b.client.name}{b.client.phone ? ` · ${b.client.phone}` : ''} · {b.professional.name}
                         </p>
                       </div>
                       <span style={{

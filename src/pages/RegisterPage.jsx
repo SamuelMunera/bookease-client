@@ -21,7 +21,7 @@ const ACCOUNT_TYPES = [
 export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'CLIENT' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -131,6 +131,21 @@ export default function RegisterPage() {
                 autoComplete="new-password"
               />
             </div>
+
+            {form.role === 'CLIENT' && (
+              <div className="form-group">
+                <label className="form-label" htmlFor="phone">Teléfono</label>
+                <input
+                  id="phone"
+                  className="input"
+                  type="tel"
+                  placeholder="+57 300 000 0000"
+                  value={form.phone}
+                  onChange={set('phone')}
+                  autoComplete="tel"
+                />
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label">Tipo de cuenta</label>
