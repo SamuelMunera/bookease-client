@@ -101,10 +101,11 @@ export default function ProfessionalProfilePage() {
           </Link>
 
           <div className="prof-profile-header">
-            <div className="prof-profile-avatar" style={{ background: pal.bg }}>
-              <span style={{ color: pal.color, fontFamily:'var(--font-heading)', fontWeight:700, fontSize:42 }}>
-                {prof.name[0].toUpperCase()}
-              </span>
+            <div className="prof-profile-avatar" style={{ background: prof.avatarUrl ? 'transparent' : pal.bg, overflow: 'hidden', padding: 0 }}>
+              {prof.avatarUrl
+                ? <img src={prof.avatarUrl} alt={prof.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : <span style={{ color: pal.color, fontFamily:'var(--font-heading)', fontWeight:700, fontSize:42 }}>{prof.name[0].toUpperCase()}</span>
+              }
             </div>
 
             <div className="prof-profile-identity">

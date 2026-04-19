@@ -129,10 +129,11 @@ function ProfCard({ p, selected, onSelect }) {
       <div className="prof-card2-strip" />
 
       {/* Avatar */}
-      <div className="prof-card2-avatar" style={{ background: pal.bg }}>
-        <span style={{ color: pal.color, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>
-          {p.name[0].toUpperCase()}
-        </span>
+      <div className="prof-card2-avatar" style={{ background: p.avatarUrl ? 'transparent' : pal.bg, overflow: 'hidden', padding: 0 }}>
+        {p.avatarUrl
+          ? <img src={p.avatarUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <span style={{ color: pal.color, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>{p.name[0].toUpperCase()}</span>
+        }
       </div>
 
       {/* Info */}
