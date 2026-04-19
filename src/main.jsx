@@ -6,10 +6,10 @@ import App from './App';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
+const Root = () => GOOGLE_CLIENT_ID
+  ? <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}><App /></GoogleOAuthProvider>
+  : <App />;
+
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <App />
-    </GoogleOAuthProvider>
-  </StrictMode>
+  <StrictMode><Root /></StrictMode>
 );

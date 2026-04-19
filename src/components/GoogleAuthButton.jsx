@@ -13,7 +13,10 @@ const IconGoogle = () => (
   </svg>
 );
 
+const HAS_GOOGLE = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
 export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar con Google', onError }) {
+  if (!HAS_GOOGLE) return null;
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
