@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function ProLoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form,    setForm]    = useState({ email: '', password: '' });
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(false);
+  const [form,      setForm]      = useState({ email: '', password: '' });
+  const [error,     setError]     = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [googleRole, setGoogleRole] = useState('PROFESSIONAL');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -139,6 +141,32 @@ export default function ProLoginPage() {
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-2) 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>o</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
+          <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' }}>
+            {[
+              { value: 'PROFESSIONAL', label: 'Profesional' },
+              { value: 'BUSINESS_OWNER', label: 'Negocio' },
+            ].map(opt => (
+              <button key={opt.value} type="button" onClick={() => setGoogleRole(opt.value)}
+                style={{
+                  flex: 1, padding: '6px 0', borderRadius: 'var(--r-md)',
+                  border: `1px solid ${googleRole === opt.value ? 'var(--violet)' : 'var(--border)'}`,
+                  background: googleRole === opt.value ? 'var(--violet-subtle)' : 'var(--surface-2)',
+                  color: googleRole === opt.value ? 'var(--violet)' : 'var(--text-muted)',
+                  fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
+                }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <GoogleAuthButton role={googleRole} onError={setError} />
 
           <p className="auth-foot">
             ¿Nuevo profesional?{' '}

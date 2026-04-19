@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const BRAND_FEATURES = [
   { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>, text: 'Barberías, spas y salones top' },
@@ -145,6 +146,14 @@ export default function LoginPage() {
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-2) 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>o</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
+          <GoogleAuthButton role="CLIENT" onError={setError} />
 
           <p className="auth-foot">
             ¿No tienes cuenta?{' '}

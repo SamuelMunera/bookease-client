@@ -121,6 +121,9 @@ const api = {
   },
   deleteProPhoto: (id) => request(`/pro/me/photos/${id}`, { method: 'DELETE' }),
 
+  // Google OAuth
+  googleAuth: (accessToken, role) => request('/auth/google', { method: 'POST', body: JSON.stringify({ accessToken, role }) }),
+
   // Admin
   adminStats:         () => request('/admin/stats'),
   adminBusinesses:    () => request('/admin/businesses'),

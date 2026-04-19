@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 const ACCOUNT_TYPES = [
   {
@@ -201,6 +202,14 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-3) 0 var(--sp-2)' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>o regístrate con</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
+          <GoogleAuthButton role={form.role} onError={setError} />
 
           <p className="auth-foot">
             ¿Ya tienes cuenta?{' '}
