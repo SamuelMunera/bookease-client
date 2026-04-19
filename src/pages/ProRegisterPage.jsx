@@ -34,7 +34,7 @@ export default function ProRegisterPage() {
     if (s === 0) {
       if (!form.name.trim())     e.name     = 'El nombre es obligatorio';
       if (!form.email.trim())    e.email    = 'El email es obligatorio';
-      if (form.password.length < 6) e.password = 'Mínimo 6 caracteres';
+      if (form.password.length < 8) e.password = 'Mínimo 8 caracteres';
     }
     if (s === 1) {
       if (!form.specialty) e.specialty = 'Elige tu especialidad';
@@ -178,8 +178,8 @@ export default function ProRegisterPage() {
                 <div className="form-group">
                   <label className="form-label" htmlFor="pro-password">Contraseña</label>
                   <input id="pro-password" className={`input${errors.password ? ' input-error' : ''}`} type="password"
-                    placeholder="Mínimo 6 caracteres" value={form.password}
-                    onChange={e => set('password', e.target.value)} required autoComplete="new-password" />
+                    placeholder="Mínimo 8 caracteres" value={form.password}
+                    onChange={e => set('password', e.target.value)} required minLength={8} autoComplete="new-password" />
                   {errors.password && <p className="field-error">{errors.password}</p>}
                 </div>
                 <div className="form-group">

@@ -129,6 +129,7 @@ export default function RegisterPage() {
                 value={form.password}
                 onChange={set('password')}
                 required
+                minLength={8}
                 autoComplete="new-password"
               />
             </div>

@@ -137,6 +137,7 @@ export default function BusinessDashboardPage() {
   async function savePassword(e) {
     e.preventDefault();
     if (pwForm.newPassword !== pwForm.confirm) return setPwMsg('Las contraseñas no coinciden');
+    if (pwForm.newPassword.length < 8) return setPwMsg('La nueva contraseña debe tener al menos 8 caracteres');
     setPwSaving(true);
     setPwMsg('');
     try {

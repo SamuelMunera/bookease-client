@@ -16,7 +16,7 @@ export default function ResetPasswordPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (newPassword !== confirm) return setError('Las contraseñas no coinciden');
-    if (newPassword.length < 6) return setError('Mínimo 6 caracteres');
+    if (newPassword.length < 8) return setError('Mínimo 8 caracteres');
     setLoading(true);
     setError('');
     try {
@@ -82,7 +82,8 @@ export default function ResetPasswordPage() {
                 className="input"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
+                minLength={8}
                 required
                 style={{ width: '100%' }}
               />
