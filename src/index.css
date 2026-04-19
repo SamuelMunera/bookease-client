@@ -3399,3 +3399,89 @@ input, textarea, select { font-family: inherit; }
   /* Services grid: allow 2 cols inside the right column on wide screens */
   .detail-grid { gap: var(--sp-8); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ADMIN PANEL — RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+.admin-sidebar-desktop { display: block; }
+.admin-main {
+  margin-left: 220px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.admin-topbar {
+  display: none;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.admin-content { flex: 1; }
+
+@media (max-width: 768px) {
+  .admin-sidebar-desktop { display: none; }
+  .admin-main { margin-left: 0; }
+  .admin-topbar { display: flex; }
+  .admin-content { padding: var(--sp-5) !important; }
+}
+
+/* Admin category form: stack on small screens */
+@media (max-width: 600px) {
+  .admin-content form > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── General responsive touch-ups ─── */
+@media (max-width: 768px) {
+  /* Auth pages */
+  .auth-wrap { flex-direction: column; min-height: 100vh; }
+  .auth-panel-brand { display: none; }
+  .auth-panel-form { padding: var(--sp-6) var(--sp-5); flex: 1; }
+  .auth-form-inner { max-width: 100%; }
+
+  /* Dashboard tabs */
+  .dash-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: var(--sp-2); }
+
+  /* Pro profile header stacks */
+  .prof-profile-header { flex-direction: column; align-items: center; text-align: center; }
+  .prof-profile-identity { align-items: center; }
+
+  /* Business hero stacks */
+  .biz-hero-inner { padding: var(--sp-5) var(--sp-4); }
+  .biz-hero-back { font-size: var(--text-xs); }
+
+  /* Page padding tighter */
+  .page { padding: var(--sp-5) var(--sp-4); }
+
+  /* Grid cards single col */
+  .grid-auto { grid-template-columns: 1fr !important; }
+
+  /* Booking page layout */
+  .booking-layout { flex-direction: column; }
+
+  /* Feat cards scroll track */
+  .scroll-track { gap: var(--sp-3); }
+  .feat-card { min-width: 240px; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: var(--sp-10) var(--sp-4) var(--sp-8); }
+  .hero-title { font-size: 22px !important; }
+  .hero-stats { flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
+  .hero-stat-sep { display: none; }
+  .search-bar-v2 { font-size: var(--text-sm); }
+
+  /* Prof profile hero */
+  .prof-profile-avatar { width: 80px !important; height: 80px !important; }
+  .prof-profile-name { font-size: var(--text-xl) !important; }
+
+  /* Cat grid single col */
+  .cat-grid { grid-template-columns: 1fr !important; }
+}

@@ -128,6 +128,9 @@ const api = {
   adminStats:         () => request('/admin/stats'),
   adminBusinesses:    () => request('/admin/businesses'),
   adminProfessionals: () => request('/admin/professionals'),
+  adminCategories:    () => request('/admin/categories'),
+  adminCreateCategory: (body) => request('/admin/categories', { method: 'POST', body: JSON.stringify(body) }),
+  adminDeleteCategory: (id)   => request(`/admin/categories/${id}`, { method: 'DELETE' }),
 
   // Categories
   getCategories: () => request('/categories'),
