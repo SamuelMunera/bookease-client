@@ -18,6 +18,8 @@ import ProLoginPage from './pages/ProLoginPage';
 import ProRegisterPage from './pages/ProRegisterPage';
 import ProfessionalDashboardPage from './pages/ProfessionalDashboardPage';
 
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -39,6 +41,8 @@ export default function App() {
             <Route path="professionals/:id" element={<ProfessionalProfilePage />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
+            <Route path="forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
             <Route path="book" element={
               <ProtectedRoute><BookingPage /></ProtectedRoute>
             } />

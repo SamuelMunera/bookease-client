@@ -73,6 +73,39 @@ const api = {
   approveJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/approve`, { method: 'PATCH' }),
   rejectJoinRequest: (id) => request(`/businesses/me/join-requests/${id}/reject`, { method: 'PATCH' }),
 
+  // Auth
+  changePassword: (body) => request('/auth/change-password', { method: 'PATCH', body: JSON.stringify(body) }),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (body) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
+
+  // Business profile
+  getMyBusiness: () => request('/businesses/me'),
+  updateBusinessProfile: (body) => request('/businesses/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
+  uploadBusinessLogo: (file) => {
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('file', file);
+    return fetch(`${BASE}/businesses/me/logo`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: form,
+    }).then(r => r.json());
+  },
+
+  // Professional profile
+  updateProProfile: (body) => request('/pro/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
+  uploadProAvatar: (file) => {
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('file', file);
+    return fetch(`${BASE}/pro/me/avatar`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: form,
+    }).then(r => r.json());
+  },
+  unlinkFromBusiness: () => request('/pro/me/business', { method: 'DELETE' }),
+
   // Admin
   adminStats:         () => request('/admin/stats'),
   adminBusinesses:    () => request('/admin/businesses'),

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
@@ -133,6 +133,7 @@ function fmtWeekRange(weekStart) {
 
 export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [profile, setProfile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [proRevenue, setProRevenue] = useState(null);
@@ -159,6 +160,20 @@ export default function ProfessionalDashboardPage() {
   const [savingBuffer, setSavingBuffer]   = useState(false);
   const [bufferMsg, setBufferMsg]         = useState('');
 
+  // Profile tab
+  const [profileForm, setProfileForm]   = useState(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg]     = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef(null);
+  // Password change
+  const [pwForm, setPwForm]             = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [pwSaving, setPwSaving]         = useState(false);
+  const [pwMsg, setPwMsg]               = useState('');
+  // Unlink business
+  const [unlinkConfirm, setUnlinkConfirm] = useState(false);
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
+
   // Schedule
   const [weekOffset, setWeekOffset]     = useState(0);
   const [weekStart, setWeekStartState]  = useState(() => getWeekStart(0));
@@ -171,6 +186,7 @@ export default function ProfessionalDashboardPage() {
       .then(data => {
         setProfile(data);
         setBufferTime(data?.bufferTime ?? 0);
+        setProfileForm({ name: data?.name || '', bio: data?.bio || '', phone: data?.phone || '', specialty: data?.specialty || '', experience: data?.experience || '' });
         if (data?.businessId) {
           api.getBusinessServices(data.businessId)
             .then(s => setBizServices(Array.isArray(s) ? s : []))
@@ -299,6 +315,53 @@ export default function ProfessionalDashboardPage() {
     setSchedule(s => s.map(d => d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d));
   }
 
+  async function saveProfile(e) {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileMsg('');
+    try {
+      const updated = await api.updateProProfile(profileForm);
+      setProfile(prev => ({ ...prev, ...updated }));
+      setProfileMsg('✓ Perfil actualizado');
+    } catch (err) { setProfileMsg('Error: ' + err.message); }
+    finally { setProfileSaving(false); setTimeout(() => setProfileMsg(''), 3000); }
+  }
+
+  async function handleAvatarChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const res = await api.uploadProAvatar(file);
+      if (res.error) throw new Error(res.error);
+      setProfile(prev => ({ ...prev, avatarUrl: res.url }));
+    } catch (err) { setProfileMsg('Error al subir avatar: ' + err.message); }
+    finally { setAvatarUploading(false); }
+  }
+
+  async function savePassword(e) {
+    e.preventDefault();
+    if (pwForm.newPassword !== pwForm.confirm) return setPwMsg('Las contraseñas no coinciden');
+    setPwSaving(true);
+    setPwMsg('');
+    try {
+      await api.changePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
+      setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
+      setPwMsg('✓ Contraseña actualizada');
+    } catch (err) { setPwMsg('Error: ' + err.message); }
+    finally { setPwSaving(false); setTimeout(() => setPwMsg(''), 4000); }
+  }
+
+  async function handleUnlink() {
+    setUnlinkLoading(true);
+    try {
+      await api.unlinkFromBusiness();
+      setProfile(prev => ({ ...prev, businessId: null, business: null }));
+      setUnlinkConfirm(false);
+    } catch (err) { setProfileMsg('Error: ' + err.message); }
+    finally { setUnlinkLoading(false); }
+  }
+
   const todayStr = new Date().toISOString().split('T')[0];
   const upcomingBookings = bookings.filter(b =>
     b.status !== 'CANCELLED' && b.date >= todayStr
@@ -405,6 +468,28 @@ export default function ProfessionalDashboardPage() {
           </p>
         )}
       </div>
+
+      {/* ── Tab navigation ── */}
+      <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)', borderBottom: '1px solid var(--border)' }}>
+        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              padding: 'var(--sp-2) var(--sp-4)', background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 'var(--text-sm)', fontWeight: activeTab === t.key ? 700 : 500,
+              color: activeTab === t.key ? 'var(--text)' : 'var(--text-muted)',
+              borderBottom: activeTab === t.key ? '2px solid var(--violet)' : '2px solid transparent',
+              marginBottom: -1, transition: 'color .15s',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Dashboard tab ── */}
+      {activeTab === 'dashboard' && (<>
 
       {/* ── Join request banner (only when not linked to a business) ── */}
       {!loadingProfile && !pro.businessId && (
@@ -907,6 +992,157 @@ export default function ProfessionalDashboardPage() {
         </div>
       </div>
       }
+
+      </>)} {/* end dashboard tab */}
+
+      {/* ── Perfil tab ── */}
+      {activeTab === 'perfil' && profileForm && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+
+          {/* Sección Perfil */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-5)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              Información personal
+            </h3>
+
+            {/* Avatar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', marginBottom: 'var(--sp-5)' }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: '50%', flexShrink: 0,
+                background: profile?.avatarUrl ? 'transparent' : 'linear-gradient(135deg, var(--violet) 0%, #9b59f7 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: 26, color: '#fff',
+                overflow: 'hidden', boxShadow: '0 0 0 3px rgba(124,92,252,0.3)',
+              }}>
+                {profile?.avatarUrl
+                  ? <img src={profile.avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : (user?.name?.[0]?.toUpperCase() ?? 'P')
+                }
+              </div>
+              <div>
+                <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 4 }}>Foto de perfil</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 8 }}>JPG, PNG o WebP · máx. 3 MB</p>
+                <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+                <button className="btn btn-secondary btn-sm" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}>
+                  {avatarUploading ? 'Subiendo…' : 'Cambiar foto'}
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={saveProfile} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--sp-4)' }}>
+              {[
+                { key: 'name', label: 'Nombre completo', required: true },
+                { key: 'phone', label: 'Teléfono' },
+                { key: 'specialty', label: 'Especialidad' },
+                { key: 'experience', label: 'Experiencia' },
+              ].map(({ key, label, required }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>{label}</label>
+                  <input
+                    className="input"
+                    value={profileForm[key] ?? ''}
+                    onChange={e => setProfileForm(f => ({ ...f, [key]: e.target.value }))}
+                    required={required}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ))}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Biografía</label>
+                <textarea
+                  className="input"
+                  value={profileForm.bio ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, bio: e.target.value }))}
+                  rows={3}
+                  style={{ width: '100%', resize: 'vertical' }}
+                />
+              </div>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                <button className="btn btn-primary" type="submit" style={{ background: 'var(--violet)' }} disabled={profileSaving}>
+                  {profileSaving ? 'Guardando…' : 'Guardar cambios'}
+                </button>
+                {profileMsg && (
+                  <span style={{ fontSize: 'var(--text-sm)', color: profileMsg.startsWith('✓') ? 'var(--success)' : 'var(--red)' }}>
+                    {profileMsg}
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+
+          {/* Sección Seguridad */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-5)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              Seguridad
+            </h3>
+            <form onSubmit={savePassword} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', maxWidth: 400 }}>
+              {[
+                { key: 'currentPassword', label: 'Contraseña actual' },
+                { key: 'newPassword', label: 'Nueva contraseña' },
+                { key: 'confirm', label: 'Confirmar nueva contraseña' },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>{label}</label>
+                  <input
+                    type="password"
+                    className="input"
+                    value={pwForm[key]}
+                    onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                <button className="btn btn-primary" type="submit" style={{ background: 'var(--violet)' }} disabled={pwSaving}>
+                  {pwSaving ? 'Guardando…' : 'Cambiar contraseña'}
+                </button>
+                {pwMsg && (
+                  <span style={{ fontSize: 'var(--text-sm)', color: pwMsg.startsWith('✓') ? 'var(--success)' : 'var(--red)' }}>
+                    {pwMsg}
+                  </span>
+                )}
+              </div>
+            </form>
+
+            {/* Desligarse del negocio */}
+            {profile?.businessId && (
+              <div style={{ marginTop: 'var(--sp-6)', paddingTop: 'var(--sp-5)', borderTop: '1px solid var(--border)' }}>
+                <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 4 }}>
+                  Desligarse del negocio
+                </p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
+                  Estás vinculado a <strong>{profile.business?.name}</strong>. Al desligarte perderás el acceso a sus servicios y agenda.
+                </p>
+                {!unlinkConfirm ? (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ color: 'var(--red)', borderColor: 'rgba(239,68,68,0.3)' }}
+                    onClick={() => setUnlinkConfirm(true)}
+                  >
+                    Desligarme del negocio
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--red)', fontWeight: 600 }}>¿Confirmar?</p>
+                    <button
+                      className="btn btn-sm"
+                      style={{ background: 'var(--red)', color: '#fff', border: 'none' }}
+                      onClick={handleUnlink}
+                      disabled={unlinkLoading}
+                    >
+                      {unlinkLoading ? 'Procesando…' : 'Sí, desligarme'}
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setUnlinkConfirm(false)}>
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -134,6 +134,12 @@ export default function ProLoginPage() {
             </button>
           </form>
 
+          <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 4 }}>
+            <Link to="/forgot-password" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textDecoration: 'none' }}>
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
           <p className="auth-foot">
             ¿Nuevo profesional?{' '}
             <Link to="/pro/register" style={{ color: 'var(--violet)' }}>Únete al equipo</Link>

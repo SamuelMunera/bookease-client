@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
@@ -26,9 +26,13 @@ function SectionCard({ title, action, children }) {
   );
 }
 
+const CATS = ['BARBERSHOP', 'SPA', 'SALON'];
+const CAT_NAME = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
+
 const TABS = [
   { key: 'panel',    label: 'Panel' },
   { key: 'finanzas', label: 'Finanzas' },
+  { key: 'perfil',   label: 'Perfil' },
 ];
 
 export default function BusinessDashboardPage() {
@@ -36,6 +40,16 @@ export default function BusinessDashboardPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('panel');
   const [business, setBusiness] = useState(null);
+  // Profile tab state
+  const [profileForm, setProfileForm] = useState(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMsg, setProfileMsg] = useState('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef(null);
+  // Password change state
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState('');
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [joinCode, setJoinCode] = useState(null);
@@ -52,6 +66,7 @@ export default function BusinessDashboardPage() {
         const mine = all.find(b => b.ownerId === user.id);
         if (!mine) { setLoading(false); return; }
         setBusiness(mine);
+        setProfileForm({ name: mine.name, description: mine.description || '', address: mine.address, city: mine.city, phone: mine.phone || '', category: mine.category });
         return api.getBusinessBookings(mine.id, { date: todayISO() });
       })
       .then(bks => { if (bks) setBookings(bks); })
@@ -93,6 +108,43 @@ export default function BusinessDashboardPage() {
       setShowRevenue(next);
     } catch {}
     finally { setTogglingRevenue(false); }
+  }
+
+  async function saveProfile(e) {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileMsg('');
+    try {
+      const updated = await api.updateBusinessProfile(profileForm);
+      setBusiness(prev => ({ ...prev, ...updated }));
+      setProfileMsg('✓ Perfil actualizado');
+    } catch (err) { setProfileMsg('Error: ' + err.message); }
+    finally { setProfileSaving(false); setTimeout(() => setProfileMsg(''), 3000); }
+  }
+
+  async function handleLogoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const res = await api.uploadBusinessLogo(file);
+      if (res.error) throw new Error(res.error);
+      setBusiness(prev => ({ ...prev, logoUrl: res.url }));
+    } catch (err) { setProfileMsg('Error al subir logo: ' + err.message); }
+    finally { setLogoUploading(false); }
+  }
+
+  async function savePassword(e) {
+    e.preventDefault();
+    if (pwForm.newPassword !== pwForm.confirm) return setPwMsg('Las contraseñas no coinciden');
+    setPwSaving(true);
+    setPwMsg('');
+    try {
+      await api.changePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
+      setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
+      setPwMsg('✓ Contraseña actualizada');
+    } catch (err) { setPwMsg('Error: ' + err.message); }
+    finally { setPwSaving(false); setTimeout(() => setPwMsg(''), 4000); }
   }
 
   function copyCode() {
@@ -453,6 +505,137 @@ export default function BusinessDashboardPage() {
             )}
           </SectionCard>
         </>
+      )}
+
+      {/* ══════════ PERFIL TAB ══════════ */}
+      {tab === 'perfil' && profileForm && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+
+          {/* ── Sección: Perfil ── */}
+          <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-5)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              Información del negocio
+            </h3>
+
+            {/* Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', marginBottom: 'var(--sp-5)' }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: 'var(--r-xl)', flexShrink: 0,
+                background: business.logoUrl ? 'transparent' : 'var(--gold-subtle)',
+                border: '1px solid var(--gold-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', fontSize: 28, fontWeight: 800, color: 'var(--gold)',
+              }}>
+                {business.logoUrl
+                  ? <img src={business.logoUrl} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : business.name[0]
+                }
+              </div>
+              <div>
+                <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, marginBottom: 4 }}>Logo del negocio</p>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 8 }}>JPG, PNG o WebP · máx. 3 MB</p>
+                <input ref={logoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={logoUploading}
+                >
+                  {logoUploading ? 'Subiendo…' : 'Cambiar logo'}
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={saveProfile} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--sp-4)' }}>
+              {[
+                { key: 'name', label: 'Nombre del negocio', required: true },
+                { key: 'phone', label: 'Teléfono' },
+                { key: 'address', label: 'Dirección', required: true },
+                { key: 'city', label: 'Ciudad', required: true },
+              ].map(({ key, label, required }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>{label}</label>
+                  <input
+                    className="input"
+                    value={profileForm[key] ?? ''}
+                    onChange={e => setProfileForm(f => ({ ...f, [key]: e.target.value }))}
+                    required={required}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Categoría</label>
+                <select
+                  className="input"
+                  value={profileForm.category}
+                  onChange={e => setProfileForm(f => ({ ...f, category: e.target.value }))}
+                  style={{ width: '100%' }}
+                >
+                  {CATS.map(c => <option key={c} value={c}>{CAT_NAME[c]}</option>)}
+                </select>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Descripción</label>
+                <textarea
+                  className="input"
+                  value={profileForm.description ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, description: e.target.value }))}
+                  rows={3}
+                  style={{ width: '100%', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                <button className="btn btn-primary" type="submit" disabled={profileSaving}>
+                  {profileSaving ? 'Guardando…' : 'Guardar cambios'}
+                </button>
+                {profileMsg && (
+                  <span style={{ fontSize: 'var(--text-sm)', color: profileMsg.startsWith('✓') ? 'var(--success)' : 'var(--red)' }}>
+                    {profileMsg}
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+
+          {/* ── Sección: Seguridad ── */}
+          <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-5)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              Seguridad
+            </h3>
+            <form onSubmit={savePassword} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', maxWidth: 400 }}>
+              {[
+                { key: 'currentPassword', label: 'Contraseña actual', type: 'password' },
+                { key: 'newPassword', label: 'Nueva contraseña', type: 'password' },
+                { key: 'confirm', label: 'Confirmar nueva contraseña', type: 'password' },
+              ].map(({ key, label, type }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>{label}</label>
+                  <input
+                    className="input"
+                    type={type}
+                    value={pwForm[key]}
+                    onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                <button className="btn btn-primary" type="submit" disabled={pwSaving}>
+                  {pwSaving ? 'Guardando…' : 'Cambiar contraseña'}
+                </button>
+                {pwMsg && (
+                  <span style={{ fontSize: 'var(--text-sm)', color: pwMsg.startsWith('✓') ? 'var(--success)' : 'var(--red)' }}>
+                    {pwMsg}
+                  </span>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* ══════════ FINANZAS TAB ══════════ */}
