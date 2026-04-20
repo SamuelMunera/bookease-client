@@ -95,7 +95,12 @@ export default function LoginPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="password">Contraseña</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label className="form-label" htmlFor="password">Contraseña</label>
+                <Link to="/forgot-password" className="auth-forgot-link">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <input
                 id="password"
                 className="input"
@@ -141,13 +146,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 4 }}>
-            <Link to="/forgot-password" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textDecoration: 'none' }}>
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-2) 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-5) 0' }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>o</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

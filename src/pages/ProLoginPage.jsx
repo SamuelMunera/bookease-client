@@ -95,7 +95,12 @@ export default function ProLoginPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="pro-password">Contraseña</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label className="form-label" htmlFor="pro-password">Contraseña</label>
+                <Link to="/forgot-password" className="auth-forgot-link auth-forgot-link--violet">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <input
                 id="pro-password"
                 className="input"
@@ -136,13 +141,7 @@ export default function ProLoginPage() {
             </button>
           </form>
 
-          <div style={{ textAlign: 'right', marginTop: -8, marginBottom: 4 }}>
-            <Link to="/forgot-password" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textDecoration: 'none' }}>
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-2) 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-5) 0' }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>o</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -150,16 +149,20 @@ export default function ProLoginPage() {
 
           <div style={{ display: 'flex', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' }}>
             {[
-              { value: 'PROFESSIONAL', label: 'Profesional' },
-              { value: 'BUSINESS_OWNER', label: 'Negocio' },
+              { value: 'PROFESSIONAL', label: 'Soy profesional' },
+              { value: 'BUSINESS_OWNER', label: 'Tengo un negocio' },
             ].map(opt => (
               <button key={opt.value} type="button" onClick={() => setGoogleRole(opt.value)}
                 style={{
-                  flex: 1, padding: '6px 0', borderRadius: 'var(--r-md)',
-                  border: `1px solid ${googleRole === opt.value ? 'var(--violet)' : 'var(--border)'}`,
+                  flex: 1, height: 38,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 'var(--r-md)',
+                  border: `1.5px solid ${googleRole === opt.value ? 'var(--violet)' : 'var(--border)'}`,
                   background: googleRole === opt.value ? 'var(--violet-subtle)' : 'var(--surface-2)',
                   color: googleRole === opt.value ? 'var(--violet)' : 'var(--text-muted)',
                   fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
+                  transition: 'border-color var(--ease), background var(--ease), color var(--ease)',
+                  outline: 'none',
                 }}>
                 {opt.label}
               </button>

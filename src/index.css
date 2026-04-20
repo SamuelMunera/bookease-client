@@ -1750,21 +1750,48 @@ input, textarea, select { font-family: inherit; }
 .auth-foot a { color: var(--gold); font-weight: 600; }
 .auth-foot a:hover { text-decoration: underline; }
 
+/* ── Forgot password link ── */
+.auth-forgot-link {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--ease);
+  line-height: 1;
+  padding-bottom: 1px;
+  border-bottom: 1px solid transparent;
+}
+.auth-forgot-link:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.auth-forgot-link--violet:hover {
+  color: var(--violet);
+  border-bottom-color: var(--violet);
+}
+
 /* ── Role cards (register) ── */
 .role-cards { display: flex; gap: var(--sp-3); margin-top: var(--sp-2); }
 .role-card {
-  flex: 1; padding: var(--sp-4);
+  flex: 1; padding: var(--sp-4) var(--sp-3);
   background: var(--surface-2); border: 2px solid var(--border);
   border-radius: var(--r-lg); cursor: pointer;
   transition: all var(--ease);
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  gap: var(--sp-2);
 }
 .role-card:hover { border-color: var(--border-strong); background: var(--surface-3); }
+.role-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
 .role-card.selected {
   border-color: var(--gold); background: var(--gold-subtle);
   box-shadow: 0 0 16px var(--gold-glow);
 }
-.role-card-title { font-size: var(--text-sm); font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.role-card-desc  { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.5; }
+.role-card-title { font-size: var(--text-sm); font-weight: 700; color: var(--text); margin: 0; }
+.role-card-desc  { font-size: var(--text-xs); color: var(--text-muted); line-height: 1.5; margin: 0; }
 
 /* ══════════════════════════════════════════════════════════
    BUSINESS DETAIL — HERO
@@ -3443,8 +3470,12 @@ input, textarea, select { font-family: inherit; }
   /* Auth pages */
   .auth-wrap { flex-direction: column; min-height: 100vh; }
   .auth-panel-brand { display: none; }
-  .auth-panel-form { padding: var(--sp-6) var(--sp-5); flex: 1; }
+  .auth-panel-form { padding: var(--sp-8) var(--sp-5); flex: 1; align-items: flex-start; }
   .auth-form-inner { max-width: 100%; }
+
+  /* Role cards wrap on small screens */
+  .role-cards { flex-wrap: wrap; }
+  .role-card { min-width: calc(50% - var(--sp-2)); }
 
   /* Dashboard tabs */
   .dash-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; padding-bottom: var(--sp-2); }

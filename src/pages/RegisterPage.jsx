@@ -7,13 +7,13 @@ import GoogleAuthButton from '../components/GoogleAuthButton';
 const ACCOUNT_TYPES = [
   {
     value: 'CLIENT',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     title: 'Cliente',
     desc: 'Reserva citas y gestiona tus visitas',
   },
   {
     value: 'BUSINESS_OWNER',
-    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
     title: 'Negocio',
     desc: 'Recibe y gestiona reservas de tu local',
   },
@@ -161,7 +161,7 @@ export default function RegisterPage() {
                     tabIndex={0}
                     onKeyDown={(e) => e.key === 'Enter' && setForm({ ...form, role: opt.value })}
                   >
-                    <div style={{ color: form.role === opt.value ? 'var(--gold)' : 'var(--text-muted)', marginBottom: 6 }}>
+                    <div style={{ color: form.role === opt.value ? 'var(--gold)' : 'var(--text-muted)' }}>
                       {opt.icon}
                     </div>
                     <p className="role-card-title">{opt.title}</p>
