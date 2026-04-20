@@ -19,6 +19,9 @@ export default function BusinessesPage() {
   const [categories, setCategories] = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [apiError,   setApiError]   = useState(false);
+  const [userLocation, setUserLocation]       = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError]     = useState('');
 
   const category  = searchParams.get('category')  || '';
   const city      = searchParams.get('city')       || '';
@@ -30,12 +33,13 @@ export default function BusinessesPage() {
     setLoading(true);
     setApiError(false);
     const params = {};
-    if (city) params.city = city;
+    if (userLocation) { params.lat = userLocation.lat; params.lng = userLocation.lng; }
+    else if (city) params.city = city;
     api.getBusinesses(params)
       .then(data => setBusinesses(data || []))
       .catch(() => { setBusinesses([]); setApiError(true); })
       .finally(() => setLoading(false));
-  }, [city]);
+  }, [city, userLocation]);
 
   function setCategory(val) {
     const p = new URLSearchParams(searchParams);
@@ -43,16 +47,50 @@ export default function BusinessesPage() {
     setSearchParams(p);
   }
 
-  function handleSearch(e) {
+  async function handleSearch(e) {
     e.preventDefault();
-    const p = new URLSearchParams(searchParams);
-    if (cityInput.trim()) p.set('city', cityInput.trim()); else p.delete('city');
-    setSearchParams(p);
+    const q = cityInput.trim();
+    if (!q) { setUserLocation(null); setLocationError(''); const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p); return; }
+    setLocationLoading(true); setLocationError('');
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers: { 'User-Agent': 'Bookease/1.0' } });
+      const data = await res.json();
+      if (data.length > 0) {
+        setUserLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name?.split(',')[0] || q });
+        const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p);
+      } else {
+        const p = new URLSearchParams(searchParams); p.set('city', q); setSearchParams(p);
+        setUserLocation(null);
+      }
+    } catch {
+      const p = new URLSearchParams(searchParams); p.set('city', q); setSearchParams(p);
+      setUserLocation(null);
+    } finally { setLocationLoading(false); }
+  }
+
+  function requestGeolocation() {
+    if (!navigator.geolocation) { setLocationError('Tu navegador no soporta geolocalización'); return; }
+    setLocationLoading(true); setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers: { 'User-Agent': 'Bookease/1.0' } });
+          const d = await res.json();
+          label = d.address?.city || d.address?.town || d.address?.village || d.address?.suburb || d.display_name?.split(',')[0] || label;
+        } catch {}
+        setUserLocation({ lat, lng, label }); setCityInput('');
+        const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p);
+        setLocationLoading(false);
+      },
+      () => { setLocationLoading(false); setLocationError('No se pudo obtener tu ubicación.'); },
+      { timeout: 10000 }
+    );
   }
 
   function clearFilters() {
-    setCityInput('');
-    setSearchParams({});
+    setCityInput(''); setUserLocation(null); setLocationError(''); setSearchParams({});
   }
 
   const filtered = category ? businesses.filter(b => b.category === category) : businesses;
@@ -85,8 +123,27 @@ export default function BusinessesPage() {
               style={{ paddingLeft: 36 }}
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-sm">Buscar</button>
-          {(city || category) && (
+          <button
+            type="button"
+            title={userLocation ? 'Limpiar ubicación' : 'Usar mi ubicación'}
+            onClick={userLocation ? () => { setUserLocation(null); setLocationError(''); } : requestGeolocation}
+            disabled={locationLoading}
+            style={{
+              display:'flex', alignItems:'center', gap:5, padding:'8px 12px',
+              borderRadius:'var(--r-md)', border:`1px solid ${userLocation ? 'var(--teal)' : 'var(--border)'}`,
+              background: userLocation ? 'rgba(0,212,200,0.1)' : 'transparent',
+              color: userLocation ? 'var(--teal)' : 'var(--text-muted)',
+              fontSize:'var(--text-xs)', fontWeight:600, cursor: locationLoading ? 'wait' : 'pointer', whiteSpace:'nowrap',
+            }}
+          >
+            {locationLoading
+              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation:'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            }
+            <span className="loc-btn-label">{userLocation ? userLocation.label : 'Mi ubicación'}</span>
+          </button>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={locationLoading}>Buscar</button>
+          {(city || category || userLocation) && (
             <button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Limpiar</button>
           )}
         </form>
@@ -106,19 +163,24 @@ export default function BusinessesPage() {
               </button>
             ))}
           </div>
-          {city && (
+          {userLocation && (
+            <button className="chip active" style={{ display:'flex', alignItems:'center', gap:6, borderColor:'var(--teal)', color:'var(--teal)', background:'rgba(0,212,200,0.08)' }}
+              onClick={() => { setUserLocation(null); setCityInput(''); }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Cerca de {userLocation.label}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          )}
+          {city && !userLocation && (
             <span className="chip" style={{ display:'flex', alignItems:'center', gap:6, cursor:'default' }}>
               {city}
-              <button
-                style={{ background:'none', border:'none', cursor:'pointer', padding:0, lineHeight:1, color:'inherit' }}
-                onClick={() => { setCityInput(''); const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p); }}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
+              <button style={{ background:'none', border:'none', cursor:'pointer', padding:0, lineHeight:1, color:'inherit' }}
+                onClick={() => { setCityInput(''); const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p); }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </span>
           )}
+          {locationError && <p style={{ fontSize:'var(--text-xs)', color:'var(--error)', marginTop:'var(--sp-1)' }}>{locationError}</p>}
         </div>
       </div>
 
@@ -200,6 +262,11 @@ export default function BusinessesPage() {
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                     </svg>
                     {b.address}, {b.city}
+                    {b.distance != null && (
+                      <span style={{ marginLeft:6, padding:'1px 7px', borderRadius:'var(--r-full)', background:'rgba(0,212,200,0.1)', border:'1px solid rgba(0,212,200,0.25)', color:'var(--teal)', fontSize:'var(--text-xs)', fontWeight:600, verticalAlign:'middle' }}>
+                        {b.distance < 1 ? `${Math.round(b.distance * 1000)} m` : `${b.distance} km`}
+                      </span>
+                    )}
                   </p>
                   {b.rating && (
                     <div className="rating-row" style={{ marginBottom:'var(--sp-2)' }}>
