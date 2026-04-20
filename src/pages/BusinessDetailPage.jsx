@@ -38,32 +38,6 @@ function formatBookingCount(n) {
   return `${hundreds}+`;
 }
 
-/* ══════════════════════════════════════════════════════════
-   LOGO + NAME ROW
-   ══════════════════════════════════════════════════════════ */
-function BizLogoName({ business }) {
-  const pal = avatarPalette(business.name);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 'var(--sp-3)', flexWrap: 'nowrap' }}>
-      <div style={{
-        width: 88, height: 88, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
-        border: '2px solid rgba(255,255,255,0.15)',
-        background: business.logoUrl ? 'transparent' : pal.bg,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 34, fontWeight: 800, color: pal.color,
-      }}>
-        {business.logoUrl
-          ? <img src={business.logoUrl} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          : business.name[0].toUpperCase()
-        }
-      </div>
-      <h1 className="biz-hero-name" style={{ margin: 0, flex: 1 }}>
-        {business.name.split(' ').slice(0, -1).join(' ')}{' '}
-        <em>{business.name.split(' ').slice(-1)[0]}</em>
-      </h1>
-    </div>
-  );
-}
 
 /* ══════════════════════════════════════════════════════════
    HERO
@@ -73,72 +47,98 @@ function BizHero({ business, stats }) {
   const reviewCount  = stats?.reviewCount ?? 0;
   const bookingCount = stats?.bookingCount ?? 0;
 
+  const pal = avatarPalette(business.name);
+
   return (
     <div className="biz-hero biz-hero--detail">
-      <div className="biz-hero-inner">
-        <div className="biz-hero-breadcrumb">
-          <Link to="/" className="biz-hero-back">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
+      <div className="biz-hero-inner" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-8)' }}>
+
+        {/* ── Left: text content ── */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="biz-hero-breadcrumb">
+            <Link to="/" className="biz-hero-back">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              Inicio
+            </Link>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="biz-hero-breadcrumb-sep">
+              <path d="M9 18l6-6-6-6"/>
             </svg>
-            Inicio
-          </Link>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="biz-hero-breadcrumb-sep">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-          <span className="biz-hero-cat">
-            <span className="biz-hero-cat-dot" />
-            {CAT_LABEL[business.category] || business.category}
-          </span>
-        </div>
+            <span className="biz-hero-cat">
+              <span className="biz-hero-cat-dot" />
+              {CAT_LABEL[business.category] || business.category}
+            </span>
+          </div>
 
-        {/* Logo + name row */}
-        <BizLogoName business={business} />
+          <h1 className="biz-hero-name">
+            {business.name.split(' ').slice(0, -1).join(' ')}{' '}
+            <em>{business.name.split(' ').slice(-1)[0]}</em>
+          </h1>
 
-        <div className="biz-hero-address">
-          <span>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display:'inline', verticalAlign:'middle', marginRight:4 }}>
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-            {business.address}, {business.city}
-          </span>
-          {business.phone && (
-            <>
-              <span className="biz-hero-sep">·</span>
-              <span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display:'inline', verticalAlign:'middle', marginRight:4 }}>
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                </svg>
-                {business.phone}
-              </span>
-            </>
+          <div className="biz-hero-address">
+            <span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display:'inline', verticalAlign:'middle', marginRight:4 }}>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              {business.address}, {business.city}
+            </span>
+            {business.phone && (
+              <>
+                <span className="biz-hero-sep">·</span>
+                <span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ display:'inline', verticalAlign:'middle', marginRight:4 }}>
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  {business.phone}
+                </span>
+              </>
+            )}
+          </div>
+
+          {business.description && (
+            <p className="biz-hero-desc">{business.description}</p>
           )}
-        </div>
 
-        {business.description && (
-          <p className="biz-hero-desc">{business.description}</p>
-        )}
-
-        <div className="biz-hero-stats">
-          {avgRating !== null ? (
+          <div className="biz-hero-stats">
+            {avgRating !== null ? (
+              <div className="biz-hero-stat">
+                <span className="biz-hero-stat-num">{avgRating.toFixed(1)}</span>
+                <span className="biz-hero-stat-label">
+                  <Stars rating={avgRating} />&nbsp;{reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+            ) : (
+              <div className="biz-hero-stat">
+                <span className="biz-hero-stat-num">—</span>
+                <span className="biz-hero-stat-label">Sin reseñas</span>
+              </div>
+            )}
+            <div className="biz-hero-stat-sep" />
             <div className="biz-hero-stat">
-              <span className="biz-hero-stat-num">{avgRating.toFixed(1)}</span>
-              <span className="biz-hero-stat-label">
-                <Stars rating={avgRating} />&nbsp;{reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
-              </span>
+              <span className="biz-hero-stat-num">{formatBookingCount(bookingCount)}</span>
+              <span className="biz-hero-stat-label">Reservas</span>
             </div>
-          ) : (
-            <div className="biz-hero-stat">
-              <span className="biz-hero-stat-num">—</span>
-              <span className="biz-hero-stat-label">Sin reseñas</span>
-            </div>
-          )}
-          <div className="biz-hero-stat-sep" />
-          <div className="biz-hero-stat">
-            <span className="biz-hero-stat-num">{formatBookingCount(bookingCount)}</span>
-            <span className="biz-hero-stat-label">Reservas</span>
           </div>
         </div>
+
+        {/* ── Right: logo ── */}
+        <div style={{
+          width: 200, height: 200, flexShrink: 0,
+          borderRadius: 20,
+          overflow: 'hidden',
+          border: '2px solid rgba(255,255,255,0.12)',
+          background: business.logoUrl ? 'transparent' : pal.bg,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 72, fontWeight: 800, color: pal.color,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}>
+          {business.logoUrl
+            ? <img src={business.logoUrl} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : business.name[0].toUpperCase()
+          }
+        </div>
+
       </div>
     </div>
   );
