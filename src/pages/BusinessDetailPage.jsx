@@ -39,6 +39,33 @@ function formatBookingCount(n) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   LOGO + NAME ROW
+   ══════════════════════════════════════════════════════════ */
+function BizLogoName({ business }) {
+  const pal = avatarPalette(business.name);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 'var(--sp-3)', flexWrap: 'nowrap' }}>
+      <div style={{
+        width: 88, height: 88, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
+        border: '2px solid rgba(255,255,255,0.15)',
+        background: business.logoUrl ? 'transparent' : pal.bg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 34, fontWeight: 800, color: pal.color,
+      }}>
+        {business.logoUrl
+          ? <img src={business.logoUrl} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : business.name[0].toUpperCase()
+        }
+      </div>
+      <h1 className="biz-hero-name" style={{ margin: 0, flex: 1 }}>
+        {business.name.split(' ').slice(0, -1).join(' ')}{' '}
+        <em>{business.name.split(' ').slice(-1)[0]}</em>
+      </h1>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    HERO
    ══════════════════════════════════════════════════════════ */
 function BizHero({ business, stats }) {
@@ -66,31 +93,7 @@ function BizHero({ business, stats }) {
         </div>
 
         {/* Logo + name row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', marginBottom: 'var(--sp-3)' }}>
-          {(() => {
-            const pal = avatarPalette(business.name);
-            return (
-              <div style={{
-                width: 88, height: 88, borderRadius: 'var(--r-xl)',
-                overflow: 'hidden', flexShrink: 0,
-                border: '2px solid rgba(255,255,255,0.15)',
-                background: business.logoUrl ? 'transparent' : pal.bg,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 34, fontWeight: 800, color: pal.color,
-              }}>
-                {business.logoUrl
-                  ? <img src={business.logoUrl} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : business.name[0].toUpperCase()
-                }
-              </div>
-            );
-          })()}
-
-          <h1 className="biz-hero-name" style={{ margin: 0 }}>
-            {business.name.split(' ').slice(0, -1).join(' ')}{' '}
-            <em>{business.name.split(' ').slice(-1)[0]}</em>
-          </h1>
-        </div>
+        <BizLogoName business={business} />
 
         <div className="biz-hero-address">
           <span>
