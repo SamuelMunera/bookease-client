@@ -3715,6 +3715,53 @@ input, textarea, select { font-family: inherit; }
 /* ── Booking success ── */
 [data-theme="light"] .booking-success { background: var(--surface); }
 
+/* ── Agenda / schedule grid ── */
+[data-theme="light"] .agenda-grid { background: var(--surface); border-color: var(--border-strong); }
+[data-theme="light"] .agenda-cell { border-color: var(--border); }
+[data-theme="light"] .agenda-cell:hover { background: var(--surface-2); }
+
+/* ── Scroll track on horizontal lists ── */
+[data-theme="light"] .scroll-track { scrollbar-color: var(--surface-4) transparent; }
+
+/* ── Biz hero section ── */
+[data-theme="light"] .biz-hero { background: var(--surface-2); }
+[data-theme="light"] .biz-hero-inner { border-color: var(--border-strong); }
+
+/* ── Professional profile page ── */
+[data-theme="light"] .prof-profile-hero { background: var(--surface-2); border-color: var(--border-strong); }
+[data-theme="light"] .prof-profile-header { background: transparent; }
+
+/* ── Booking page ── */
+[data-theme="light"] .booking-layout { background: var(--bg); }
+[data-theme="light"] .booking-sidebar { background: var(--surface); border-color: var(--border-strong); }
+[data-theme="light"] .time-slot { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); }
+[data-theme="light"] .time-slot:hover { background: var(--gold-subtle); border-color: var(--gold-border); color: var(--text); }
+[data-theme="light"] .time-slot.selected { background: var(--gold-subtle); border-color: var(--gold); color: var(--text); }
+
+/* ── Nav cta-outline in light ── */
+[data-theme="light"] .nav-cta-outline { border-color: rgba(14,13,26,0.15); color: var(--text-muted); background: transparent; }
+[data-theme="light"] .nav-cta-outline:hover { background: var(--gold-subtle); border-color: var(--gold-border); color: var(--gold); box-shadow: none; }
+
+/* ── Hamburger button ── */
+[data-theme="light"] .nav-hamburger { border-color: var(--border-strong); color: var(--text-muted); }
+
+/* ── Mobile menu items ── */
+[data-theme="light"] .nav-mobile-link { color: var(--text-muted); }
+[data-theme="light"] .nav-mobile-link:hover { background: var(--surface-2); color: var(--text); }
+
+/* ── Admin layout ── */
+[data-theme="light"] .admin-sidebar { background: var(--surface); border-right-color: var(--border-strong); }
+[data-theme="light"] .admin-nav-item { color: var(--text-muted); }
+[data-theme="light"] .admin-nav-item:hover { background: var(--surface-2); color: var(--text); }
+[data-theme="light"] .admin-nav-item.active { background: var(--gold-subtle); color: var(--gold); }
+
+/* ── Error and success messages ── */
+[data-theme="light"] .error-msg { background: var(--error-bg); }
+[data-theme="light"] .success-msg { background: var(--success-bg); border-color: var(--success-border); }
+
+/* ── Forgot password link variant ── */
+[data-theme="light"] .auth-forgot-link { color: var(--text-subtle); }
+
 /* ─── General responsive touch-ups ─── */
 @media (max-width: 768px) {
   /* Auth pages */
