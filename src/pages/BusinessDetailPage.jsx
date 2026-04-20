@@ -65,6 +65,27 @@ function BizHero({ business, stats }) {
           </span>
         </div>
 
+        {/* Logo */}
+        {(() => {
+          const pal = avatarPalette(business.name);
+          return (
+            <div style={{
+              width: 64, height: 64, borderRadius: 'var(--r-lg)',
+              overflow: 'hidden', marginBottom: 'var(--sp-4)',
+              border: '2px solid rgba(255,255,255,0.12)',
+              flexShrink: 0,
+              background: business.logoUrl ? 'transparent' : pal.bg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 26, fontWeight: 800, color: pal.color,
+            }}>
+              {business.logoUrl
+                ? <img src={business.logoUrl} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : business.name[0].toUpperCase()
+              }
+            </div>
+          );
+        })()}
+
         <h1 className="biz-hero-name">
           {business.name.split(' ').slice(0, -1).join(' ')}{' '}
           <em>{business.name.split(' ').slice(-1)[0]}</em>
