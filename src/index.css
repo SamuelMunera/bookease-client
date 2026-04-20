@@ -1976,15 +1976,15 @@ input, textarea, select { font-family: inherit; }
 }
 
 .biz-hero-stats {
-  display: flex; gap: var(--sp-4);
-  margin-top: var(--sp-2);
+  display: flex; gap: var(--sp-5);
+  margin-top: var(--sp-4);
 }
 
 .biz-hero-stat {
-  padding: var(--sp-5) var(--sp-7);
+  padding: var(--sp-6) var(--sp-10);
   background: var(--glass); backdrop-filter: blur(8px);
   border: 1px solid var(--glass-border); border-radius: var(--r-xl);
-  text-align: center; min-width: 130px;
+  text-align: center; min-width: 160px;
 }
 
 .biz-hero-stat-num {
