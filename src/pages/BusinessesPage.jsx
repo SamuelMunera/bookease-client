@@ -22,6 +22,7 @@ export default function BusinessesPage() {
   const [userLocation, setUserLocation]       = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError]     = useState('');
+  const [radius, setRadius]                   = useState(10);
 
   const category  = searchParams.get('category')  || '';
   const city      = searchParams.get('city')       || '';
@@ -33,13 +34,13 @@ export default function BusinessesPage() {
     setLoading(true);
     setApiError(false);
     const params = {};
-    if (userLocation) { params.lat = userLocation.lat; params.lng = userLocation.lng; }
+    if (userLocation) { params.lat = userLocation.lat; params.lng = userLocation.lng; params.radius = radius; }
     else if (city) params.city = city;
     api.getBusinesses(params)
       .then(data => setBusinesses(data || []))
       .catch(() => { setBusinesses([]); setApiError(true); })
       .finally(() => setLoading(false));
-  }, [city, userLocation]);
+  }, [city, userLocation, radius]);
 
   function setCategory(val) {
     const p = new URLSearchParams(searchParams);
@@ -90,7 +91,7 @@ export default function BusinessesPage() {
   }
 
   function clearFilters() {
-    setCityInput(''); setUserLocation(null); setLocationError(''); setSearchParams({});
+    setCityInput(''); setUserLocation(null); setLocationError(''); setRadius(10); setSearchParams({});
   }
 
   const filtered = category ? businesses.filter(b => b.category === category) : businesses;
@@ -142,6 +143,23 @@ export default function BusinessesPage() {
             }
             <span className="loc-btn-label">{userLocation ? userLocation.label : 'Mi ubicación'}</span>
           </button>
+          {userLocation && (
+            <select
+              value={radius}
+              onChange={e => setRadius(Number(e.target.value))}
+              style={{
+                padding:'7px 10px', borderRadius:'var(--r-md)',
+                border:'1px solid var(--teal)', background:'rgba(0,212,200,0.08)',
+                color:'var(--teal)', fontSize:'var(--text-xs)', fontWeight:600, cursor:'pointer',
+              }}
+            >
+              <option value={2}>2 km</option>
+              <option value={5}>5 km</option>
+              <option value={10}>10 km</option>
+              <option value={25}>25 km</option>
+              <option value={50}>50 km</option>
+            </select>
+          )}
           <button type="submit" className="btn btn-primary btn-sm" disabled={locationLoading}>Buscar</button>
           {(city || category || userLocation) && (
             <button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters}>Limpiar</button>
@@ -167,7 +185,7 @@ export default function BusinessesPage() {
             <button className="chip active" style={{ display:'flex', alignItems:'center', gap:6, borderColor:'var(--teal)', color:'var(--teal)', background:'rgba(0,212,200,0.08)' }}
               onClick={() => { setUserLocation(null); setCityInput(''); }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              Cerca de {userLocation.label}
+              Cerca de {userLocation.label} · {radius} km
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           )}
