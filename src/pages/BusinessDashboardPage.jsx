@@ -192,23 +192,23 @@ export default function BusinessDashboardPage() {
   const stats = [
     {
       num: bookings.length, label: 'Citas hoy', color: 'var(--text-muted)',
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
     },
     {
       num: todayConfirmed, label: 'Confirmadas', color: 'var(--success)',
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
     },
     {
       num: todayPending, label: 'Pendientes', color: 'var(--warning)',
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
     },
     {
       num: business.services?.length ?? 0, label: 'Servicios', color: 'var(--violet)',
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
     },
     {
       num: business.professionals?.length ?? 0, label: 'Profesionales', color: catColor,
-      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
     },
   ];
 
@@ -273,16 +273,16 @@ export default function BusinessDashboardPage() {
       </div>
 
       {/* ── Stats ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
         {stats.map(s => (
           <div key={s.label} style={{
             background: 'var(--surface-2)', border: '1px solid var(--border)',
-            borderRadius: 'var(--r-xl)', padding: 'var(--sp-4)',
+            borderRadius: 'var(--r-xl)', padding: 'var(--sp-4) var(--sp-5)',
             borderTop: `3px solid ${s.color}`,
           }}>
-            <div style={{ color: s.color, marginBottom: 'var(--sp-2)' }}>{s.icon}</div>
-            <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: s.color, margin: '0 0 2px', fontFamily: 'var(--font-heading)' }}>{s.num}</p>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600 }}>{s.label}</p>
+            <div style={{ color: s.color, marginBottom: 'var(--sp-3)' }}>{s.icon}</div>
+            <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: s.color, margin: '0 0 4px', fontFamily: 'var(--font-heading)', lineHeight: 1 }}>{s.num}</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', margin: 0 }}>{s.label}</p>
           </div>
         ))}
       </div>

@@ -605,21 +605,35 @@ export default function ProfessionalDashboardPage() {
         marginBottom: 'var(--sp-6)',
       }}>
         {[
-          { label: 'Citas hoy',      value: todayBookings.length,   color: 'var(--violet)', icon: '📅' },
-          { label: 'Próximas',       value: upcomingBookings.length, color: 'var(--gold)',   icon: '⏭' },
-          { label: 'Confirmadas',    value: confirmedTotal,          color: 'var(--green)',  icon: '✓' },
-          { label: 'Pendientes',     value: pendingTotal,            color: 'var(--gold)',   icon: '⏳' },
+          {
+            label: 'Citas hoy', value: todayBookings.length, color: 'var(--violet)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+          },
+          {
+            label: 'Próximas', value: upcomingBookings.length, color: 'var(--gold)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+          },
+          {
+            label: 'Confirmadas', value: confirmedTotal, color: 'var(--success)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+          },
+          {
+            label: 'Pendientes', value: pendingTotal, color: 'var(--warning)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
+          },
         ].map(stat => (
           <div key={stat.label} style={{
-            padding: 'var(--sp-4)',
-            borderRadius: 'var(--r-lg)',
-            background: 'var(--surface-raised)',
+            padding: 'var(--sp-4) var(--sp-5)',
+            borderRadius: 'var(--r-xl)',
+            background: 'var(--surface-2)',
             border: '1px solid var(--border)',
+            borderTop: `3px solid ${stat.color}`,
           }}>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-2)' }}>{stat.label}</p>
-            <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 700, color: stat.color }}>
+            <div style={{ color: stat.color, marginBottom: 'var(--sp-3)' }}>{stat.icon}</div>
+            <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: stat.color, margin: '0 0 4px', fontFamily: 'var(--font-heading)', lineHeight: 1 }}>
               {loadingBookings ? '—' : stat.value}
             </p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', margin: 0 }}>{stat.label}</p>
           </div>
         ))}
       </div>
