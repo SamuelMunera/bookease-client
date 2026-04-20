@@ -1071,17 +1071,17 @@ input, textarea, select { font-family: inherit; }
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: var(--sp-5) var(--sp-8);
+  padding: var(--sp-5) var(--sp-10);
   background: var(--glass);
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-radius: var(--r-xl);
-  max-width: 520px;
+  max-width: 480px;
   margin: 0 auto;
 }
 
-.hero-stat { text-align: center; }
-.hero-stat-sep { width: 1px; height: 32px; background: var(--border); margin: 0 var(--sp-6); flex-shrink: 0; }
+.hero-stat { text-align: center; flex: 1; }
+.hero-stat-sep { width: 1px; height: 32px; background: var(--border); margin: 0 var(--sp-8); flex-shrink: 0; }
 .hero-stat-num {
   font-family: var(--font-heading);
   font-size: var(--text-xl);

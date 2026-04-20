@@ -183,7 +183,6 @@ export default function BusinessListPage() {
     { num: `${c1.toLocaleString()}+`, label: 'Negocios' },
     { num: c2,                         label: 'Ciudades' },
     { num: `${c3}K+`,                  label: 'Reservas' },
-    { num: `${(c4/10).toFixed(1)}★`,   label: 'Valoración' },
   ];
 
   useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);
