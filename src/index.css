@@ -1625,7 +1625,7 @@ input, textarea, select { font-family: inherit; }
 
 .cat-tile-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(8,8,15,0.9) 0%, rgba(8,8,15,0.4) 50%, rgba(8,8,15,0.1) 100%);
+  background: linear-gradient(to top, rgba(212,168,83,0.55) 0%, rgba(212,168,83,0.15) 50%, transparent 100%);
 }
 
 .cat-tile-body {
@@ -1660,12 +1660,12 @@ input, textarea, select { font-family: inherit; }
   position: absolute; top: var(--sp-4); right: var(--sp-4); z-index: 2;
   width: 32px; height: 32px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(8,8,15,0.6); backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border); border-radius: var(--r-full);
-  color: var(--text-muted);
+  background: var(--gold-subtle); backdrop-filter: blur(8px);
+  border: 1px solid var(--gold-border); border-radius: var(--r-full);
+  color: var(--gold);
   transition: all var(--ease);
 }
-.cat-tile:hover .cat-tile-arrow { background: var(--gold-subtle); border-color: var(--gold-border); color: var(--gold); }
+.cat-tile:hover .cat-tile-arrow { background: var(--gold); border-color: var(--gold); color: #0A0808; box-shadow: 0 0 12px var(--gold-glow); }
 
 /* ══════════════════════════════════════════════════════════
    FILTERS BAR
@@ -1678,7 +1678,7 @@ input, textarea, select { font-family: inherit; }
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-6);
-  background: rgba(8,8,15,0.9);
+  background: var(--nav-bg);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
@@ -3775,12 +3775,15 @@ input, textarea, select { font-family: inherit; }
   border-bottom-color: var(--border-strong);
 }
 
-/* ── Category tile overlay: remove dark vignette ── */
+/* ── Category tile overlay: softer gold in light ── */
 [data-theme="light"] .cat-tile-overlay {
-  background: linear-gradient(to top, rgba(14,13,26,0.45) 0%, rgba(14,13,26,0.1) 50%, transparent 100%);
+  background: linear-gradient(to top, rgba(212,168,83,0.4) 0%, rgba(212,168,83,0.1) 50%, transparent 100%);
 }
 [data-theme="light"] .cat-tile { border-color: var(--border-strong); }
 [data-theme="light"] .cat-tile:hover { border-color: var(--gold-border); box-shadow: 0 8px 24px rgba(14,13,26,0.12), var(--shadow-gold); }
+
+/* ── Filters bar ── */
+[data-theme="light"] .filters-bar { border-bottom-color: var(--border-strong); }
 
 /* ── Business card image label ── */
 [data-theme="light"] .biz-card-img-label {
