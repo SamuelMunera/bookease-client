@@ -209,6 +209,9 @@ input, textarea, select { font-family: inherit; }
 }
 
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-muted);
@@ -217,6 +220,7 @@ input, textarea, select { font-family: inherit; }
   transition: color var(--ease), background var(--ease);
   letter-spacing: 0.01em;
   white-space: nowrap;
+  line-height: 1;
 }
 .nav-link:hover  { color: var(--text); background: rgba(255,255,255,0.05); }
 .nav-link.active { color: var(--gold); }
