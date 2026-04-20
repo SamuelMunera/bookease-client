@@ -442,11 +442,11 @@ export default function Layout() {
             © {new Date().getFullYear()} Bookease · Todos los derechos reservados
           </p>
           <div className="footer-bottom-links">
-            <a href="#" className="footer-bottom-link">Privacidad</a>
+            <Link to="/privacy" className="footer-bottom-link">Privacidad</Link>
             <span className="footer-bottom-sep">·</span>
-            <a href="#" className="footer-bottom-link">Términos</a>
+            <Link to="/terms" className="footer-bottom-link">Términos</Link>
             <span className="footer-bottom-sep">·</span>
-            <a href="#" className="footer-bottom-link">Cookies</a>
+            <Link to="/cookies" className="footer-bottom-link">Cookies</Link>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
             <button
