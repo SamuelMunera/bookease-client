@@ -129,7 +129,7 @@ export default function ProRegisterPage() {
             })}
           </div>
 
-          <div style={{ marginTop: 'var(--sp-8)', padding: 'var(--sp-4)', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--r-lg)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <div style={{ marginTop: 'var(--sp-8)', padding: 'var(--sp-4)', background: 'var(--surface-3)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               El dueño del negocio debe aprobarte antes de que quedes vinculado. Si quieres abrir tu propio local,
               <Link to="/register" style={{ color: 'var(--gold)', marginLeft: 4 }}>regístrate como dueño de negocio.</Link>

@@ -3673,6 +3673,48 @@ input, textarea, select { font-family: inherit; }
 [data-theme="light"] .detail-page { background: var(--bg); }
 [data-theme="light"] .detail-section-label { color: var(--text-muted); border-bottom-color: var(--border); }
 
+/* ── Business card hover ── */
+[data-theme="light"] .biz-card { border-color: var(--border-strong); }
+[data-theme="light"] .biz-card:hover {
+  box-shadow: 0 8px 24px rgba(14,13,26,0.1), 0 0 0 1px var(--gold-border), 0 0 20px var(--gold-glow);
+}
+
+/* ── Feat card hover ── */
+[data-theme="light"] .feat-card:hover {
+  box-shadow: 0 8px 24px rgba(14,13,26,0.1), 0 0 0 1px var(--gold-border);
+}
+
+/* ── Hero orbs: tone down in light mode ── */
+[data-theme="light"] .hero-orb { opacity: 0.35; }
+[data-theme="light"] .hero::before { opacity: 0.6; }
+[data-theme="light"] .hero::after { opacity: 0.5; }
+
+/* ── Footer newsletter input ── */
+[data-theme="light"] .footer-newsletter-input { background: var(--surface); border-color: var(--border-strong); }
+
+/* ── Footer stats block ── */
+[data-theme="light"] .footer-stats { background: var(--surface-2); border-color: var(--border-strong); }
+
+/* ── Social buttons ── */
+[data-theme="light"] .footer-social-btn { background: var(--surface-2); border-color: var(--border-strong); color: var(--text-muted); }
+
+/* ── Chip variants ── */
+[data-theme="light"] .chip:hover { border-color: var(--gold-border); }
+
+/* ── Profile stats ── */
+[data-theme="light"] .biz-hero-stat-sep { background: var(--border-strong); }
+
+/* ── Google auth button ── */
+[data-theme="light"] [class*="google-auth"], [data-theme="light"] button[style*="surface-2"] {
+  border-color: var(--border-strong);
+}
+
+/* ── Page container ── */
+[data-theme="light"] .page-sm { background: transparent; }
+
+/* ── Booking success ── */
+[data-theme="light"] .booking-success { background: var(--surface); }
+
 /* ─── General responsive touch-ups ─── */
 @media (max-width: 768px) {
   /* Auth pages */

@@ -408,7 +408,7 @@ export default function ProfessionalDashboardPage() {
     <div style={{ maxWidth: 960, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4)' }}>
 
       {/* ── Welcome header ── */}
-      <div style={{
+      <div className="pro-welcome-header" style={{
         background: 'linear-gradient(135deg, #1a1235 0%, #0D0D1E 100%)',
         border: '1px solid rgba(124,92,252,0.2)',
         borderRadius: 'var(--r-xl)',
@@ -443,8 +443,8 @@ export default function ProfessionalDashboardPage() {
           <div style={{ flex: 1 }}>
             {loadingProfile ? (
               <>
-                <div style={{ height: 22, width: 200, background: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 8 }} />
-                <div style={{ height: 14, width: 140, background: 'rgba(255,255,255,0.05)', borderRadius: 6 }} />
+                <div className="pro-skeleton-line" style={{ height: 22, width: 200, background: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 8 }} />
+                <div className="pro-skeleton-line" style={{ height: 14, width: 140, background: 'rgba(255,255,255,0.08)', borderRadius: 6 }} />
               </>
             ) : (
               <>
@@ -492,9 +492,9 @@ export default function ProfessionalDashboardPage() {
           <p style={{
             marginTop: 'var(--sp-4)',
             padding: 'var(--sp-3) var(--sp-4)',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--surface-3)',
             borderRadius: 'var(--r-md)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            border: '1px solid var(--border)',
             fontSize: 'var(--text-sm)', color: 'var(--text-muted)',
             lineHeight: 1.6, fontStyle: 'italic',
           }}>
