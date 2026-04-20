@@ -3768,6 +3768,27 @@ input, textarea, select { font-family: inherit; }
 /* ── Forgot password link variant ── */
 [data-theme="light"] .auth-forgot-link { color: var(--text-subtle); }
 
+/* ── Dark section (categories) ── */
+[data-theme="light"] .dark-section {
+  background: var(--surface-2);
+  border-top-color: var(--border-strong);
+  border-bottom-color: var(--border-strong);
+}
+
+/* ── Category tile overlay: remove dark vignette ── */
+[data-theme="light"] .cat-tile-overlay {
+  background: linear-gradient(to top, rgba(14,13,26,0.45) 0%, rgba(14,13,26,0.1) 50%, transparent 100%);
+}
+[data-theme="light"] .cat-tile { border-color: var(--border-strong); }
+[data-theme="light"] .cat-tile:hover { border-color: var(--gold-border); box-shadow: 0 8px 24px rgba(14,13,26,0.12), var(--shadow-gold); }
+
+/* ── Business card image label ── */
+[data-theme="light"] .biz-card-img-label {
+  background: rgba(255,255,255,0.75);
+  border-color: rgba(14,13,26,0.1);
+  color: var(--text-muted);
+}
+
 /* ─── General responsive touch-ups ─── */
 @media (max-width: 768px) {
   /* Auth pages */
