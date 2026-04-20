@@ -124,13 +124,13 @@ function BizHero({ business, stats }) {
 
         {/* ── Right: logo ── */}
         <div style={{
-          width: 200, height: 200, flexShrink: 0,
+          width: 280, height: 280, flexShrink: 0,
           borderRadius: 20,
           overflow: 'hidden',
           border: '2px solid rgba(255,255,255,0.12)',
           background: business.logoUrl ? 'transparent' : pal.bg,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 72, fontWeight: 800, color: pal.color,
+          fontSize: 96, fontWeight: 800, color: pal.color,
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
         }}>
           {business.logoUrl
