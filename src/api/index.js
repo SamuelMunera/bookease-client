@@ -13,6 +13,7 @@ async function request(path, options = {}) {
     },
     ...options,
   });
+  if (res.status === 204) return null;
   const text = await res.text();
   let data;
   try {
