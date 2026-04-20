@@ -35,7 +35,7 @@ export default function ProLoginPage() {
   return (
     <div className="auth-wrap">
       {/* Brand panel */}
-      <div className="auth-panel-brand" style={{ background: 'linear-gradient(160deg, #0D0D1E 0%, #1a1235 100%)' }}>
+      <div className="auth-panel-brand">
         <div className="auth-panel-brand-inner">
           <div className="auth-brand-logo">Book<span>ease</span></div>
           <p className="auth-brand-tagline" style={{ marginTop: 'var(--sp-4)' }}>
