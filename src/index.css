@@ -1896,7 +1896,7 @@ input, textarea, select { font-family: inherit; }
 .biz-hero {
   position: relative;
   overflow: hidden;
-  padding: var(--sp-20) var(--sp-6) var(--sp-10);
+  padding: 80px var(--sp-6) var(--sp-12);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   isolation: isolate;
@@ -1930,7 +1930,7 @@ input, textarea, select { font-family: inherit; }
 
 .biz-hero-breadcrumb {
   display: flex; align-items: center; gap: var(--sp-2);
-  margin-bottom: var(--sp-12);
+  margin-bottom: var(--sp-8);
 }
 .biz-hero-breadcrumb-sep { color: var(--text-dim); flex-shrink: 0; }
 
@@ -2606,7 +2606,7 @@ input, textarea, select { font-family: inherit; }
   .page { padding: var(--sp-5) var(--sp-4); }
   /* Detail page */
   .detail-page { padding: var(--sp-5) var(--sp-4); }
-  .biz-hero { padding: var(--sp-10) var(--sp-5) var(--sp-8); }
+  .biz-hero { padding: 56px var(--sp-5) var(--sp-8); }
   .booking-bar { padding: var(--sp-3) var(--sp-4); }
   /* Profile page */
   .prof-profile-hero { padding: var(--sp-8) 0 var(--sp-10); }
