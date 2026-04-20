@@ -99,13 +99,13 @@ function BizHero({ business, stats }) {
             <div className="biz-hero-stat">
               <span className="biz-hero-stat-num">{avgRating.toFixed(1)}</span>
               <span className="biz-hero-stat-label">
-                <Stars rating={avgRating} /> {reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
+                <Stars rating={avgRating} />&nbsp;{reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
               </span>
             </div>
           ) : (
             <div className="biz-hero-stat">
-              <span className="biz-hero-stat-num" style={{ fontSize:'var(--text-base)', color:'var(--text-muted)' }}>Sin reseñas</span>
-              <span className="biz-hero-stat-label">Calificación</span>
+              <span className="biz-hero-stat-num">—</span>
+              <span className="biz-hero-stat-label">Sin reseñas</span>
             </div>
           )}
           <div className="biz-hero-stat-sep" />
