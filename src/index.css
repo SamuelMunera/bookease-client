@@ -1896,7 +1896,7 @@ input, textarea, select { font-family: inherit; }
 .biz-hero {
   position: relative;
   overflow: hidden;
-  padding: var(--sp-12) var(--sp-6) var(--sp-10);
+  padding: var(--sp-20) var(--sp-6) var(--sp-10);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   isolation: isolate;
