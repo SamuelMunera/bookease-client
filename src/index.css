@@ -4094,3 +4094,8 @@ input, textarea, select { font-family: inherit; }
   .legal-cookie-row > span { border-right: none; border-bottom: 1px solid var(--border); }
   .legal-cookie-row > span:last-child { border-bottom: none; }
 }
+
+/* ── Location button label – hide on very small screens ── */
+@media (max-width: 480px) {
+  .loc-btn-label { display: none; }
+}
