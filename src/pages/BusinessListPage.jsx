@@ -89,8 +89,9 @@ function FeaturedCard({ b, badge, onClick }) {
             <span className="rating-num">{b.rating}</span>
             <span className="rating-count">({b.reviewCount})</span>
           </div>
-          <div className="biz-card-arrow">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="biz-card-cta">
+            Reservar
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </div>
@@ -484,8 +485,11 @@ export default function BusinessListPage() {
                           {b.services?.length > 0 ? `${b.services.length} servicio${b.services.length!==1?'s':''}` : ''}
                           {b.professionals?.length > 0 ? ` · ${b.professionals.length} profesional${b.professionals.length!==1?'es':''}` : ''}
                         </p>
-                        <div className="biz-card-arrow">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        <div className="biz-card-cta">
+                          Reservar
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                          </svg>
                         </div>
                       </div>
                     </div>
