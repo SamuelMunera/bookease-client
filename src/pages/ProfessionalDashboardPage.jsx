@@ -89,6 +89,7 @@ function ProTimelineRow({ b }) {
           <div>
             <p className="agenda-client-name">{b.client?.name ?? 'Cliente'}</p>
             <p className="agenda-client-email">{b.client?.email ?? ''}</p>
+            {b.client?.phone && <p className="agenda-client-email">{b.client.phone}</p>}
           </div>
         </div>
       </div>

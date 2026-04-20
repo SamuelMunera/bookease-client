@@ -130,6 +130,7 @@ function TimelineRow({ b, onConfirm, onCancel }) {
           <div>
             <p className="agenda-client-name">{b.client.name}</p>
             <p className="agenda-client-email">{b.client.email}</p>
+            {b.client.phone && <p className="agenda-client-email">{b.client.phone}</p>}
           </div>
         </div>
 
