@@ -1930,7 +1930,7 @@ input, textarea, select { font-family: inherit; }
 
 .biz-hero-breadcrumb {
   display: flex; align-items: center; gap: var(--sp-2);
-  margin-bottom: var(--sp-7);
+  margin-bottom: var(--sp-12);
 }
 .biz-hero-breadcrumb-sep { color: var(--text-dim); flex-shrink: 0; }
 
