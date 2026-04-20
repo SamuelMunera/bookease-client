@@ -17,9 +17,20 @@ const HAS_GOOGLE = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar con Google', onError }) {
   if (!HAS_GOOGLE) return null;
+
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [phoneState, setPhoneState] = useState(null); // { data, phone }
+  const [phoneError, setPhoneError] = useState('');
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  function getRedirect(user, isNew) {
+    if (user.role === 'BUSINESS_OWNER' && isNew) return '/register-business';
+    if (user.role === 'PROFESSIONAL') return '/pro/dashboard';
+    if (user.role === 'BUSINESS_OWNER') return '/dashboard';
+    return '/';
+  }
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -27,14 +38,10 @@ export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar c
       try {
         const data = await api.googleAuth(tokenResponse.access_token, role);
         login(data);
-        if (data.user.role === 'BUSINESS_OWNER' && data.isNew) {
-          navigate('/register-business');
-        } else if (data.user.role === 'PROFESSIONAL') {
-          navigate('/pro/dashboard');
-        } else if (data.user.role === 'BUSINESS_OWNER') {
-          navigate('/dashboard');
+        if (data.isNew) {
+          setPhoneState({ data, phone: '' });
         } else {
-          navigate('/');
+          navigate(getRedirect(data.user, false));
         }
       } catch (err) {
         onError?.(err.message || 'Error al autenticar con Google');
@@ -44,6 +51,60 @@ export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar c
     },
     onError: () => onError?.('Error al conectar con Google'),
   });
+
+  async function handlePhoneSubmit(e) {
+    e.preventDefault();
+    const phone = phoneState.phone.trim();
+    if (!phone) { setPhoneError('El teléfono es obligatorio'); return; }
+    setSavingPhone(true);
+    try {
+      await api.updateMe({ phone });
+      navigate(getRedirect(phoneState.data.user, true));
+    } catch {
+      navigate(getRedirect(phoneState.data.user, true));
+    } finally {
+      setSavingPhone(false);
+    }
+  }
+
+  if (phoneState) {
+    return (
+      <form onSubmit={handlePhoneSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
+          padding: 'var(--sp-2) var(--sp-3)',
+          background: 'rgba(52,168,83,0.08)', border: '1px solid rgba(52,168,83,0.25)',
+          borderRadius: 'var(--r-md)', fontSize: 'var(--text-xs)', color: '#34A853',
+        }}>
+          <IconGoogle />
+          Cuenta creada con Google
+        </div>
+        <div className="form-group" style={{ margin: 0 }}>
+          <label className="form-label" htmlFor="google-phone">
+            Teléfono de contacto
+          </label>
+          <input
+            id="google-phone"
+            className={`input${phoneError ? ' input-error' : ''}`}
+            type="tel"
+            placeholder="+57 300 000 0000"
+            value={phoneState.phone}
+            onChange={e => { setPhoneState(s => ({ ...s, phone: e.target.value })); setPhoneError(''); }}
+            autoComplete="tel"
+            autoFocus
+          />
+          {phoneError && <p className="field-error">{phoneError}</p>}
+        </div>
+        <button
+          type="submit"
+          className="btn btn-primary btn-lg btn-full"
+          disabled={savingPhone}
+        >
+          {savingPhone ? 'Guardando...' : 'Continuar'}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <button

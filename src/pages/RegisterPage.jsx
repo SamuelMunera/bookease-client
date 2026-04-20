@@ -134,20 +134,19 @@ export default function RegisterPage() {
               />
             </div>
 
-            {form.role === 'CLIENT' && (
-              <div className="form-group">
-                <label className="form-label" htmlFor="phone">Teléfono</label>
-                <input
-                  id="phone"
-                  className="input"
-                  type="tel"
-                  placeholder="+57 300 000 0000"
-                  value={form.phone}
-                  onChange={set('phone')}
-                  autoComplete="tel"
-                />
-              </div>
-            )}
+            <div className="form-group">
+              <label className="form-label" htmlFor="phone">Teléfono</label>
+              <input
+                id="phone"
+                className="input"
+                type="tel"
+                placeholder="+57 300 000 0000"
+                value={form.phone}
+                onChange={set('phone')}
+                required
+                autoComplete="tel"
+              />
+            </div>
 
             <div className="form-group">
               <label className="form-label">Tipo de cuenta</label>

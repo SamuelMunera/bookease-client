@@ -29,6 +29,7 @@ const api = {
   // Auth
   register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  updateMe: (body) => request('/auth/me', { method: 'PATCH', body: JSON.stringify(body) }),
 
   // Businesses
   getBusinesses: (params = {}) => request(`/businesses?${new URLSearchParams(params)}`),
