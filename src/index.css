@@ -3201,6 +3201,21 @@ input, textarea, select { font-family: inherit; }
   .detail-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Pro dashboard agenda context resets ── */
+.pro-agenda .agenda-header { padding: 0; max-width: none; margin: 0 0 var(--sp-6); }
+.pro-agenda .agenda-controls { margin-bottom: var(--sp-5); }
+.pro-agenda .agenda-row-card { flex: 1; }
+
+@media (max-width: 768px) {
+  .pro-agenda .agenda-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .pro-agenda .agenda-time-col { min-width: 52px; }
+}
+@media (max-width: 480px) {
+  .pro-agenda .agenda-stats-row { grid-template-columns: 1fr 1fr; }
+  .pro-agenda .agenda-timeline-row { flex-wrap: wrap; }
+  .pro-agenda .agenda-vline { display: none; }
+}
+
 /* ══════════════════════════════════════════════════════════
    BOOKING PAGE — SLOTS & CTA
    ══════════════════════════════════════════════════════════ */

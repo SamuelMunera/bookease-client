@@ -1148,7 +1148,7 @@ export default function ProfessionalDashboardPage() {
         const aConfirmed = agendaBookings.filter(b => b.status === 'CONFIRMED');
         const aCancelled = agendaBookings.filter(b => b.status === 'CANCELLED');
         return (
-          <>
+          <div className="pro-agenda">
             {/* Header */}
             <div className="agenda-header">
               <div>
@@ -1230,7 +1230,7 @@ export default function ProfessionalDashboardPage() {
                 {agendaBookings.map(b => <ProTimelineRow key={b.id} b={b} />)}
               </div>
             )}
-          </>
+          </div>
         );
       })()}
 
