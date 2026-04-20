@@ -49,17 +49,21 @@ function BizHero({ business, stats }) {
   return (
     <div className="biz-hero biz-hero--detail">
       <div className="biz-hero-inner">
-        <Link to="/" className="biz-hero-back">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        <div className="biz-hero-breadcrumb">
+          <Link to="/" className="biz-hero-back">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Inicio
+          </Link>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="biz-hero-breadcrumb-sep">
+            <path d="M9 18l6-6-6-6"/>
           </svg>
-          Inicio
-        </Link>
-
-        <p className="biz-hero-cat">
-          <span className="biz-hero-cat-dot" />
-          {CAT_LABEL[business.category] || business.category}
-        </p>
+          <span className="biz-hero-cat">
+            <span className="biz-hero-cat-dot" />
+            {CAT_LABEL[business.category] || business.category}
+          </span>
+        </div>
 
         <h1 className="biz-hero-name">
           {business.name.split(' ').slice(0, -1).join(' ')}{' '}
