@@ -3,6 +3,99 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
+/* ── Agenda helpers ─────────────────────────────────────── */
+const AGENDA_DAYS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const AGENDA_MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function fmtAgendaFull(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${AGENDA_DAYS[d.getDay()]} ${d.getDate()} de ${AGENDA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+function isAgendaToday(dateStr) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  return new Date(dateStr + 'T00:00:00').getTime() === t.getTime();
+}
+
+const AGENDA_STATUS_BADGE = { CONFIRMED:'badge-confirmed', PENDING:'badge-pending', CANCELLED:'badge-cancelled', COMPLETED:'badge-confirmed' };
+const AGENDA_STATUS_LABEL = { CONFIRMED:'Confirmada', PENDING:'Pendiente', CANCELLED:'Cancelada', COMPLETED:'Completada' };
+
+function AgendaDateNav({ value, onChange }) {
+  const today = new Date().toISOString().split('T')[0];
+  function shift(days) {
+    const d = new Date(value + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    onChange(d.toISOString().split('T')[0]);
+  }
+  return (
+    <div className="agenda-date-nav">
+      <button className="agenda-nav-arrow" onClick={() => shift(-1)} aria-label="Día anterior">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div className="agenda-date-input-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="2">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <input type="date" className="agenda-date-input" value={value} onChange={e => onChange(e.target.value)} />
+      </div>
+      <button className="agenda-nav-arrow" onClick={() => shift(1)} aria-label="Día siguiente">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      {value !== today && (
+        <button className="btn btn-secondary btn-sm" onClick={() => onChange(today)}>Hoy</button>
+      )}
+    </div>
+  );
+}
+
+function AgendaStatCard({ num, label, color, icon }) {
+  return (
+    <div className="agenda-stat-card" style={{ borderTopColor: color }}>
+      <div className="agenda-stat-icon" style={{ color, background: `${color}18` }}>{icon}</div>
+      <p className="agenda-stat-num" style={{ color }}>{num}</p>
+      <p className="agenda-stat-label">{label}</p>
+    </div>
+  );
+}
+
+function ProTimelineRow({ b }) {
+  const statusColor = { CONFIRMED:'var(--success)', PENDING:'var(--warning)', CANCELLED:'var(--text-subtle)', COMPLETED:'var(--text-muted)' }[b.status] ?? 'var(--text-subtle)';
+  return (
+    <div className={`agenda-timeline-row${b.status === 'CANCELLED' ? ' cancelled' : ''}`}>
+      <div className="agenda-time-col">
+        <div className="agenda-time-dot" style={{ background: statusColor, boxShadow: b.status !== 'CANCELLED' ? `0 0 8px ${statusColor}` : 'none' }} />
+        <span className="agenda-time-label">{b.startTime}</span>
+        {b.endTime && <span className="agenda-time-end">{b.endTime}</span>}
+      </div>
+      <div className="agenda-vline" style={{ borderLeftColor: b.status === 'CANCELLED' ? 'var(--border)' : statusColor + '40' }} />
+      <div className="agenda-row-card">
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'var(--sp-3)', flexWrap:'wrap', marginBottom:'var(--sp-3)' }}>
+          <div>
+            <p className="agenda-row-service">{b.service?.name ?? '—'}</p>
+            <div className="agenda-row-meta">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              {b.startTime}{b.endTime ? `–${b.endTime}` : ''}
+              {b.service?.duration && <><span className="agenda-meta-sep">·</span>{b.service.duration} min</>}
+            </div>
+          </div>
+          <span className={`badge ${AGENDA_STATUS_BADGE[b.status] ?? 'badge-pending'}`}>
+            {AGENDA_STATUS_LABEL[b.status] ?? b.status}
+          </span>
+        </div>
+        <div className="agenda-client-row">
+          <div className="agenda-client-avatar">{b.client?.name?.[0]?.toUpperCase() ?? '?'}</div>
+          <div>
+            <p className="agenda-client-name">{b.client?.name ?? 'Cliente'}</p>
+            <p className="agenda-client-email">{b.client?.email ?? ''}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function JoinCodeForm({ joinCode, setJoinCode, onSend, loading, error }) {
   return (
     <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
@@ -178,6 +271,9 @@ export default function ProfessionalDashboardPage() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoMsg, setPhotoMsg] = useState('');
   const galleryInputRef = useRef(null);
+
+  // Agenda tab
+  const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().split('T')[0]);
 
   // Schedule
   const [weekOffset, setWeekOffset]     = useState(0);
@@ -505,7 +601,7 @@ export default function ProfessionalDashboardPage() {
 
       {/* ── Tab navigation ── */}
       <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)', borderBottom: '1px solid var(--border)' }}>
-        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
+        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'agenda', label: 'Agenda' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
@@ -1042,6 +1138,101 @@ export default function ProfessionalDashboardPage() {
       }
 
       </>)} {/* end dashboard tab */}
+
+      {/* ── Agenda tab ── */}
+      {activeTab === 'agenda' && (() => {
+        const agendaBookings = [...bookings]
+          .filter(b => b.date?.startsWith(agendaDate))
+          .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''));
+        const aPending   = agendaBookings.filter(b => b.status === 'PENDING');
+        const aConfirmed = agendaBookings.filter(b => b.status === 'CONFIRMED');
+        const aCancelled = agendaBookings.filter(b => b.status === 'CANCELLED');
+        return (
+          <>
+            {/* Header */}
+            <div className="agenda-header">
+              <div>
+                <p className="section-label">Panel profesional</p>
+                <h2 className="page-title">Agenda</h2>
+                <p className="page-subtitle" style={{ textTransform:'capitalize' }}>
+                  {agendaDate ? fmtAgendaFull(agendaDate) : 'Selecciona una fecha'}
+                </p>
+              </div>
+              {isAgendaToday(agendaDate) && (
+                <div className="agenda-today-pill">
+                  <span className="agenda-today-dot" />
+                  Hoy
+                </div>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="agenda-controls">
+              <AgendaDateNav value={agendaDate} onChange={setAgendaDate} />
+            </div>
+
+            {/* Stats */}
+            {!loadingBookings && agendaBookings.length > 0 && (
+              <div className="agenda-stats-row">
+                <AgendaStatCard num={agendaBookings.length} label="Total" color="var(--text-muted)"
+                  icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+                />
+                <AgendaStatCard num={aPending.length} label="Pendientes" color="var(--warning)"
+                  icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                />
+                <AgendaStatCard num={aConfirmed.length} label="Confirmadas" color="var(--success)"
+                  icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>}
+                />
+                {aCancelled.length > 0 && (
+                  <AgendaStatCard num={aCancelled.length} label="Canceladas" color="var(--text-subtle)"
+                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Loading */}
+            {loadingBookings && (
+              <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-4)', marginTop:'var(--sp-4)' }}>
+                {[1,2,3].map(n => (
+                  <div key={n} style={{ display:'flex', gap:'var(--sp-4)', alignItems:'flex-start' }}>
+                    <div className="skeleton" style={{ width:60, height:60, borderRadius:'var(--r-lg)', flexShrink:0 }} />
+                    <div style={{ flex:1, display:'flex', flexDirection:'column', gap:'var(--sp-2)' }}>
+                      <div className="skeleton" style={{ height:16, width:'50%', borderRadius:'var(--r-sm)' }} />
+                      <div className="skeleton" style={{ height:12, width:'70%', borderRadius:'var(--r-sm)' }} />
+                      <div className="skeleton" style={{ height:60, width:'100%', borderRadius:'var(--r-lg)', marginTop:'var(--sp-1)' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty */}
+            {!loadingBookings && agendaBookings.length === 0 && (
+              <div className="empty-state" style={{ marginTop:'var(--sp-6)' }}>
+                <div className="empty-state-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </div>
+                <p style={{ fontSize:'var(--text-base)', fontWeight:600, color:'var(--text)', marginBottom:'var(--sp-2)' }}>
+                  Sin citas para esta fecha
+                </p>
+                <p style={{ fontSize:'var(--text-sm)' }}>Tus reservas aparecerán aquí cuando las tengas.</p>
+              </div>
+            )}
+
+            {/* Timeline */}
+            {!loadingBookings && agendaBookings.length > 0 && (
+              <div className="agenda-timeline">
+                {agendaBookings.map(b => <ProTimelineRow key={b.id} b={b} />)}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* ── Perfil tab ── */}
       {activeTab === 'perfil' && profileForm && (
