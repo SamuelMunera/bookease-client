@@ -115,6 +115,7 @@ export default function ProfessionalProfilePage() {
   const [notFound, setNotFound] = useState(false);
   const [stats,    setStats]   = useState(null);
   const [reviews,  setReviews] = useState([]);
+  const [homeServices, setHomeServices] = useState([]);
   const [canReview, setCanReview] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [reviewError, setReviewError] = useState('');
@@ -132,6 +133,9 @@ export default function ProfessionalProfilePage() {
         setProf(data);
         setStats(profStats);
         setReviews(profReviews || []);
+        if (data.offersHomeService) {
+          api.getProfessionalHomeServices(id).then(setHomeServices).catch(() => {});
+        }
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -157,6 +161,11 @@ export default function ProfessionalProfilePage() {
   const firstName = prof.name.split(' ')[0];
   const bizId     = prof.business?.id;
   const bizName   = prof.business?.name;
+
+  const coverageCities = (() => {
+    try { return JSON.parse(prof.homeServiceArea || '{}').cities || []; }
+    catch { return []; }
+  })();
 
   function handleBook() {
     if (!user) return navigate('/login');
@@ -201,11 +210,15 @@ export default function ProfessionalProfilePage() {
                 )}
               </div>
               <h1 className="prof-profile-name">{prof.name}</h1>
-              {bizName && (
+              {bizName ? (
                 <p className="prof-profile-role" style={{ color: 'var(--text-muted)' }}>
                   {bizName}
                 </p>
-              )}
+              ) : prof.specialty ? (
+                <p className="prof-profile-role" style={{ color: 'var(--text-muted)' }}>
+                  {prof.specialty}
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -283,6 +296,51 @@ export default function ProfessionalProfilePage() {
           <section className="prof-profile-section">
             <h2 className="prof-profile-section-title">Sobre {firstName}</h2>
             <p className="prof-profile-about">{prof.bio}</p>
+          </section>
+        )}
+
+        {/* ── Servicios a domicilio ── */}
+        {prof.offersHomeService && homeServices.length > 0 && (
+          <section className="prof-profile-section">
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginBottom:'var(--sp-4)' }}>
+              <h2 className="prof-profile-section-title" style={{ margin:0 }}>Servicios a domicilio</h2>
+              <span className="home-service-badge">
+                <IconHome />
+                {coverageCities.length > 0 ? coverageCities.join(', ') : 'Toda la ciudad'}
+              </span>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-2)' }}>
+              {homeServices.map(svc => (
+                <div key={svc.id} style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'var(--sp-4) var(--sp-5)',
+                  background:'var(--surface)', border:'1px solid var(--border)',
+                  borderRadius:'var(--r-xl)',
+                }}>
+                  <div>
+                    <p style={{ margin:0, fontWeight:700, fontSize:'var(--text-sm)', color:'var(--text)' }}>{svc.name}</p>
+                    {svc.description && (
+                      <p style={{ margin:'2px 0 0', fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>{svc.description}</p>
+                    )}
+                    <p style={{ margin:'4px 0 0', fontSize:'var(--text-xs)', color:'var(--text-subtle)' }}>{svc.duration} min</p>
+                  </div>
+                  <div style={{ textAlign:'right', flexShrink:0, marginLeft:'var(--sp-4)' }}>
+                    <p style={{ margin:0, fontWeight:700, fontSize:'var(--text-base)', color:'var(--gold)' }}>
+                      ${Number(svc.price).toLocaleString('es-CO')}
+                    </p>
+                    {svc.surcharge && Number(svc.surcharge) > 0 && (
+                      <p style={{ margin:0, fontSize:10, color:'var(--text-subtle)' }}>
+                        +${Number(svc.surcharge).toLocaleString('es-CO')} domicilio
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-primary" style={{ marginTop:'var(--sp-4)' }} onClick={handleBookHome}>
+              <IconHome />
+              Reservar a domicilio
+            </button>
           </section>
         )}
 
