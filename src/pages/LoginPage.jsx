@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import GoogleAuthButton from '../components/GoogleAuthButton';
@@ -14,6 +14,7 @@ const BRAND_FEATURES = [
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,8 +26,9 @@ export default function LoginPage() {
     try {
       const data = await api.login(form);
       login(data);
-      const dest = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard', CLIENT: '/' };
-      navigate(dest[data.user.role] || '/');
+      const from = location.state?.from;
+      const roleDest = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard', CLIENT: '/' };
+      navigate(from || roleDest[data.user.role] || '/');
     } catch (err) {
       setError(err.message);
     } finally {

@@ -164,7 +164,7 @@ export default function ProfessionalProfilePage() {
   }
 
   function handleBookHome() {
-    if (!user) return navigate('/login');
+    if (!user) return navigate('/login', { state: { from: `/professionals/${prof.id}/book-home` } });
     navigate(`/professionals/${prof.id}/book-home`);
   }
 

@@ -48,7 +48,7 @@ export default function App() {
             <Route path="professionals" element={<Navigate to="/?section=pros" replace />} />
             <Route path="professionals/:id" element={<ProfessionalProfilePage />} />
             <Route path="professionals/:professionalId/book-home" element={
-              <ProtectedRoute role="CLIENT"><HomeBookingPage /></ProtectedRoute>
+              <ProtectedRoute><HomeBookingPage /></ProtectedRoute>
             } />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
