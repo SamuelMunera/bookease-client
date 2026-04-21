@@ -51,10 +51,10 @@ function BizHero({ business, stats }) {
 
   return (
     <div className="biz-hero biz-hero--detail">
-      <div className="biz-hero-inner" style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-8)' }}>
+      <div className="biz-hero-inner">
 
         {/* ── Left: text content ── */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="biz-hero-text">
           <div className="biz-hero-breadcrumb">
             <Link to="/" className="biz-hero-back">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -123,18 +123,12 @@ function BizHero({ business, stats }) {
         </div>
 
         {/* ── Right: logo ── */}
-        <div style={{
-          width: 340, height: 340, flexShrink: 0,
-          borderRadius: 20,
-          overflow: 'hidden',
-          border: '2px solid rgba(255,255,255,0.12)',
+        <div className="biz-hero-logo" style={{
           background: business.logoUrl ? 'transparent' : pal.bg,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 120, fontWeight: 800, color: pal.color,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          color: pal.color,
         }}>
           {business.logoUrl
-            ? <img src={business.logoUrl} alt={business.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ? <img src={business.logoUrl} alt={business.name} />
             : business.name[0].toUpperCase()
           }
         </div>
