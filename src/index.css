@@ -3291,6 +3291,31 @@ html { scroll-padding-top: 68px; }
 }
 .booking-slots-empty span { font-size: var(--text-xs); color: var(--text-dim); }
 
+.booking-section-card--active {
+  border-color: var(--gold-border) !important;
+  background: var(--gold-subtle) !important;
+  box-shadow: 0 0 0 1px var(--gold-border);
+}
+
+.booking-error {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--error-bg, rgba(239,68,68,.08));
+  border: 1px solid var(--error-border, rgba(239,68,68,.2));
+  border-radius: var(--r-lg);
+  color: var(--error, #ef4444);
+  font-size: var(--text-sm);
+}
+
+.input-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: var(--sp-1);
+  letter-spacing: 0.03em;
+}
+
 /* Selected slot card */
 .slot-selected-card {
   display: flex; align-items: center; gap: var(--sp-3);
