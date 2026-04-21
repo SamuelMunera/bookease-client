@@ -273,6 +273,21 @@ export default function ProfessionalDashboardPage() {
   const [photoMsg, setPhotoMsg] = useState('');
   const galleryInputRef = useRef(null);
 
+  // Home service tab
+  const [homeConfig, setHomeConfig] = useState(null);
+  const [homeConfigSaving, setHomeConfigSaving] = useState(false);
+  const [homeConfigMsg, setHomeConfigMsg] = useState('');
+  const [homeServices, setHomeServices] = useState([]);
+  const [homeServicesLoaded, setHomeServicesLoaded] = useState(false);
+  const [homeServiceForm, setHomeServiceForm] = useState(null); // null | {} | { id, ...existing }
+  const [homeServiceSaving, setHomeServiceSaving] = useState(false);
+  const [homeServiceMsg, setHomeServiceMsg] = useState('');
+  const [homeSchedule, setHomeSchedule] = useState([0,1,2,3,4,5,6].map(d => ({
+    dayOfWeek: d, startTime: '09:00', endTime: '18:00', isActive: false,
+  })));
+  const [homeScheduleSaving, setHomeScheduleSaving] = useState(false);
+  const [homeScheduleMsg, setHomeScheduleMsg] = useState('');
+
   // Agenda tab
   const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().split('T')[0]);
 
@@ -335,6 +350,72 @@ export default function ProfessionalDashboardPage() {
       })
       .catch(() => {});
   }, [weekOffset]);
+
+  useEffect(() => {
+    if (activeTab !== 'domicilio' || homeServicesLoaded) return;
+    Promise.all([
+      api.getHomeConfig().catch(() => null),
+      api.getMyHomeServices().catch(() => []),
+      api.getMyHomeSchedule().catch(() => []),
+    ]).then(([cfg, svcs, sched]) => {
+      if (cfg) setHomeConfig(cfg);
+      setHomeServices(Array.isArray(svcs) ? svcs : []);
+      if (Array.isArray(sched) && sched.length > 0) {
+        setHomeSchedule(prev => prev.map(row => {
+          const found = sched.find(s => s.dayOfWeek === row.dayOfWeek);
+          return found ? { ...found } : row;
+        }));
+      }
+      setHomeServicesLoaded(true);
+    });
+  }, [activeTab, homeServicesLoaded]);
+
+  async function saveHomeConfig() {
+    setHomeConfigSaving(true); setHomeConfigMsg('');
+    try {
+      const updated = await api.updateHomeConfig(homeConfig);
+      setHomeConfig(updated);
+      setHomeConfigMsg('Guardado');
+    } catch { setHomeConfigMsg('Error al guardar'); }
+    finally { setHomeConfigSaving(false); setTimeout(() => setHomeConfigMsg(''), 2500); }
+  }
+
+  async function saveHomeService(e) {
+    e.preventDefault();
+    setHomeServiceSaving(true); setHomeServiceMsg('');
+    try {
+      if (homeServiceForm.id) {
+        const updated = await api.updateHomeService(homeServiceForm.id, homeServiceForm);
+        setHomeServices(prev => prev.map(s => s.id === updated.id ? updated : s));
+      } else {
+        const created = await api.createHomeService(homeServiceForm);
+        setHomeServices(prev => [...prev, created]);
+      }
+      setHomeServiceForm(null);
+      setHomeServiceMsg('Guardado');
+    } catch (err) { setHomeServiceMsg(err.message); }
+    finally { setHomeServiceSaving(false); setTimeout(() => setHomeServiceMsg(''), 3000); }
+  }
+
+  async function deleteHomeService(id) {
+    try {
+      await api.deleteHomeService(id);
+      setHomeServices(prev => prev.filter(s => s.id !== id));
+    } catch {}
+  }
+
+  async function saveHomeSchedule() {
+    setHomeScheduleSaving(true); setHomeScheduleMsg('');
+    try {
+      const updated = await api.setMyHomeSchedule(homeSchedule);
+      if (Array.isArray(updated)) setHomeSchedule(prev => prev.map(row => {
+        const found = updated.find(s => s.dayOfWeek === row.dayOfWeek);
+        return found ? { ...found } : row;
+      }));
+      setHomeScheduleMsg('Guardado');
+    } catch { setHomeScheduleMsg('Error al guardar'); }
+    finally { setHomeScheduleSaving(false); setTimeout(() => setHomeScheduleMsg(''), 2500); }
+  }
 
   async function sendJoinRequest() {
     if (!joinCode.trim()) return;
@@ -602,7 +683,7 @@ export default function ProfessionalDashboardPage() {
 
       {/* ── Tab navigation ── */}
       <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)', borderBottom: '1px solid var(--border)' }}>
-        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'agenda', label: 'Agenda' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
+        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'agenda', label: 'Agenda' }, { key: 'domicilio', label: 'A domicilio' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
@@ -1234,6 +1315,204 @@ export default function ProfessionalDashboardPage() {
           </div>
         );
       })()}
+
+      {/* ── A domicilio tab ── */}
+      {activeTab === 'domicilio' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+
+          {/* Toggle home service */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-4)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              Configuración de servicios a domicilio
+            </h3>
+            {!homeConfig ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando…</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={homeConfig.offersHomeService ?? false}
+                    onChange={e => setHomeConfig(c => ({ ...c, offersHomeService: e.target.checked }))}
+                    style={{ width: 18, height: 18, accentColor: 'var(--accent)' }}
+                  />
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
+                    Ofrecer servicios a domicilio
+                  </span>
+                </label>
+
+                <div>
+                  <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                    Ciudades que cubro (separadas por coma)
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={(homeConfig.homeServiceArea?.cities ?? []).join(', ')}
+                    onChange={e => {
+                      const cities = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                      setHomeConfig(c => ({ ...c, homeServiceArea: { ...(c.homeServiceArea ?? {}), cities } }));
+                    }}
+                    placeholder="Ej: Medellín, Bello, Itagüí"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                    Nota para clientes (opcional)
+                  </label>
+                  <textarea
+                    className="input"
+                    value={homeConfig.homeServiceNotes ?? ''}
+                    onChange={e => setHomeConfig(c => ({ ...c, homeServiceNotes: e.target.value }))}
+                    rows={2}
+                    placeholder="Ej: Atiendo con cita previa. Incluye materiales."
+                    style={{ width: '100%', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                  <button className="btn btn-primary" onClick={saveHomeConfig} disabled={homeConfigSaving} style={{ background: 'var(--violet)' }}>
+                    {homeConfigSaving ? 'Guardando…' : 'Guardar configuración'}
+                  </button>
+                  {homeConfigMsg && <span style={{ fontSize: 'var(--text-sm)', color: homeConfigMsg.startsWith('Error') ? 'var(--red)' : 'var(--success)' }}>{homeConfigMsg}</span>}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Home services catalog */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: 0 }}>Servicios a domicilio</h3>
+              {!homeServiceForm && (
+                <button className="btn btn-secondary btn-sm" onClick={() => setHomeServiceForm({ name: '', description: '', duration: 60, price: '', surcharge: '' })}>
+                  + Nuevo servicio
+                </button>
+              )}
+            </div>
+
+            {homeServiceForm && (
+              <form onSubmit={saveHomeService} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)', padding: 'var(--sp-4)', background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>
+                <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', margin: 0, color: 'var(--text)' }}>
+                  {homeServiceForm.id ? 'Editar servicio' : 'Nuevo servicio a domicilio'}
+                </p>
+                {[
+                  { key: 'name', label: 'Nombre', type: 'text', required: true },
+                  { key: 'description', label: 'Descripción (opcional)', type: 'text' },
+                  { key: 'duration', label: 'Duración (min)', type: 'number', required: true },
+                  { key: 'price', label: 'Precio base ($)', type: 'number', required: true },
+                  { key: 'surcharge', label: 'Recargo domicilio ($, opcional)', type: 'number' },
+                ].map(({ key, label, type, required }) => (
+                  <div key={key}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 3 }}>{label}</label>
+                    <input
+                      type={type} required={!!required} className="input"
+                      value={homeServiceForm[key] ?? ''}
+                      onChange={e => setHomeServiceForm(f => ({ ...f, [key]: e.target.value }))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <button type="submit" className="btn btn-primary" disabled={homeServiceSaving} style={{ background: 'var(--violet)' }}>
+                    {homeServiceSaving ? 'Guardando…' : 'Guardar'}
+                  </button>
+                  <button type="button" className="btn btn-ghost" onClick={() => setHomeServiceForm(null)}>Cancelar</button>
+                  {homeServiceMsg && <span style={{ fontSize: 'var(--text-sm)', color: homeServiceMsg.startsWith('Error') || homeServiceMsg === 'Error al guardar' ? 'var(--red)' : 'var(--success)' }}>{homeServiceMsg}</span>}
+                </div>
+              </form>
+            )}
+
+            {homeServices.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Aún no tienes servicios a domicilio.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                {homeServices.map(svc => (
+                  <div key={svc.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                    padding: 'var(--sp-3) var(--sp-4)', background: 'var(--surface)',
+                    border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>{svc.name}</p>
+                      <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                        {svc.duration} min · ${Number(svc.price).toLocaleString('es-CO')}
+                        {svc.surcharge && Number(svc.surcharge) > 0 && ` + $${Number(svc.surcharge).toLocaleString('es-CO')} domicilio`}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 'var(--text-xs)', padding: '2px 8px', borderRadius: 'var(--r-full)', background: svc.isActive ? 'rgba(34,197,94,.1)' : 'rgba(100,100,120,.1)', color: svc.isActive ? 'var(--success)' : 'var(--text-muted)' }}>
+                      {svc.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setHomeServiceForm({ ...svc, price: String(svc.price), surcharge: String(svc.surcharge ?? '') })}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ color: 'var(--red)' }}
+                      onClick={() => deleteHomeService(svc.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Home schedule */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-4)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+              Horario para servicios a domicilio
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+              {homeSchedule.map((day, i) => (
+                <div key={day.dayOfWeek} style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 120, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={day.isActive}
+                      onChange={e => setHomeSchedule(prev => prev.map((d, j) => j === i ? { ...d, isActive: e.target.checked } : d))}
+                      style={{ accentColor: 'var(--accent)' }}
+                    />
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: day.isActive ? 600 : 400, color: day.isActive ? 'var(--text)' : 'var(--text-muted)' }}>
+                      {DAYS_LABEL[day.dayOfWeek]}
+                    </span>
+                  </label>
+                  {day.isActive && (
+                    <>
+                      <input
+                        type="time" className="input"
+                        value={day.startTime}
+                        onChange={e => setHomeSchedule(prev => prev.map((d, j) => j === i ? { ...d, startTime: e.target.value } : d))}
+                        style={{ width: 110 }}
+                      />
+                      <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>–</span>
+                      <input
+                        type="time" className="input"
+                        value={day.endTime}
+                        onChange={e => setHomeSchedule(prev => prev.map((d, j) => j === i ? { ...d, endTime: e.target.value } : d))}
+                        style={{ width: 110 }}
+                      />
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
+              <button className="btn btn-primary" onClick={saveHomeSchedule} disabled={homeScheduleSaving} style={{ background: 'var(--violet)' }}>
+                {homeScheduleSaving ? 'Guardando…' : 'Guardar horario'}
+              </button>
+              {homeScheduleMsg && <span style={{ fontSize: 'var(--text-sm)', color: homeScheduleMsg.startsWith('Error') ? 'var(--red)' : 'var(--success)' }}>{homeScheduleMsg}</span>}
+            </div>
+          </div>
+
+        </div>
+      )}
 
       {/* ── Perfil tab ── */}
       {activeTab === 'perfil' && profileForm && (

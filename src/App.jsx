@@ -18,6 +18,7 @@ import BusinessDashboardPage from './pages/BusinessDashboardPage';
 import ProLoginPage from './pages/ProLoginPage';
 import ProRegisterPage from './pages/ProRegisterPage';
 import ProfessionalDashboardPage from './pages/ProfessionalDashboardPage';
+import HomeBookingPage from './pages/HomeBookingPage';
 
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
@@ -45,6 +46,9 @@ export default function App() {
             <Route path="businesses/:id" element={<BusinessDetailPage />} />
             <Route path="how-it-works" element={<HowItWorksPage />} />
             <Route path="professionals/:id" element={<ProfessionalProfilePage />} />
+            <Route path="professionals/:professionalId/book-home" element={
+              <ProtectedRoute role="CLIENT"><HomeBookingPage /></ProtectedRoute>
+            } />
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="forgot-password" element={<ForgotPasswordPage />} />

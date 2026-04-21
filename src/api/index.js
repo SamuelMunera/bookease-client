@@ -137,6 +137,22 @@ const api = {
   // Categories
   getCategories: () => request('/categories'),
 
+  // Home service (pro dashboard)
+  getHomeConfig: () => request('/pro/me/home-config'),
+  updateHomeConfig: (body) => request('/pro/me/home-config', { method: 'PATCH', body: JSON.stringify(body) }),
+  getMyHomeServices: () => request('/pro/me/home-services'),
+  createHomeService: (body) => request('/pro/me/home-services', { method: 'POST', body: JSON.stringify(body) }),
+  updateHomeService: (id, body) => request(`/pro/me/home-services/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteHomeService: (id) => request(`/pro/me/home-services/${id}`, { method: 'DELETE' }),
+  getMyHomeSchedule: () => request('/pro/me/home-schedule'),
+  setMyHomeSchedule: (days) => request('/pro/me/home-schedule', { method: 'PUT', body: JSON.stringify({ days }) }),
+  // Home service (public)
+  getProfessionalHomeServices: (id) => request(`/professionals/${id}/home-services`),
+  getHomeSlots: (params) => request(`/slots/home?${new URLSearchParams(params)}`),
+  // Home bookings
+  createHomeBooking: (body) => request('/bookings/home', { method: 'POST', body: JSON.stringify(body) }),
+  cancelHomeBooking: (id) => request(`/bookings/home/${id}/cancel`, { method: 'PATCH' }),
+
   // Slots
   getSlots: (params) => request(`/slots?${new URLSearchParams(params)}`),
 

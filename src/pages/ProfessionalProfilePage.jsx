@@ -31,6 +31,11 @@ const IconBuilding = () => (
     <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h6"/>
   </svg>
 );
+const IconHome = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
 
 function formatBookingCount(n) {
   if (n < 100) return String(n);
@@ -158,6 +163,11 @@ export default function ProfessionalProfilePage() {
     navigate(bizId ? `/businesses/${bizId}?professionalId=${prof.id}` : '/');
   }
 
+  function handleBookHome() {
+    if (!user) return navigate('/login');
+    navigate(`/professionals/${prof.id}/book-home`);
+  }
+
   return (
     <>
       {/* ══ Hero ═══════════════════════════════════════════════ */}
@@ -178,9 +188,17 @@ export default function ProfessionalProfilePage() {
             </div>
 
             <div className="prof-profile-identity">
-              <div className="prof-profile-avail">
-                <span className="prof-card2-avail-dot" />
-                Disponible hoy
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+                <div className="prof-profile-avail">
+                  <span className="prof-card2-avail-dot" />
+                  Disponible hoy
+                </div>
+                {prof.offersHomeService && (
+                  <span className="home-service-badge">
+                    <IconHome />
+                    A domicilio
+                  </span>
+                )}
               </div>
               <h1 className="prof-profile-name">{prof.name}</h1>
               {bizName && (
@@ -217,14 +235,36 @@ export default function ProfessionalProfilePage() {
           )}
 
           <div className="prof-profile-hero-cta">
-            <button
-              className="btn btn-primary"
-              style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-8)', height:48 }}
-              onClick={handleBook}
-            >
-              Reservar cita
-              <IconArrowRight />
-            </button>
+            {bizId && (
+              <button
+                className="btn btn-primary"
+                style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-8)', height:48 }}
+                onClick={handleBook}
+              >
+                Reservar cita
+                <IconArrowRight />
+              </button>
+            )}
+            {prof.offersHomeService && (
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-8)', height:48 }}
+                onClick={handleBookHome}
+              >
+                <IconHome />
+                Reservar a domicilio
+              </button>
+            )}
+            {!bizId && !prof.offersHomeService && (
+              <button
+                className="btn btn-primary"
+                style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-8)', height:48 }}
+                onClick={handleBook}
+              >
+                Reservar cita
+                <IconArrowRight />
+              </button>
+            )}
             {bizId && (
               <Link to={`/businesses/${bizId}`} className="btn btn-ghost" style={{ height:48 }}>
                 <IconBuilding />
@@ -352,14 +392,38 @@ export default function ProfessionalProfilePage() {
           <p className="prof-profile-bottom-cta-text">
             ¿Listo para tu próxima cita con <strong>{firstName}</strong>?
           </p>
-          <button
-            className="btn btn-primary"
-            style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-10)', height:52 }}
-            onClick={handleBook}
-          >
-            Reservar ahora
-            <IconArrowRight />
-          </button>
+          <div style={{ display:'flex', gap:'var(--sp-3)', flexWrap:'wrap', justifyContent:'center' }}>
+            {bizId && (
+              <button
+                className="btn btn-primary"
+                style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-10)', height:52 }}
+                onClick={handleBook}
+              >
+                Reservar en negocio
+                <IconArrowRight />
+              </button>
+            )}
+            {prof.offersHomeService && (
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-8)', height:52 }}
+                onClick={handleBookHome}
+              >
+                <IconHome />
+                Reservar a domicilio
+              </button>
+            )}
+            {!bizId && !prof.offersHomeService && (
+              <button
+                className="btn btn-primary"
+                style={{ fontSize:'var(--text-base)', padding:'0 var(--sp-10)', height:52 }}
+                onClick={handleBook}
+              >
+                Reservar ahora
+                <IconArrowRight />
+              </button>
+            )}
+          </div>
         </div>
 
       </div>
