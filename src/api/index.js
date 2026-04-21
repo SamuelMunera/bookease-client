@@ -147,6 +147,7 @@ const api = {
   getMyHomeSchedule: () => request('/pro/me/home-schedule'),
   setMyHomeSchedule: (days) => request('/pro/me/home-schedule', { method: 'PUT', body: JSON.stringify({ days }) }),
   // Home service (public)
+  getHomeProfessionals: (params = {}) => request(`/professionals?${new URLSearchParams(params)}`),
   getProfessionalHomeServices: (id) => request(`/professionals/${id}/home-services`),
   getHomeSlots: (params) => request(`/slots/home?${new URLSearchParams(params)}`),
   // Home bookings
