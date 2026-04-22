@@ -682,17 +682,17 @@ export default function ProfessionalDashboardPage() {
       </div>
 
       {/* ── Tab navigation ── */}
-      <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)', borderBottom: '1px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'agenda', label: 'Agenda' }, { key: 'domicilio', label: 'A domicilio' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
             style={{
-              padding: 'var(--sp-2) var(--sp-4)', background: 'none', border: 'none', cursor: 'pointer',
+              padding: 'var(--sp-2) var(--sp-3)', background: 'none', border: 'none', cursor: 'pointer',
               fontSize: 'var(--text-sm)', fontWeight: activeTab === t.key ? 700 : 500,
               color: activeTab === t.key ? 'var(--text)' : 'var(--text-muted)',
               borderBottom: activeTab === t.key ? '2px solid var(--violet)' : '2px solid transparent',
-              marginBottom: -1, transition: 'color .15s',
+              marginBottom: -1, transition: 'color .15s', whiteSpace: 'nowrap', flexShrink: 0,
             }}
           >
             {t.label}
