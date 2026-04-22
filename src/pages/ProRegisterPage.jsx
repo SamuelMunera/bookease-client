@@ -4,7 +4,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
-const STEPS = ['Cuenta', 'Perfil', 'Código'];
+const STEPS = ['Cuenta', 'Perfil', 'Modalidad'];
 
 const SPECIALTIES = [
   'Barbería', 'Peluquería', 'Colorimetría', 'Estética facial',
@@ -23,14 +23,28 @@ const IconGoogle = () => (
   </svg>
 );
 
+const IconBuilding = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h6"/>
+  </svg>
+);
+
+const IconHome = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+
 export default function ProRegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
+  const [mode, setMode] = useState(null); // 'business' | 'independent'
   const [form, setForm] = useState({
     name: '', email: '', password: '', phone: '',
-    specialty: '', bio: '', experience: '', joinCode: '',
+    specialty: '', bio: '', experience: '',
+    joinCode: '', cities: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -73,7 +87,8 @@ export default function ProRegisterPage() {
       if (!form.specialty) e.specialty = 'Elige tu especialidad';
     }
     if (s === 2) {
-      if (!form.joinCode.trim()) e.joinCode = 'Ingresa el código del negocio';
+      if (!mode) e.mode = 'Elige cómo quieres operar';
+      if (mode === 'business' && !form.joinCode.trim()) e.joinCode = 'Ingresa el código del negocio';
     }
     return e;
   }
@@ -84,7 +99,10 @@ export default function ProRegisterPage() {
     setStep(s => s + 1);
   }
 
-  function back() { setStep(s => s - 1); }
+  function back() {
+    setStep(s => s - 1);
+    setErrors({});
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -93,20 +111,34 @@ export default function ProRegisterPage() {
     setApiError('');
     setLoading(true);
     try {
-      const { name, email, password, phone, specialty, bio, experience, joinCode } = form;
+      const { name, email, password, phone, specialty, bio, experience, joinCode, cities } = form;
+      const citiesArr = cities.split(',').map(c => c.trim()).filter(Boolean);
+      const isIndependent = mode === 'independent';
+
       if (googleToken) {
         const data = await api.googleAuth(googleToken, 'PROFESSIONAL');
         login(data);
         await api.updateProProfile({ specialty, bio, experience });
+        if (isIndependent) {
+          await api.updateHomeConfig({
+            offersHomeService: true,
+            ...(citiesArr.length ? { homeServiceArea: { cities: citiesArr } } : {}),
+          });
+        }
       } else {
-        const data = await api.registerProfessional({ name, email, password, phone, specialty, bio, experience });
+        const body = { name, email, password, phone, specialty, bio, experience };
+        if (isIndependent) {
+          body.offersHomeService = true;
+          if (citiesArr.length) body.homeServiceArea = { cities: citiesArr };
+        }
+        const data = await api.registerProfessional(body);
         login(data);
       }
-      try {
-        await api.submitJoinRequest(joinCode);
-      } catch {
-        // registro OK, la solicitud puede reintentarse desde el dashboard
+
+      if (mode === 'business') {
+        try { await api.submitJoinRequest(joinCode); } catch { /* reintentable desde dashboard */ }
       }
+
       navigate('/pro/dashboard');
     } catch (err) {
       setApiError(err.message);
@@ -128,7 +160,6 @@ export default function ProRegisterPage() {
             Gestiona tu agenda, recibe reservas y haz crecer tu cartera de clientes.
           </p>
 
-          {/* Step indicators */}
           <div style={{ marginTop: 'var(--sp-8)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
             {STEPS.map((label, i) => {
               const done    = i < step;
@@ -163,8 +194,10 @@ export default function ProRegisterPage() {
 
           <div style={{ marginTop: 'var(--sp-8)', padding: 'var(--sp-4)', background: 'var(--surface-3)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)' }}>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              El dueño del negocio debe aprobarte antes de que quedes vinculado. Si quieres abrir tu propio local,
-              <Link to="/register" style={{ color: 'var(--gold)', marginLeft: 4 }}>regístrate como dueño de negocio.</Link>
+              {mode === 'business'
+                ? 'El dueño del negocio debe aprobarte antes de que quedes vinculado. Si quieres abrir tu propio local, '
+                : 'Como independiente podrás ofrecer servicios a domicilio desde el primer día. Si quieres abrir tu propio negocio, '}
+              <Link to="/register" style={{ color: 'var(--gold)' }}>regístrate como dueño de negocio.</Link>
             </p>
           </div>
         </div>
@@ -173,7 +206,6 @@ export default function ProRegisterPage() {
       {/* Form panel */}
       <div className="auth-panel-form">
         <div className="auth-form-inner">
-          {/* Badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', background: 'var(--violet-subtle)', border: '1px solid rgba(124,92,252,0.3)', borderRadius: 'var(--r-full)', marginBottom: 'var(--sp-4)' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--violet)' }} />
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--violet)', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase' }}>
@@ -185,7 +217,7 @@ export default function ProRegisterPage() {
           <p className="auth-form-sub">
             {step === 0 && 'Crea tus credenciales de acceso'}
             {step === 1 && 'Cuéntanos sobre tu perfil profesional'}
-            {step === 2 && 'Ingresa el código del negocio donde trabajas'}
+            {step === 2 && '¿Cómo quieres operar?'}
           </p>
 
           <form className="auth-form-fields" onSubmit={step < 2 ? (e) => { e.preventDefault(); next(); } : handleSubmit}>
@@ -212,11 +244,9 @@ export default function ProRegisterPage() {
                     >
                       {loading
                         ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                        : <IconGoogle />
-                      }
+                        : <IconGoogle />}
                       {loading ? 'Conectando...' : 'Continuar con Google'}
                     </button>
-
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', margin: 'var(--sp-2) 0' }}>
                       <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                       <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>o con email</span>
@@ -224,7 +254,6 @@ export default function ProRegisterPage() {
                     </div>
                   </>
                 )}
-
                 <div className="form-group">
                   <label className="form-label" htmlFor="pro-name">Nombre completo</label>
                   <input id="pro-name" className={`input${errors.name ? ' input-error' : ''}`} type="text"
@@ -249,18 +278,10 @@ export default function ProRegisterPage() {
                 <div className="form-group">
                   <label className="form-label" htmlFor="pro-phone">Teléfono <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
                   <input id="pro-phone" className="input" type="tel"
-                    placeholder="+34 600 000 000" value={form.phone}
+                    placeholder="+57 300 000 0000" value={form.phone}
                     onChange={e => set('phone', e.target.value)} autoComplete="tel" />
                 </div>
-
-                {apiError && (
-                  <p className="error-msg">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {apiError}
-                  </p>
-                )}
+                {apiError && <p className="error-msg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{apiError}</p>}
               </>
             )}
 
@@ -268,12 +289,7 @@ export default function ProRegisterPage() {
             {step === 1 && (
               <>
                 {googleToken && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
-                    padding: 'var(--sp-2) var(--sp-3)', marginBottom: 'var(--sp-2)',
-                    background: 'rgba(52,168,83,0.08)', border: '1px solid rgba(52,168,83,0.25)',
-                    borderRadius: 'var(--r-md)', fontSize: 'var(--text-xs)', color: '#34A853',
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-2) var(--sp-3)', marginBottom: 'var(--sp-2)', background: 'rgba(52,168,83,0.08)', border: '1px solid rgba(52,168,83,0.25)', borderRadius: 'var(--r-md)', fontSize: 'var(--text-xs)', color: '#34A853' }}>
                     <IconGoogle />
                     Cuenta vinculada con Google · {form.email}
                   </div>
@@ -282,24 +298,14 @@ export default function ProRegisterPage() {
                   <label className="form-label">Especialidad</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--sp-2)' }}>
                     {SPECIALTIES.map(sp => (
-                      <button
-                        key={sp} type="button"
-                        onClick={() => set('specialty', sp)}
-                        style={{
-                          padding: 'var(--sp-2) var(--sp-3)',
-                          borderRadius: 'var(--r-md)',
-                          border: `1px solid ${form.specialty === sp ? 'var(--violet)' : 'var(--border)'}`,
-                          background: form.specialty === sp ? 'var(--violet-subtle)' : 'transparent',
-                          color: form.specialty === sp ? 'var(--violet)' : 'var(--text-muted)',
-                          fontSize: 'var(--text-xs)',
-                          fontWeight: form.specialty === sp ? 600 : 400,
-                          cursor: 'pointer',
-                          transition: 'all .15s',
-                          textAlign: 'left',
-                        }}
-                      >
-                        {sp}
-                      </button>
+                      <button key={sp} type="button" onClick={() => set('specialty', sp)} style={{
+                        padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
+                        border: `1px solid ${form.specialty === sp ? 'var(--violet)' : 'var(--border)'}`,
+                        background: form.specialty === sp ? 'var(--violet-subtle)' : 'transparent',
+                        color: form.specialty === sp ? 'var(--violet)' : 'var(--text-muted)',
+                        fontSize: 'var(--text-xs)', fontWeight: form.specialty === sp ? 600 : 400,
+                        cursor: 'pointer', transition: 'all .15s', textAlign: 'left',
+                      }}>{sp}</button>
                     ))}
                   </div>
                   {errors.specialty && <p className="field-error" style={{ marginTop: 'var(--sp-2)' }}>{errors.specialty}</p>}
@@ -314,53 +320,108 @@ export default function ProRegisterPage() {
                   <label className="form-label" htmlFor="pro-bio">Bio / Presentación <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
                   <textarea id="pro-bio" className="input" rows={3}
                     placeholder="Cuéntale a tus futuros clientes quién eres y cómo trabajas…"
-                    value={form.bio}
-                    onChange={e => set('bio', e.target.value)}
-                    style={{ resize: 'vertical', fontFamily: 'inherit' }}
-                  />
+                    value={form.bio} onChange={e => set('bio', e.target.value)}
+                    style={{ resize: 'vertical', fontFamily: 'inherit' }} />
                 </div>
               </>
             )}
 
-            {/* ── Step 2: Join Code ── */}
+            {/* ── Step 2: Modalidad ── */}
             {step === 2 && (
               <>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="pro-joincode">Código del negocio</label>
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
-                    Pídele al dueño del negocio su código de vinculación de 6 caracteres.
-                  </p>
-                  <input
-                    id="pro-joincode"
-                    className={`input${errors.joinCode ? ' input-error' : ''}`}
-                    type="text"
-                    placeholder="Ej. AB3X9K"
-                    value={form.joinCode}
-                    onChange={e => set('joinCode', e.target.value.toUpperCase())}
-                    maxLength={6}
-                    style={{ letterSpacing: '0.2em', fontWeight: 700, fontSize: 'var(--text-lg)', textAlign: 'center' }}
-                  />
-                  {errors.joinCode && <p className="field-error">{errors.joinCode}</p>}
+                {/* Mode cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+                  {/* Business */}
+                  <button type="button" onClick={() => { setMode('business'); setErrors(e => ({ ...e, mode: '' })); }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-4)',
+                      padding: 'var(--sp-4)', borderRadius: 'var(--r-xl)', cursor: 'pointer',
+                      border: `2px solid ${mode === 'business' ? 'var(--violet)' : 'var(--border)'}`,
+                      background: mode === 'business' ? 'var(--violet-subtle)' : 'var(--surface-2)',
+                      transition: 'all .15s', textAlign: 'left',
+                    }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 'var(--r-lg)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: mode === 'business' ? 'rgba(124,92,252,0.15)' : 'var(--surface-3)', color: mode === 'business' ? 'var(--violet)' : 'var(--text-muted)' }}>
+                      <IconBuilding />
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 'var(--text-sm)', color: mode === 'business' ? 'var(--violet)' : 'var(--text)' }}>Trabajar en un negocio</p>
+                      <p style={{ margin: '3px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.5 }}>Solicita unirte a un salón, barbería o spa con su código.</p>
+                    </div>
+                    {mode === 'business' && (
+                      <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                    )}
+                  </button>
 
-                  <div style={{
-                    marginTop: 'var(--sp-4)', padding: 'var(--sp-3) var(--sp-4)',
-                    borderRadius: 'var(--r-md)', background: 'var(--violet-subtle)',
-                    border: '1px solid rgba(124,92,252,0.2)',
-                    fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6,
-                  }}>
-                    Tu solicitud quedará pendiente hasta que el dueño del negocio la apruebe.
-                    Podrás ver el estado desde tu dashboard.
-                  </div>
+                  {/* Independent */}
+                  <button type="button" onClick={() => { setMode('independent'); setErrors(e => ({ ...e, mode: '' })); }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-4)',
+                      padding: 'var(--sp-4)', borderRadius: 'var(--r-xl)', cursor: 'pointer',
+                      border: `2px solid ${mode === 'independent' ? 'var(--gold-border)' : 'var(--border)'}`,
+                      background: mode === 'independent' ? 'var(--gold-subtle)' : 'var(--surface-2)',
+                      transition: 'all .15s', textAlign: 'left',
+                    }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 'var(--r-lg)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: mode === 'independent' ? 'rgba(212,168,83,0.15)' : 'var(--surface-3)', color: mode === 'independent' ? 'var(--gold)' : 'var(--text-muted)' }}>
+                      <IconHome />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 'var(--text-sm)', color: mode === 'independent' ? 'var(--gold)' : 'var(--text)' }}>Continuar como independiente</p>
+                      <p style={{ margin: '3px 0 0', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.5 }}>Trabaja por tu cuenta y ofrece servicios a domicilio desde el primer día.</p>
+                    </div>
+                    {mode === 'independent' && (
+                      <div style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                    )}
+                  </button>
                 </div>
 
-                {apiError && (
-                  <p className="error-msg">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {apiError}
-                  </p>
+                {errors.mode && <p className="field-error" style={{ marginTop: 'var(--sp-2)' }}>{errors.mode}</p>}
+
+                {/* Business: join code */}
+                {mode === 'business' && (
+                  <div className="form-group" style={{ marginTop: 'var(--sp-4)' }}>
+                    <label className="form-label" htmlFor="pro-joincode">Código del negocio</label>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
+                      Pídele al dueño del negocio su código de vinculación de 6 caracteres.
+                    </p>
+                    <input id="pro-joincode"
+                      className={`input${errors.joinCode ? ' input-error' : ''}`}
+                      type="text" placeholder="Ej. AB3X9K"
+                      value={form.joinCode}
+                      onChange={e => set('joinCode', e.target.value.toUpperCase())}
+                      maxLength={6}
+                      style={{ letterSpacing: '0.2em', fontWeight: 700, fontSize: 'var(--text-lg)', textAlign: 'center' }}
+                    />
+                    {errors.joinCode && <p className="field-error">{errors.joinCode}</p>}
+                    <div style={{ marginTop: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--violet-subtle)', border: '1px solid rgba(124,92,252,0.2)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                      Tu solicitud quedará pendiente hasta que el dueño la apruebe. Podrás ver el estado desde tu dashboard.
+                    </div>
+                  </div>
                 )}
+
+                {/* Independent: optional cities */}
+                {mode === 'independent' && (
+                  <div className="form-group" style={{ marginTop: 'var(--sp-4)' }}>
+                    <label className="form-label" htmlFor="pro-cities">
+                      Ciudades donde ofreces servicios <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span>
+                    </label>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
+                      Sepáralas por coma. Si no indicas ninguna, se asume que cubres toda tu ciudad.
+                    </p>
+                    <input id="pro-cities" className="input" type="text"
+                      placeholder="Medellín, Bogotá, Cali…"
+                      value={form.cities}
+                      onChange={e => set('cities', e.target.value)} />
+                    <div style={{ marginTop: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                      Podrás configurar tus servicios, tarifas y disponibilidad desde tu dashboard después del registro.
+                    </div>
+                  </div>
+                )}
+
+                {apiError && <p className="error-msg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{apiError}</p>}
               </>
             )}
 
@@ -368,39 +429,23 @@ export default function ProRegisterPage() {
             <div style={{ display: 'flex', gap: 'var(--sp-3)', marginTop: 'var(--sp-2)' }}>
               {step > 0 && (
                 <button type="button" className="btn btn-ghost btn-lg" onClick={back} style={{ flex: '0 0 auto' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M19 12H5M12 5l-7 7 7 7"/>
-                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
                   Atrás
                 </button>
               )}
-              <button
-                type="submit"
-                className="btn btn-primary btn-lg btn-full"
-                disabled={loading}
-                style={{ flex: 1, background: 'var(--violet)' }}
-              >
+              <button type="submit" className="btn btn-primary btn-lg btn-full" disabled={loading}
+                style={{ flex: 1, background: step === 2 && mode === 'independent' ? 'var(--gold)' : 'var(--violet)', color: step === 2 && mode === 'independent' ? '#0A0808' : undefined }}>
                 {loading ? (
                   <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                    </svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                     Registrando...
                   </>
                 ) : step < 2 ? (
-                  <>
-                    Siguiente
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </>
+                  <>Siguiente<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
+                ) : mode === 'independent' ? (
+                  <>Crear cuenta independiente<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
                 ) : (
-                  <>
-                    Crear mi cuenta
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </>
+                  <>Crear mi cuenta<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
                 )}
               </button>
             </div>
