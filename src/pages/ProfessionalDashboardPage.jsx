@@ -703,8 +703,8 @@ export default function ProfessionalDashboardPage() {
       {/* ── Dashboard tab ── */}
       {activeTab === 'dashboard' && (<>
 
-      {/* ── Join request banner (only when not linked to a business) ── */}
-      {!loadingProfile && !pro.businessId && (
+      {/* ── Join request banner (only for pros seeking a business) ── */}
+      {!loadingProfile && !pro.businessId && !pro.offersHomeService && (
         <div style={{
           marginBottom: 'var(--sp-6)',
           padding: 'var(--sp-5)',
