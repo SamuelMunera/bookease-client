@@ -943,7 +943,7 @@ export default function ProfessionalDashboardPage() {
       {proRevenue && pro.businessId && (
         <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: '0 0 var(--sp-4)' }}>Mis ingresos</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-3)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--sp-3)' }}>
             {[
               { label: 'Hoy',         val: proRevenue.day   },
               { label: 'Esta semana', val: proRevenue.week  },
@@ -1087,7 +1087,7 @@ export default function ProfessionalDashboardPage() {
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', marginTop: 'var(--sp-4)', flexWrap: 'wrap' }}>
             {[0, 5, 10, 15, 20, 30].map(val => (
               <button
                 key={val}
