@@ -2623,9 +2623,8 @@ html { scroll-padding-top: 68px; }
 @media (max-width: 768px) {
   .auth-panel-brand { display: none; }
   .hero { padding: var(--sp-12) var(--sp-5) var(--sp-10); }
-  .hero-stats { padding: var(--sp-4) var(--sp-5); }
+  .hero-stats { padding: var(--sp-4) var(--sp-5); gap: 0; flex-wrap: nowrap; justify-content: space-around; }
   .hero-stat-sep { display: none; }
-  .hero-stats { gap: var(--sp-5); flex-wrap: wrap; }
   .features-strip { flex-direction: column; }
   .feature-item { border-right: none; border-bottom: 1px solid var(--border); }
   .cat-grid { grid-template-columns: 1fr 1fr; }
@@ -3706,6 +3705,17 @@ html { scroll-padding-top: 68px; }
 /* ── Chips ── */
 [data-theme="light"] .chip { background: var(--surface-3); border-color: var(--border-strong); }
 
+/* ── Pro dashboard main body grid ── */
+.pro-dash-body {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--sp-6);
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .pro-dash-body { grid-template-columns: 1fr; }
+}
+
 /* ── Pro welcome header (dark gradient in dark mode) ── */
 [data-theme="light"] .pro-welcome-header {
   background: linear-gradient(135deg, #EDE9FF 0%, #F5F4FF 100%) !important;
@@ -3912,8 +3922,9 @@ html { scroll-padding-top: 68px; }
 @media (max-width: 480px) {
   .hero { padding: var(--sp-10) var(--sp-4) var(--sp-8); }
   .hero-title { font-size: 22px !important; }
-  .hero-stats { flex-direction: column; gap: var(--sp-3); align-items: flex-start; }
-  .hero-stat-sep { display: none; }
+  .hero-stats { flex-direction: row; justify-content: space-around; gap: 0; padding: var(--sp-4) var(--sp-3); }
+  .hero-stat-sep { width: 1px; margin: 0 var(--sp-3); }
+  .hero-stat-num { font-size: var(--text-lg) !important; }
   .search-bar-v2 { font-size: var(--text-sm); }
 
   /* Prof profile hero */

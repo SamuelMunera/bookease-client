@@ -816,7 +816,7 @@ export default function ProfessionalDashboardPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 'var(--sp-6)', alignItems: 'start' }}>
+      <div className="pro-dash-body">
 
         {/* ── Upcoming bookings ── */}
         <div>
