@@ -140,7 +140,9 @@ function ReschedulePanel({ booking, onDone, onClose }) {
 
 /* ── Timeline booking row ────────────────────────────────── */
 function AgendaBookingRow({ b, onCancel, onRescheduled }) {
-  const upcoming = isUpcoming(b.date);
+  const upcoming   = isUpcoming(b.date);
+  const isHome     = b.type === 'HOME_SERVICE';
+  const serviceName = b.service?.name ?? b.homeService?.name ?? '—';
   const [showReschedule, setShowReschedule] = useState(false);
 
   const statusColor = {
@@ -167,7 +169,14 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
         <div className="agenda-row-card">
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'var(--sp-3)', flexWrap:'wrap', marginBottom:'var(--sp-3)' }}>
             <div>
-              <p className="agenda-row-service">{b.service.name}</p>
+              <p className="agenda-row-service" style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)' }}>
+                {serviceName}
+                {isHome && (
+                  <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:'var(--r-full)', background:'rgba(212,168,83,.12)', border:'1px solid rgba(212,168,83,.25)', color:'var(--gold)' }}>
+                    A domicilio
+                  </span>
+                )}
+              </p>
               <div className="agenda-row-meta">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -186,8 +195,20 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
             </span>
           </div>
 
-          {/* Business info */}
-          {b.business?.name && (
+          {/* Business or address info */}
+          {isHome && b.clientAddress ? (
+            <div className="agenda-client-row">
+              <div className="agenda-client-avatar" style={{ background:'rgba(212,168,83,.15)', color:'var(--gold)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+              <div>
+                <p className="agenda-client-name">Servicio a domicilio</p>
+                <p className="agenda-client-email">{b.clientAddress}</p>
+              </div>
+            </div>
+          ) : b.business?.name ? (
             <div className="agenda-client-row">
               <div className="agenda-client-avatar">{b.business.name[0].toUpperCase()}</div>
               <div>
@@ -195,20 +216,22 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
                 <p className="agenda-client-email">{[b.business.address, b.business.city].filter(Boolean).join(', ')}</p>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Actions */}
           {b.status !== 'CANCELLED' && upcoming && (
             <div className="agenda-row-actions">
-              <button className="btn btn-secondary btn-sm" onClick={() => setShowReschedule(v => !v)}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                  <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                  <path d="M8 16H3v5"/>
-                </svg>
-                Aplazar
-              </button>
-              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
+              {!isHome && (
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowReschedule(v => !v)}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                    <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                    <path d="M8 16H3v5"/>
+                  </svg>
+                  Aplazar
+                </button>
+              )}
+              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id, isHome)}>
                 Cancelar
               </button>
             </div>
@@ -245,9 +268,9 @@ export default function MyBookingsPage() {
   }
   useEffect(load, []);
 
-  async function handleCancel(id) {
+  async function handleCancel(id, isHome) {
     if (!confirm('¿Cancelar esta reserva?')) return;
-    await api.cancelBooking(id);
+    await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));
     load();
   }
 
@@ -319,7 +342,7 @@ export default function MyBookingsPage() {
       {!loading && bookings.length > 0 && (
         <>
           {/* Stats */}
-          <div className="agenda-stats-row" style={{ gridTemplateColumns: `repeat(${cancelled.length > 0 ? 4 : 3}, 1fr)` }}>
+          <div className="agenda-stats-row" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))' }}>
             <StatCard num={bookings.length} label="Total" color="var(--text-muted)"
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
             />
