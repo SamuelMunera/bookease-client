@@ -1511,6 +1511,46 @@ export default function ProfessionalDashboardPage() {
             </div>
           </div>
 
+          {/* Buffer entre citas a domicilio */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--sp-2)' }}>Tiempo entre citas</h3>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-4)', maxWidth: 400 }}>
+              Minutos de pausa entre un servicio y el siguiente. Sirve para desplazarte entre domicilios sin quedar ajustado.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
+              {[0, 10, 15, 20, 30, 45, 60].map(val => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setBufferTime(val)}
+                  style={{
+                    padding: '7px 14px', borderRadius: 'var(--r-md)', cursor: 'pointer', transition: 'all .12s',
+                    border: `1.5px solid ${bufferTime === val ? 'var(--gold-border)' : 'var(--border)'}`,
+                    background: bufferTime === val ? 'var(--gold-subtle)' : 'var(--surface)',
+                    color: bufferTime === val ? 'var(--gold)' : 'var(--text-muted)',
+                    fontSize: 'var(--text-sm)', fontWeight: bufferTime === val ? 700 : 500,
+                  }}
+                >
+                  {val === 0 ? 'Sin pausa' : `${val} min`}
+                </button>
+              ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginLeft: 'auto' }}>
+                <input
+                  type="number" min="0" max="120" value={bufferTime}
+                  onChange={e => setBufferTime(Math.max(0, parseInt(e.target.value) || 0))}
+                  style={{ width: 70, padding: '5px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface-raised)', color: 'var(--text)', fontSize: 'var(--text-sm)', textAlign: 'right' }}
+                />
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>min</span>
+              </div>
+            </div>
+            <div style={{ marginTop: 'var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+              <button className="btn btn-primary" onClick={saveBuffer} disabled={savingBuffer} style={{ background: 'var(--gold)', color: '#0A0808' }}>
+                {savingBuffer ? 'Guardando…' : 'Guardar'}
+              </button>
+              {bufferMsg && <span style={{ fontSize: 'var(--text-xs)', color: bufferMsg === 'Guardado' ? 'var(--success)' : 'var(--error)' }}>{bufferMsg}</span>}
+            </div>
+          </div>
+
         </div>
       )}
 
