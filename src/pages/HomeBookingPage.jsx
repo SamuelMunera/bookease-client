@@ -157,9 +157,9 @@ export default function HomeBookingPage() {
       .finally(() => setLoading(false));
   }, [professionalId, navigate]);
 
-  /* Load slots when service or date changes (step 2) */
+  /* Load slots when service or date changes — no step dep to avoid resetting slot on step advance */
   useEffect(() => {
-    if (!selectedService || step < 2) return;
+    if (!selectedService) return;
     setSlotsLoading(true);
     setSlot(null);
     setError('');
@@ -176,7 +176,8 @@ export default function HomeBookingPage() {
       })
       .catch(() => setSlots([]))
       .finally(() => setSlotsLoading(false));
-  }, [selectedService, date, step, professionalId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedService, date, professionalId]);
 
   async function handleConfirm() {
     setError('');
