@@ -194,6 +194,7 @@ export default function HomeBookingPage() {
         clientCity: city.trim(),
       });
       setSuccess(booking);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setError(err.message);
     } finally {
