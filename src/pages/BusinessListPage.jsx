@@ -241,8 +241,6 @@ export default function BusinessListPage() {
   const [locationError, setLocationError]     = useState('');
   const [radius, setRadius]                   = useState(10);
 
-  const [homePros, setHomePros] = useState([]);
-
   // animated counters
   const c1 = useAnimatedCounter(2500);
   const c2 = useAnimatedCounter(28);
@@ -256,13 +254,6 @@ export default function BusinessListPage() {
   ];
 
   useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);
-
-  useEffect(() => {
-    const params = {};
-    if (city) params.city = city;
-    else if (userLocation) params.city = userLocation.label;
-    api.getHomeProfessionals(params).then(d => setHomePros(d || [])).catch(() => {});
-  }, [city, userLocation]);
 
   useEffect(() => {
     setLoading(true);
@@ -533,27 +524,28 @@ export default function BusinessListPage() {
       </div>
 
       {/* ══ PROFESIONALES A DOMICILIO ═════════════════════════ */}
-      {homePros.length > 0 && (
-        <div className="section-block">
-          <div className="section-inner">
-            <div className="section-head">
-              <div>
-                <p className="section-eyebrow">Sin salir de casa</p>
-                <h2 className="section-title">Profesionales <em>a domicilio</em></h2>
+      {/* ── CTA Domicilios ── */}
+      <div className="section-block">
+        <div className="section-inner">
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'var(--sp-4)', padding:'var(--sp-6) var(--sp-6)', background:'var(--gold-subtle)', border:'1px solid var(--gold-border)', borderRadius:'var(--r-2xl)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
+              <div style={{ width:48, height:48, borderRadius:'var(--r-xl)', background:'rgba(212,168,83,.2)', border:'1px solid var(--gold-border)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--gold)', flexShrink:0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
               </div>
-              <Link to="/professionals" className="section-link">
-                Ver todos
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </Link>
+              <div>
+                <p style={{ margin:0, fontWeight:700, fontSize:'var(--text-base)', color:'var(--text)' }}>¿Prefieres que vengan a ti?</p>
+                <p style={{ margin:'2px 0 0', fontSize:'var(--text-sm)', color:'var(--text-muted)' }}>Explora profesionales que ofrecen servicio a domicilio.</p>
+              </div>
             </div>
-          </div>
-          <div className="scroll-outer">
-            <div className="scroll-track">
-              {homePros.map(p => <ProHomeCard key={p.id} pro={p} />)}
-            </div>
+            <Link to="/home-service" className="btn btn-primary" style={{ background:'var(--gold)', color:'#0A0808', flexShrink:0 }}>
+              Ver servicio a domicilio
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </Link>
           </div>
         </div>
-      )}
+      </div>
 
       {/* ══ RECIÉN LLEGADOS ═══════════════════════════════════ */}
       {newest.length > 0 && (

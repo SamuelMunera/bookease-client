@@ -3,15 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
 
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
-const PRO_PALETTES2 = [
-  { bg:'linear-gradient(135deg,#D4A853,#A8833F)', color:'#0A0808' },
-  { bg:'linear-gradient(135deg,#7C5CFC,#5B3FD9)', color:'#fff'    },
-  { bg:'linear-gradient(135deg,#00D4C8,#008F8B)', color:'#0A0808' },
-  { bg:'linear-gradient(135deg,#22C55E,#15803D)', color:'#fff'    },
-  { bg:'linear-gradient(135deg,#EC4899,#9D174D)', color:'#fff'    },
-];
-function proPal2(name) { return PRO_PALETTES2[(name?.charCodeAt(0) ?? 0) % PRO_PALETTES2.length]; }
-
 function Stars({ rating }) {
   const full  = Math.floor(rating);
   const half  = rating % 1 >= 0.5 ? 1 : 0;
@@ -19,58 +10,7 @@ function Stars({ rating }) {
   return <span className="stars">{'★'.repeat(full)}{'½'.repeat(half)}{'☆'.repeat(empty)}</span>;
 }
 
-function ProCard({ pro }) {
-  const pal = proPal2(pro.name);
-  return (
-    <Link to={`/professionals/${pro.id}`} className="pro-home-card" style={{ textDecoration:'none' }}>
-      <div className="pro-home-card-avatar" style={{ background: pro.avatarUrl ? 'transparent' : pal.bg }}>
-        {pro.avatarUrl
-          ? <img src={pro.avatarUrl} alt={pro.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
-          : <span style={{ color:pal.color, fontFamily:'var(--font-heading)', fontWeight:700, fontSize:28 }}>{pro.name[0].toUpperCase()}</span>
-        }
-      </div>
-      <div className="pro-home-card-body">
-        <div style={{ display:'flex', gap:'var(--sp-1)', flexWrap:'wrap', marginBottom:4 }}>
-          <span className="home-service-badge" style={{ fontSize:10, padding:'2px 8px' }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            A domicilio
-          </span>
-          {pro.hasBusinessToo && (
-            <span style={{ fontSize:10, padding:'2px 8px', borderRadius:'var(--r-full)', background:'rgba(124,92,252,.1)', color:'var(--violet)', border:'1px solid rgba(124,92,252,.2)', fontWeight:600 }}>
-              + Negocio
-            </span>
-          )}
-        </div>
-        <p className="pro-home-card-name">{pro.name}</p>
-        {pro.specialty && <p className="pro-home-card-spec">{pro.specialty}</p>}
-        {pro.cities.length > 0 && (
-          <p className="pro-home-card-cities">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink:0 }}>
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-            {pro.cities.slice(0,3).join(' · ')}
-          </p>
-        )}
-        <div className="pro-home-card-foot">
-          {pro.avgRating ? (
-            <span className="pro-home-card-rating">
-              <span style={{ color:'#D4A853' }}>★</span> {pro.avgRating}
-              <span style={{ color:'var(--text-muted)', fontWeight:400 }}> ({pro.reviewCount})</span>
-            </span>
-          ) : (
-            <span style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>Nuevo</span>
-          )}
-          <span className="pro-home-card-cta">
-            Ver perfil
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
+
 
 export default function BusinessesPage() {
   const navigate = useNavigate();
@@ -154,14 +94,6 @@ export default function BusinessesPage() {
   function clearFilters() {
     setCityInput(''); setUserLocation(null); setLocationError(''); setRadius(10); setSearchParams({});
   }
-
-  const [homePros, setHomePros] = useState([]);
-  useEffect(() => {
-    const params = {};
-    if (city) params.city = city;
-    else if (userLocation) params.city = userLocation.label;
-    api.getHomeProfessionals(params).then(d => setHomePros(d || [])).catch(() => {});
-  }, [city, userLocation]);
 
   const filtered = category ? businesses.filter(b => b.category === category) : businesses;
 
@@ -281,22 +213,6 @@ export default function BusinessesPage() {
         </div>
       )}
 
-      {/* ── Profesionales a domicilio ── */}
-      {homePros.length > 0 && (
-        <div style={{ marginBottom:'var(--sp-8)' }}>
-          <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'var(--sp-4)' }}>
-            <div>
-              <p style={{ fontSize:'var(--text-xs)', fontWeight:600, letterSpacing:'.07em', textTransform:'uppercase', color:'var(--accent)', marginBottom:4 }}>Sin salir de casa</p>
-              <h2 style={{ fontFamily:'var(--font-heading)', fontSize:'var(--text-xl)', margin:0, color:'var(--text)' }}>
-                Profesionales <em>a domicilio</em>
-              </h2>
-            </div>
-          </div>
-          <div style={{ display:'flex', gap:'var(--sp-3)', overflowX:'auto', paddingBottom:'var(--sp-2)' }}>
-            {homePros.map(p => <ProCard key={p.id} pro={p} />)}
-          </div>
-        </div>
-      )}
 
       {/* ── Count ── */}
       {!loading && filtered.length > 0 && (
