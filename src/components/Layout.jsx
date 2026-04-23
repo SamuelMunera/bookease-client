@@ -114,6 +114,12 @@ export default function Layout() {
               {l.label}
             </Link>
           ))}
+          <Link to="/home-service" className={`nav-link nav-link-home${isActive('/home-service') ? ' active' : ''}`}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            A domicilio
+          </Link>
           {!user && <span className="nav-pill-badge">Nuevo</span>}
         </div>
 
@@ -257,6 +263,7 @@ export default function Layout() {
             <>
               <Link to="/" className="nav-mobile-link">Explorar</Link>
               <Link to="/businesses" className="nav-mobile-link">Negocios</Link>
+              <Link to="/home-service" className="nav-mobile-link" style={{ color:'var(--gold)', fontWeight:600 }}>A domicilio</Link>
               <Link to="/how-it-works" className="nav-mobile-link">Cómo funciona</Link>
               <Link to="/login" className="nav-mobile-link">Iniciar sesión</Link>
               <Link to="/pro/login" className="nav-mobile-link" style={{ color: 'var(--violet)' }}>Soy profesional</Link>
@@ -266,6 +273,7 @@ export default function Layout() {
           {user?.role === 'CLIENT' && (
             <>
               <Link to="/" className="nav-mobile-link">Explorar</Link>
+              <Link to="/home-service" className="nav-mobile-link" style={{ color:'var(--gold)', fontWeight:600 }}>A domicilio</Link>
               <Link to="/my-bookings" className="nav-mobile-link">Mis reservas</Link>
               <button className="nav-mobile-link" style={{ textAlign:'left', width:'100%' }} onClick={handleLogout}>Cerrar sesión</button>
             </>
