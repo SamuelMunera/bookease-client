@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 const CAT_COLOR = { BARBERSHOP: 'var(--gold)', SPA: 'var(--violet)', SALON: 'var(--gold-light)' };
@@ -69,7 +70,7 @@ export default function BusinessDashboardPage() {
         const mine = all.find(b => b.ownerId === user.id);
         if (!mine) { setLoading(false); return; }
         setBusiness(mine);
-        setProfileForm({ name: mine.name, description: mine.description || '', address: mine.address, city: mine.city, phone: mine.phone || '', category: mine.category });
+        setProfileForm({ name: mine.name, description: mine.description || '', address: mine.address, city: mine.city, phone: mine.phone || '', category: mine.category, country: mine.country || 'CO', timezone: mine.timezone || 'America/Bogota', state: mine.state || '', zipCode: mine.zipCode || '' });
         return api.getBusinessBookings(mine.id, { date: todayISO() });
       })
       .then(bks => { if (bks) setBookings(bks); })
@@ -593,6 +594,34 @@ export default function BusinessDashboardPage() {
                   {CATS.map(c => <option key={c} value={c}>{CAT_NAME[c]}</option>)}
                 </select>
               </div>
+
+              {/* Country / Timezone / State / ZIP */}
+              <div style={{ gridColumn: '1 / -1', display:'flex', gap:'var(--sp-2)', flexWrap:'wrap' }}>
+                {COUNTRIES.map(c => (
+                  <button key={c.code} type="button" onClick={() => setProfileForm(f => ({ ...f, country: c.code, timezone: c.code === 'CO' ? 'America/Bogota' : (f.timezone || 'America/New_York'), state: '', zipCode: '' }))}
+                    style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: profileForm.country === c.code ? 700 : 500, border:`1.5px solid ${profileForm.country===c.code?'var(--violet)':'var(--border)'}`, background: profileForm.country===c.code?'var(--violet-subtle)':'var(--surface-2)', color: profileForm.country===c.code?'var(--violet)':'var(--text-muted)', transition:'all .12s' }}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              {profileForm.country === 'US' && (
+                <>
+                  <div>
+                    <label style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', display:'block', marginBottom:4 }}>Timezone</label>
+                    <select className="input" value={profileForm.timezone} onChange={e => setProfileForm(f => ({ ...f, timezone: e.target.value }))} style={{ width:'100%' }}>
+                      {US_TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', display:'block', marginBottom:4 }}>State</label>
+                    <input className="input" value={profileForm.state ?? ''} onChange={e => setProfileForm(f => ({ ...f, state: e.target.value.toUpperCase() }))} placeholder="FL" maxLength={2} style={{ width:'100%' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', display:'block', marginBottom:4 }}>ZIP Code</label>
+                    <input className="input" value={profileForm.zipCode ?? ''} onChange={e => setProfileForm(f => ({ ...f, zipCode: e.target.value }))} placeholder="33101" maxLength={10} style={{ width:'100%' }} />
+                  </div>
+                </>
+              )}
 
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Descripción</label>
