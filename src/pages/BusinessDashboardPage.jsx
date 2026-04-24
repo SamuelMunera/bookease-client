@@ -653,6 +653,28 @@ export default function BusinessDashboardPage() {
               </div>
             </form>
           </div>
+
+          {/* Política de cancelación */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>Política de cancelación</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)', maxWidth:440 }}>
+              Horas mínimas de anticipación que necesita el cliente para cancelar su cita. 0 = sin restricción.
+            </p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'var(--sp-2)', marginBottom:'var(--sp-4)' }}>
+              {[0, 2, 6, 12, 24, 48].map(h => (
+                <button key={h} type="button" onClick={() => setCancelMinHours(h)}
+                  style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: cancelMinHours === h ? 700 : 500, border:`1.5px solid ${cancelMinHours === h ? 'var(--violet)' : 'var(--border)'}`, background: cancelMinHours === h ? 'var(--violet-subtle)' : 'var(--surface-2)', color: cancelMinHours === h ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
+                  {h === 0 ? 'Sin límite' : `${h}h`}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)' }}>
+              <button className="btn btn-primary btn-sm" onClick={saveCancelPolicy} disabled={savingPolicy}>
+                {savingPolicy ? 'Guardando…' : 'Guardar política'}
+              </button>
+              {policyMsg && <span style={{ fontSize:'var(--text-xs)', color: policyMsg === 'Guardado' ? 'var(--success)' : 'var(--error)' }}>{policyMsg}</span>}
+            </div>
+          </div>
         </div>
       )}
 
@@ -689,30 +711,6 @@ export default function BusinessDashboardPage() {
                 width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s',
               }} />
             </button>
-          </div>
-
-          {/* Política de cancelación */}
-          <div style={{ paddingTop:'var(--sp-5)', borderTop:'1px solid var(--border)' }}>
-            <p style={{ fontWeight:700, color:'var(--text)', fontSize:'var(--text-sm)', margin:'0 0 4px' }}>
-              Política de cancelación
-            </p>
-            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
-              Horas mínimas de anticipación que necesita el cliente para cancelar su cita. 0 = sin restricción.
-            </p>
-            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', flexWrap:'wrap' }}>
-              {[0, 2, 6, 12, 24, 48].map(h => (
-                <button key={h} type="button" onClick={() => setCancelMinHours(h)}
-                  style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: cancelMinHours === h ? 700 : 500, border:`1.5px solid ${cancelMinHours === h ? 'var(--violet)' : 'var(--border)'}`, background: cancelMinHours === h ? 'var(--violet-subtle)' : 'var(--surface-2)', color: cancelMinHours === h ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
-                  {h === 0 ? 'Sin límite' : `${h}h`}
-                </button>
-              ))}
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginTop:'var(--sp-4)' }}>
-              <button className="btn btn-primary btn-sm" onClick={saveCancelPolicy} disabled={savingPolicy}>
-                {savingPolicy ? 'Guardando…' : 'Guardar política'}
-              </button>
-              {policyMsg && <span style={{ fontSize:'var(--text-xs)', color: policyMsg === 'Guardado' ? 'var(--success)' : 'var(--error)' }}>{policyMsg}</span>}
-            </div>
           </div>
 
           {/* Resumen general */}
