@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import ManualBookingModal from '../components/ManualBookingModal';
 
 /* ── Agenda helpers ─────────────────────────────────────── */
 const AGENDA_DAYS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -251,6 +252,7 @@ export default function ProfessionalDashboardPage() {
 
   // Buffer time
   const [bufferTime, setBufferTime]       = useState(0);
+  const [showManualPro, setShowManualPro] = useState(false);
   const [savingBuffer, setSavingBuffer]   = useState(false);
   const [bufferMsg, setBufferMsg]         = useState('');
 
@@ -822,9 +824,17 @@ export default function ProfessionalDashboardPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)' }}>
             <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text)' }}>Próximas citas</h2>
-            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-              {upcomingBookings.length} {upcomingBookings.length === 1 ? 'cita' : 'citas'}
-            </span>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)' }}>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+                {upcomingBookings.length} {upcomingBookings.length === 1 ? 'cita' : 'citas'}
+              </span>
+              {bizServices.length > 0 && (
+                <button className="btn btn-primary btn-sm" onClick={() => setShowManualPro(true)}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Añadir cita
+                </button>
+              )}
+            </div>
           </div>
 
           {loadingBookings ? (
@@ -1781,6 +1791,18 @@ export default function ProfessionalDashboardPage() {
         </div>
       )}
 
+      {showManualPro && (
+        <ManualBookingModal
+          mode="pro"
+          professionals={profile ? [{ id: profile.id, name: profile.name }] : []}
+          services={bizServices}
+          onClose={() => setShowManualPro(false)}
+          onCreated={() => {
+            setShowManualPro(false);
+            api.getProBookings().then(d => setBookings(Array.isArray(d) ? d : [])).catch(() => {});
+          }}
+        />
+      )}
     </div>
   );
 }

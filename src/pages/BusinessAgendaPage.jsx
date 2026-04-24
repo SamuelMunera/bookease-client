@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import ManualBookingModal from '../components/ManualBookingModal';
 
 const DAYS_ES   = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -168,6 +169,12 @@ export default function BusinessAgendaPage() {
   const [bookings,   setBookings]   = useState([]);
   const [loading,    setLoading]    = useState(false);
 
+  const [showManual, setShowManual] = useState(false);
+  const [professionals, setProfessionals] = useState([]);
+  useEffect(() => {
+    if (businessId) api.getBusinessProfessionals(businessId).then(setProfessionals).catch(() => {});
+  }, [businessId]);
+
   // service form
   const [showSvcForm, setShowSvcForm] = useState(false);
   const [svcForm,     setSvcForm]     = useState(EMPTY_SVC);
@@ -246,12 +253,20 @@ export default function BusinessAgendaPage() {
           </p>
         </div>
 
-        {isToday(date) && (
-          <div className="agenda-today-pill">
-            <span className="agenda-today-dot" />
-            Hoy
-          </div>
-        )}
+        <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', flexWrap:'wrap' }}>
+          {isToday(date) && (
+            <div className="agenda-today-pill">
+              <span className="agenda-today-dot" />
+              Hoy
+            </div>
+          )}
+          {businessId && (
+            <button className="btn btn-primary btn-sm" onClick={() => setShowManual(true)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Añadir cita
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Controls row ── */}
@@ -406,6 +421,19 @@ export default function BusinessAgendaPage() {
             />
           ))}
         </div>
+      )}
+
+      {showManual && (
+        <ManualBookingModal
+          mode="business"
+          businessId={businessId}
+          professionals={professionals}
+          onClose={() => setShowManual(false)}
+          onCreated={() => {
+            setShowManual(false);
+            api.getBusinessBookings(businessId, { date }).then(d => setBookings(d || []));
+          }}
+        />
       )}
     </div>
   );

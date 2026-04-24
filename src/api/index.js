@@ -166,6 +166,10 @@ const api = {
   rescheduleBooking: (id, body) =>
     request(`/bookings/${id}/reschedule`, { method: 'PATCH', body: JSON.stringify(body) }),
 
+  searchClient: (email) => request(`/bookings/clients/search?email=${encodeURIComponent(email)}`),
+  createManualBookingBusiness: (businessId, body) => request(`/businesses/${businessId}/bookings/manual`, { method: 'POST', body: JSON.stringify(body) }),
+  createManualBookingPro: (body) => request('/pro/me/bookings/manual', { method: 'POST', body: JSON.stringify(body) }),
+
   // Reviews
   getBusinessReviews:       (id)       => request(`/businesses/${id}/reviews`),
   getBusinessStats:         (id)       => request(`/businesses/${id}/stats`),
