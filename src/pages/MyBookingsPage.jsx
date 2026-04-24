@@ -190,9 +190,16 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
                 {' · '}{b.startTime}{b.endTime ? `–${b.endTime}` : ''}
               </div>
             </div>
-            <span className={`badge ${STATUS_BADGE[b.status] ?? 'badge-pending'}`}>
-              {STATUS_LABEL[b.status] ?? b.status}
-            </span>
+            <div style={{ display:'flex', gap:'var(--sp-2)', alignItems:'center', flexWrap:'wrap' }}>
+              {b.source && b.source !== 'ONLINE' && (
+                <span style={{ fontSize:10, padding:'2px 7px', borderRadius:'var(--r-full)', background:'rgba(124,92,252,.1)', color:'var(--violet)', border:'1px solid rgba(124,92,252,.2)', fontWeight:600 }}>
+                  {{ MANUAL:'Manual', WHATSAPP:'WhatsApp', CALL:'Llamada', PRESENCIAL:'Presencial' }[b.source] ?? b.source}
+                </span>
+              )}
+              <span className={`badge ${STATUS_BADGE[b.status] ?? 'badge-pending'}`}>
+                {STATUS_LABEL[b.status] ?? b.status}
+              </span>
+            </div>
           </div>
 
           {/* Business or address info */}
