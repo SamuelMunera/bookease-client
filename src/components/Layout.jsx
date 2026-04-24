@@ -120,7 +120,6 @@ export default function Layout() {
             </svg>
             A domicilio
           </Link>
-          {!user && <span className="nav-pill-badge">Nuevo</span>}
         </div>
 
         {/* Right side */}
