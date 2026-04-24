@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES, getTimezone } from '../utils/countryConfig';
 
 const STEPS = ['Cuenta', 'Perfil', 'Modalidad'];
 
@@ -45,6 +46,7 @@ export default function ProRegisterPage() {
     name: '', email: '', password: '', phone: '',
     specialty: '', bio: '', experience: '',
     joinCode: '', cities: '',
+    country: 'CO', timezone: '', state: '', zipCode: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -111,8 +113,9 @@ export default function ProRegisterPage() {
     setApiError('');
     setLoading(true);
     try {
-      const { name, email, password, phone, specialty, bio, experience, joinCode, cities } = form;
+      const { name, email, password, phone, specialty, bio, experience, joinCode, cities, country, timezone, state, zipCode } = form;
       const citiesArr = cities.split(',').map(c => c.trim()).filter(Boolean);
+      const resolvedTz = getTimezone(country, timezone);
       const isIndependent = mode === 'independent';
 
       if (googleToken) {
@@ -126,7 +129,7 @@ export default function ProRegisterPage() {
           });
         }
       } else {
-        const body = { name, email, password, phone, specialty, bio, experience };
+        const body = { name, email, password, phone, specialty, bio, experience, country, timezone: resolvedTz, state: state || undefined, zipCode: zipCode || undefined };
         if (isIndependent) {
           body.offersHomeService = true;
           if (citiesArr.length) body.homeServiceArea = { cities: citiesArr };
@@ -276,9 +279,29 @@ export default function ProRegisterPage() {
                   {errors.password && <p className="field-error">{errors.password}</p>}
                 </div>
                 <div className="form-group">
+                  <label className="form-label">País *</label>
+                  <div style={{ display:'flex', gap:'var(--sp-2)' }}>
+                    {COUNTRIES.map(c => (
+                      <button key={c.code} type="button" onClick={() => { set('country')({ target:{ value:c.code } }); set('timezone')({ target:{ value:'' } }); }}
+                        style={{ flex:1, padding:'var(--sp-2) var(--sp-3)', borderRadius:'var(--r-lg)', cursor:'pointer', border:`1.5px solid ${form.country===c.code?'var(--violet)':'var(--border)'}`, background:form.country===c.code?'var(--violet-subtle)':'var(--surface-2)', color:form.country===c.code?'var(--violet)':'var(--text-muted)', fontWeight:form.country===c.code?700:500, fontSize:'var(--text-sm)', transition:'all .12s' }}>
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {form.country === 'US' && (
+                  <div className="form-group">
+                    <label className="form-label">Timezone *</label>
+                    <select className="input" value={form.timezone} onChange={e => set('timezone')(e)} required>
+                      <option value="">Select your timezone…</option>
+                      {US_TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+                    </select>
+                  </div>
+                )}
+                <div className="form-group">
                   <label className="form-label" htmlFor="pro-phone">Teléfono <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span></label>
                   <input id="pro-phone" className="input" type="tel"
-                    placeholder="+57 300 000 0000" value={form.phone}
+                    placeholder={COUNTRY_CONFIG[form.country]?.phonePlaceholder || '+57 300 000 0000'} value={form.phone}
                     onChange={e => set('phone', e.target.value)} autoComplete="tel" />
                 </div>
                 {apiError && <p className="error-msg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{apiError}</p>}

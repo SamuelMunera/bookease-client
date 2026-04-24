@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
+import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES, getTimezone } from '../utils/countryConfig';
 
 export default function RegisterBusinessPage() {
   const navigate = useNavigate();
@@ -8,9 +9,12 @@ export default function RegisterBusinessPage() {
   const [form, setForm] = useState({
     name: '', category: '', description: '',
     city: '', address: '', phone: '',
+    country: 'CO', timezone: '', state: '', zipCode: '',
   });
   const [error,   setError]   = useState('');
   const [loading, setLoading] = useState(false);
+
+  const cfg = COUNTRY_CONFIG[form.country] || COUNTRY_CONFIG.CO;
 
   useEffect(() => {
     api.getCategories().then(cats => {
@@ -21,10 +25,20 @@ export default function RegisterBusinessPage() {
 
   const set = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
 
+  function setCountry(code) {
+    setForm(p => ({ ...p, country: code, timezone: '', state: '', zipCode: '' }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name.trim() || !form.city.trim() || !form.address.trim()) {
       return setError('Nombre, ciudad y dirección son obligatorios.');
+    }
+    if (form.country === 'US' && !form.timezone) {
+      return setError('Select your timezone.');
+    }
+    if (form.country === 'US' && form.zipCode && !/^\d{5}(-\d{4})?$/.test(form.zipCode)) {
+      return setError('ZIP code must be 5 digits (e.g. 33101).');
     }
     setError('');
     setLoading(true);
@@ -36,6 +50,10 @@ export default function RegisterBusinessPage() {
         city:        form.city.trim(),
         address:     form.address.trim(),
         phone:       form.phone.trim() || undefined,
+        country:     form.country,
+        timezone:    getTimezone(form.country, form.timezone),
+        state:       form.state.trim() || undefined,
+        zipCode:     form.zipCode.trim() || undefined,
       });
       navigate('/dashboard');
     } catch (err) {
@@ -138,22 +156,60 @@ export default function RegisterBusinessPage() {
               </div>
             </div>
 
-            {/* City + Address */}
-            <div style={{ display: 'flex', gap: 'var(--sp-3)' }}>
-              <div className="form-group" style={{ flex: '0 0 130px' }}>
-                <label className="form-label">Ciudad *</label>
-                <input className="input" placeholder="Bogotá" value={form.city} onChange={set('city')} required />
+            {/* Country */}
+            <div className="form-group">
+              <label className="form-label">País *</label>
+              <div style={{ display:'flex', gap:'var(--sp-2)' }}>
+                {COUNTRIES.map(c => (
+                  <button key={c.code} type="button" onClick={() => setCountry(c.code)}
+                    style={{ flex:1, padding:'var(--sp-3)', borderRadius:'var(--r-lg)', cursor:'pointer', border:`1.5px solid ${form.country===c.code?'var(--gold)':'var(--border)'}`, background:form.country===c.code?'var(--gold-subtle)':'var(--surface-2)', color:form.country===c.code?'var(--gold)':'var(--text-muted)', fontWeight:form.country===c.code?700:500, fontSize:'var(--text-sm)', transition:'all .12s' }}>
+                    {c.label}
+                  </button>
+                ))}
               </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label className="form-label">Dirección *</label>
-                <input className="input" placeholder="Calle 123 # 45-67" value={form.address} onChange={set('address')} required />
+            </div>
+
+            {/* Timezone for US */}
+            {form.country === 'US' && (
+              <div className="form-group">
+                <label className="form-label">Timezone *</label>
+                <select className="input" value={form.timezone} onChange={set('timezone')} required>
+                  <option value="">Select your timezone…</option>
+                  {US_TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
+                </select>
               </div>
+            )}
+
+            {/* Address */}
+            <div className="form-group">
+              <label className="form-label">{cfg.addressLabel} *</label>
+              <input className="input" placeholder={cfg.addressPlaceholder} value={form.address} onChange={set('address')} required />
+            </div>
+
+            {/* City + State (US) + ZIP (US) */}
+            <div style={{ display:'flex', gap:'var(--sp-3)', flexWrap:'wrap' }}>
+              <div className="form-group" style={{ flex:'1 1 120px' }}>
+                <label className="form-label">{cfg.cityLabel} *</label>
+                <input className="input" placeholder={cfg.cityPlaceholder} value={form.city} onChange={set('city')} required />
+              </div>
+              {cfg.hasState && (
+                <div className="form-group" style={{ flex:'0 0 80px' }}>
+                  <label className="form-label">{cfg.stateLabel}</label>
+                  <input className="input" placeholder={cfg.statePlaceholder} value={form.state} onChange={set('state')} maxLength={2} style={{ textTransform:'uppercase' }} />
+                </div>
+              )}
+              {cfg.hasZip && (
+                <div className="form-group" style={{ flex:'0 0 110px' }}>
+                  <label className="form-label">{cfg.zipLabel}</label>
+                  <input className="input" placeholder={cfg.zipPlaceholder} value={form.zipCode} onChange={set('zipCode')} maxLength={10} />
+                </div>
+              )}
             </div>
 
             {/* Phone */}
             <div className="form-group">
               <label className="form-label">Teléfono</label>
-              <input className="input" placeholder="+57 300 000 0000" value={form.phone} onChange={set('phone')} />
+              <input className="input" placeholder={cfg.phonePlaceholder} value={form.phone} onChange={set('phone')} />
             </div>
 
             {/* Description */}
