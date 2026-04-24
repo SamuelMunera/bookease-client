@@ -66,6 +66,8 @@ const api = {
   getProServiceConfigs: () => request('/pro/me/service-configs'),
   saveProServiceConfigs: (configs) => request('/pro/me/service-configs', { method: 'PUT', body: JSON.stringify({ configs }) }),
   updateProBuffer: (bufferTime) => request('/pro/me/buffer', { method: 'PATCH', body: JSON.stringify({ bufferTime }) }),
+  updateProCancelPolicy: (cancelMinHours) => request('/pro/me/cancel-policy', { method: 'PATCH', body: JSON.stringify({ cancelMinHours }) }),
+  updateBizCancelPolicy: (bizId, cancelMinHours) => request(`/businesses/${bizId}`, { method: 'PUT', body: JSON.stringify({ cancelMinHours }) }),
 
   // Join requests
   submitJoinRequest: (code) => request('/pro/join', { method: 'POST', body: JSON.stringify({ code }) }),

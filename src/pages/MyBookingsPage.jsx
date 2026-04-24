@@ -140,10 +140,20 @@ function ReschedulePanel({ booking, onDone, onClose }) {
 
 /* ── Timeline booking row ────────────────────────────────── */
 function AgendaBookingRow({ b, onCancel, onRescheduled }) {
-  const upcoming   = isUpcoming(b.date);
-  const isHome     = b.type === 'HOME_SERVICE';
+  const upcoming    = isUpcoming(b.date);
+  const isHome      = b.type === 'HOME_SERVICE';
   const serviceName = b.service?.name ?? b.homeService?.name ?? '—';
   const [showReschedule, setShowReschedule] = useState(false);
+  const [cancelError, setCancelError]       = useState('');
+  const [cancelling, setCancelling]         = useState(false);
+
+  async function handleCancelClick() {
+    if (!confirm('¿Cancelar esta reserva?')) return;
+    setCancelling(true); setCancelError('');
+    try { await onCancel(b.id, isHome); }
+    catch (err) { setCancelError(err.message); }
+    finally { setCancelling(false); }
+  }
 
   const statusColor = {
     CONFIRMED: 'var(--success)',
@@ -227,21 +237,28 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
 
           {/* Actions */}
           {b.status !== 'CANCELLED' && upcoming && (
-            <div className="agenda-row-actions">
-              {!isHome && (
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowReschedule(v => !v)}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                    <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                    <path d="M8 16H3v5"/>
-                  </svg>
-                  Aplazar
+            <>
+              <div className="agenda-row-actions">
+                {!isHome && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setShowReschedule(v => !v)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                      <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                      <path d="M8 16H3v5"/>
+                    </svg>
+                    Aplazar
+                  </button>
+                )}
+                <button className="btn btn-danger btn-sm" disabled={cancelling} onClick={handleCancelClick}>
+                  {cancelling ? 'Cancelando…' : 'Cancelar'}
                 </button>
+              </div>
+              {cancelError && (
+                <div style={{ marginTop:'var(--sp-2)', padding:'var(--sp-2) var(--sp-3)', borderRadius:'var(--r-md)', background:'rgba(239,68,68,.08)', border:'1px solid rgba(239,68,68,.2)', fontSize:'var(--text-xs)', color:'var(--error)', lineHeight:1.5 }}>
+                  {cancelError}
+                </div>
               )}
-              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id, isHome)}>
-                Cancelar
-              </button>
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -276,7 +293,6 @@ export default function MyBookingsPage() {
   useEffect(load, []);
 
   async function handleCancel(id, isHome) {
-    if (!confirm('¿Cancelar esta reserva?')) return;
     await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));
     load();
   }
