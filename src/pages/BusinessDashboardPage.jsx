@@ -59,6 +59,9 @@ export default function BusinessDashboardPage() {
   const [revenue, setRevenue] = useState(null);
   const [showRevenue, setShowRevenue] = useState(false);
   const [togglingRevenue, setTogglingRevenue] = useState(false);
+  const [cancelMinHours, setCancelMinHours] = useState(0);
+  const [savingPolicy, setSavingPolicy] = useState(false);
+  const [policyMsg, setPolicyMsg] = useState('');
 
   useEffect(() => {
     api.getBusinesses()
@@ -77,6 +80,7 @@ export default function BusinessDashboardPage() {
   useEffect(() => {
     if (!business) return;
     setShowRevenue(business.showRevenueToProf ?? false);
+    setCancelMinHours(business.cancelMinHours ?? 0);
     api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
     api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
     api.getBusinessRevenue().then(d => setRevenue(d)).catch(() => {});
@@ -98,6 +102,15 @@ export default function BusinessDashboardPage() {
       setActionMsg('Solicitud rechazada');
     } catch (err) { setActionMsg(err.message); }
     finally { setTimeout(() => setActionMsg(''), 3000); }
+  }
+
+  async function saveCancelPolicy() {
+    setSavingPolicy(true); setPolicyMsg('');
+    try {
+      await api.updateBizCancelPolicy(business.id, cancelMinHours);
+      setPolicyMsg('Guardado');
+    } catch { setPolicyMsg('Error al guardar'); }
+    finally { setSavingPolicy(false); setTimeout(() => setPolicyMsg(''), 2500); }
   }
 
   async function toggleRevenuePerm() {
@@ -676,6 +689,30 @@ export default function BusinessDashboardPage() {
                 width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s',
               }} />
             </button>
+          </div>
+
+          {/* Política de cancelación */}
+          <div style={{ paddingTop:'var(--sp-5)', borderTop:'1px solid var(--border)' }}>
+            <p style={{ fontWeight:700, color:'var(--text)', fontSize:'var(--text-sm)', margin:'0 0 4px' }}>
+              Política de cancelación
+            </p>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
+              Horas mínimas de anticipación que necesita el cliente para cancelar su cita. 0 = sin restricción.
+            </p>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', flexWrap:'wrap' }}>
+              {[0, 2, 6, 12, 24, 48].map(h => (
+                <button key={h} type="button" onClick={() => setCancelMinHours(h)}
+                  style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: cancelMinHours === h ? 700 : 500, border:`1.5px solid ${cancelMinHours === h ? 'var(--violet)' : 'var(--border)'}`, background: cancelMinHours === h ? 'var(--violet-subtle)' : 'var(--surface-2)', color: cancelMinHours === h ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
+                  {h === 0 ? 'Sin límite' : `${h}h`}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginTop:'var(--sp-4)' }}>
+              <button className="btn btn-primary btn-sm" onClick={saveCancelPolicy} disabled={savingPolicy}>
+                {savingPolicy ? 'Guardando…' : 'Guardar política'}
+              </button>
+              {policyMsg && <span style={{ fontSize:'var(--text-xs)', color: policyMsg === 'Guardado' ? 'var(--success)' : 'var(--error)' }}>{policyMsg}</span>}
+            </div>
           </div>
 
           {/* Resumen general */}

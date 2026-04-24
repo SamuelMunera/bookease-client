@@ -255,6 +255,9 @@ export default function ProfessionalDashboardPage() {
   const [showManualPro, setShowManualPro] = useState(false);
   const [savingBuffer, setSavingBuffer]   = useState(false);
   const [bufferMsg, setBufferMsg]         = useState('');
+  const [cancelMinHours, setCancelMinHours] = useState(0);
+  const [savingPolicy, setSavingPolicy]   = useState(false);
+  const [policyMsg, setPolicyMsg]         = useState('');
 
   // Profile tab
   const [profileForm, setProfileForm]   = useState(null);
@@ -305,6 +308,7 @@ export default function ProfessionalDashboardPage() {
       .then(data => {
         setProfile(data);
         setBufferTime(data?.bufferTime ?? 0);
+        setCancelMinHours(data?.cancelMinHours ?? 0);
         setProfileForm({ name: data?.name || '', bio: data?.bio || '', phone: data?.phone || '', specialty: data?.specialty || '', experience: data?.experience || '' });
         api.getProPhotos().then(p => setPhotos(Array.isArray(p) ? p : [])).catch(() => {});
         if (data?.businessId) {
@@ -465,6 +469,15 @@ export default function ProfessionalDashboardPage() {
       setBufferMsg('Guardado');
     } catch { setBufferMsg('Error al guardar'); }
     finally { setSavingBuffer(false); setTimeout(() => setBufferMsg(''), 2500); }
+  }
+
+  async function saveProCancelPolicy() {
+    setSavingPolicy(true); setPolicyMsg('');
+    try {
+      await api.updateProCancelPolicy(cancelMinHours);
+      setPolicyMsg('Guardado');
+    } catch { setPolicyMsg('Error al guardar'); }
+    finally { setSavingPolicy(false); setTimeout(() => setPolicyMsg(''), 2500); }
   }
 
   async function saveSchedule() {
@@ -1715,6 +1728,28 @@ export default function ProfessionalDashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Política de cancelación */}
+          <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+            <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--sp-2)' }}>Política de cancelación</h3>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-4)', maxWidth: 440 }}>
+              Horas mínimas de anticipación que necesita el cliente para cancelar o aplazar. 0 = sin restricción.
+            </p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'var(--sp-2)', marginBottom:'var(--sp-4)' }}>
+              {[0, 2, 6, 12, 24, 48].map(h => (
+                <button key={h} type="button" onClick={() => setCancelMinHours(h)}
+                  style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: cancelMinHours === h ? 700 : 500, border:`1.5px solid ${cancelMinHours === h ? 'var(--violet)' : 'var(--border)'}`, background: cancelMinHours === h ? 'var(--violet-subtle)' : 'var(--surface-2)', color: cancelMinHours === h ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
+                  {h === 0 ? 'Sin límite' : `${h}h`}
+                </button>
+              ))}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)' }}>
+              <button className="btn btn-primary btn-sm" onClick={saveProCancelPolicy} disabled={savingPolicy}>
+                {savingPolicy ? 'Guardando…' : 'Guardar política'}
+              </button>
+              {policyMsg && <span style={{ fontSize:'var(--text-xs)', color: policyMsg === 'Guardado' ? 'var(--success)' : 'var(--error)' }}>{policyMsg}</span>}
+            </div>
           </div>
 
           {/* Sección Seguridad */}
