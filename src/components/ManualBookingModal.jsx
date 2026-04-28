@@ -118,7 +118,15 @@ export default function ManualBookingModal({ mode, businessId, professionals = [
         : await api.createManualBookingPro(body);
       onCreated(booking);
       onClose();
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      if (err.code === 'SLOT_CONFLICT') {
+        setSlot('');
+        setStep(2);
+        setError('Este horario acaba de ser tomado. Elige otra fecha u hora.');
+      } else {
+        setError(err.message);
+      }
+    }
     finally { setSub(false); }
   }
 

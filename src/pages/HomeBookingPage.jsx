@@ -196,7 +196,13 @@ export default function HomeBookingPage() {
       setSuccess(booking);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'SLOT_CONFLICT') {
+        setSlot(null);
+        setStep(2);
+        setError('Este horario acaba de ser tomado. Por favor elige otro turno.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setSubmitting(false);
     }

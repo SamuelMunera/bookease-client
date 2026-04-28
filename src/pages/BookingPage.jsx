@@ -186,10 +186,13 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState('');
   const [success,    setSuccess]    = useState(false);
+  const [slotTaken,  setSlotTaken]  = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     setSelected(null);
     setError('');
+    setSlotTaken(false);
     setLoading(true);
     api.getSlots({ professionalId, serviceId, date })
       .then(d  => {
@@ -208,17 +211,28 @@ export default function BookingPage() {
       })
       .catch(e => setError(e.message))
       .finally(()  => setLoading(false));
-  }, [date, professionalId, serviceId]);
+  }, [date, professionalId, serviceId, refreshKey]);
+
+  function refreshSlots() {
+    setRefreshKey(k => k + 1);
+  }
 
   async function handleConfirm() {
     if (!selected) return;
     setSubmitting(true);
     setError('');
+    setSlotTaken(false);
     try {
       await api.createBooking({ professionalId, serviceId, date, startTime: selected.startTime });
       setSuccess(true);
     } catch (e) {
-      setError(e.message);
+      if (e.code === 'SLOT_CONFLICT') {
+        setSlotTaken(true);
+        setSelected(null);
+        refreshSlots();
+      } else {
+        setError(e.message);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -360,6 +374,19 @@ export default function BookingPage() {
           )}
         </div>
       </div>
+
+      {/* ── Slot conflict banner ── */}
+      {slotTaken && (
+        <div className="slot-conflict-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div style={{ flex:1 }}>
+            <p style={{ margin:0, fontWeight:600 }}>Este horario acaba de ser tomado</p>
+            <p style={{ margin:'2px 0 0', fontSize:'var(--text-xs)', opacity:.85 }}>Por favor elige otro turno en los horarios actualizados.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Error ── */}
       {error && (

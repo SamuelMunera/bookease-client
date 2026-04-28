@@ -822,6 +822,19 @@ html { scroll-padding-top: 68px; }
   font-size: var(--text-sm);
 }
 
+.slot-conflict-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: var(--r-md);
+  color: var(--gold);
+  font-size: var(--text-sm);
+  margin-bottom: var(--sp-4);
+}
+
 /* ══════════════════════════════════════════════════════════
    LAYOUT HELPERS
    ══════════════════════════════════════════════════════════ */
