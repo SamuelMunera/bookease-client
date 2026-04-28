@@ -31,14 +31,15 @@ export default function RegisterBusinessPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim() || !form.city.trim() || !form.address.trim()) {
-      return setError('Nombre, ciudad y dirección son obligatorios.');
-    }
-    if (form.country === 'US' && !form.timezone) {
-      return setError('Select your timezone.');
-    }
-    if (form.country === 'US' && form.zipCode && !/^\d{5}(-\d{4})?$/.test(form.zipCode)) {
-      return setError('ZIP code must be 5 digits (e.g. 33101).');
+    if (!form.name.trim()) return setError('El nombre del negocio es obligatorio.');
+    if (!form.address.trim() || form.address.trim().length < 5)
+      return setError('Ingresa una dirección completa (mínimo 5 caracteres).');
+    if (!form.city.trim()) return setError('La ciudad es obligatoria.');
+    if (form.country === 'US') {
+      if (!form.state) return setError('Selecciona el estado (EE. UU.).');
+      if (!form.zipCode || !/^\d{5}(-\d{4})?$/.test(form.zipCode.trim()))
+        return setError('El ZIP code debe tener 5 dígitos (ej: 33101).');
+      if (!form.timezone) return setError('Selecciona tu zona horaria.');
     }
     setError('');
     setLoading(true);
