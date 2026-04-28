@@ -475,21 +475,38 @@ export default function BusinessAgendaPage() {
       )}
 
       {/* ── Empty ── */}
-      {!loading && bookings.length === 0 && (
-        <div className="empty-state" style={{ marginTop:'var(--sp-6)' }}>
-          <div className="empty-state-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
+      {!loading && bookings.length === 0 && (() => {
+        const biz = businesses.find(b => b.id === businessId);
+        const noServices = !(biz?.services?.length > 0);
+        const noPros     = !(professionals.length > 0);
+        return (
+          <div className="empty-state" style={{ marginTop:'var(--sp-6)' }}>
+            <div className="empty-state-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <p style={{ fontSize:'var(--text-base)', fontWeight:600, color:'var(--text)', marginBottom:'var(--sp-2)' }}>
+              Sin reservas para esta fecha
+            </p>
+            {noServices ? (
+              <p style={{ fontSize:'var(--text-sm)', lineHeight:1.5 }}>
+                Agrega al menos un servicio aquí arriba para poder recibir reservas.
+              </p>
+            ) : noPros ? (
+              <p style={{ fontSize:'var(--text-sm)', lineHeight:1.5 }}>
+                Aún no hay profesionales. Comparte el código de vinculación desde el Panel para que se unan.
+              </p>
+            ) : (
+              <p style={{ fontSize:'var(--text-sm)', lineHeight:1.5 }}>
+                Las reservas confirmadas aparecerán aquí. Puedes crear una cita manual con el botón de arriba.
+              </p>
+            )}
           </div>
-          <p style={{ fontSize:'var(--text-base)', fontWeight:600, color:'var(--text)', marginBottom:'var(--sp-2)' }}>
-            Sin reservas para esta fecha
-          </p>
-          <p style={{ fontSize:'var(--text-sm)' }}>Las reservas que recibas aparecerán aquí.</p>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Timeline ── */}
       {!loading && sorted.length > 0 && (

@@ -493,8 +493,13 @@ export default function BusinessDashboardPage() {
           {/* Join code + pending requests */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
             <SectionCard title="Código de vinculación">
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)' }}>
-                Comparte este código con los profesionales que quieras añadir.
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-3)', lineHeight:1.5 }}>
+                Comparte este código con los profesionales de tu equipo.
+                {!business.professionals?.length && (
+                  <span style={{ display:'block', marginTop:4, color:'var(--gold)', fontWeight:600 }}>
+                    Necesitas al menos un profesional para recibir reservas.
+                  </span>
+                )}
               </p>
               {joinCode ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
@@ -575,9 +580,23 @@ export default function BusinessDashboardPage() {
             }
           >
             {!bookings.length ? (
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-8) 0' }}>
-                No hay citas programadas para hoy.
-              </p>
+              <div style={{ textAlign:'center', padding:'var(--sp-8) var(--sp-4)' }}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.25" style={{ marginBottom:'var(--sp-3)' }}>
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <p style={{ fontSize:'var(--text-sm)', color:'var(--text-subtle)', marginBottom:'var(--sp-1)' }}>Sin citas hoy</p>
+                {(!business.services?.length || !business.professionals?.length) ? (
+                  <p style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)', lineHeight:1.5 }}>
+                    Completa los primeros pasos arriba para que los clientes puedan reservar.
+                  </p>
+                ) : (
+                  <p style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)', lineHeight:1.5 }}>
+                    Las citas confirmadas aparecerán aquí.{' '}
+                    <Link to="/agenda" style={{ color:'var(--gold)', fontWeight:600 }}>Crear cita manual →</Link>
+                  </p>
+                )}
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
                 {[...bookings].sort((a, b) => a.startTime.localeCompare(b.startTime)).map(b => {
