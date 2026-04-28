@@ -353,6 +353,16 @@ export default function BusinessDashboardPage() {
           <Link to={`/businesses/${business.id}`} className="btn btn-secondary btn-sm">
             Ver perfil público
           </Link>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowWelcome(true)}
+            title="Ver guía de inicio"
+            style={{ padding:'6px 10px' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -398,7 +408,7 @@ export default function BusinessDashboardPage() {
       {tab === 'panel' && (
         <>
           {/* Onboarding checklist */}
-          <BusinessOnboardingChecklist business={business} onSwitchTab={setTab} />
+          <BusinessOnboardingChecklist business={business} onSwitchTab={setTab} onOpenGuide={() => setShowWelcome(true)} />
 
           {/* Services + Professionals */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>

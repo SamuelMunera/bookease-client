@@ -4423,9 +4423,12 @@ html { scroll-padding-top: 68px; }
   font-size: var(--text-xs); color: var(--text-subtle);
   margin: 0; text-align: center; padding-top: var(--sp-2);
   border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-1); flex-wrap: wrap;
 }
 
 @media (max-width: 480px) {
+  .ob-checklist { padding: var(--sp-4); }
+  .ob-pct { font-size: var(--text-xl); }
   .ob-step { flex-wrap: wrap; }
   .ob-step-cta { margin-top: var(--sp-2); margin-left: calc(20px + var(--sp-3)); }
 }

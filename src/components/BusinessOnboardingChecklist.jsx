@@ -38,7 +38,7 @@ const STEPS = [
   },
 ];
 
-export default function BusinessOnboardingChecklist({ business, onSwitchTab }) {
+export default function BusinessOnboardingChecklist({ business, onSwitchTab, onOpenGuide }) {
   const steps  = STEPS.map(s => ({ ...s, isDone: s.done(business) }));
   const done   = steps.filter(s => s.isDone).length;
   const total  = steps.length;
@@ -83,9 +83,14 @@ export default function BusinessOnboardingChecklist({ business, onSwitchTab }) {
         ))}
       </div>
 
-      <p className="ob-footer">
-        Cuando completes todos los pasos, tu negocio estará listo para recibir reservas.
-      </p>
+      <div className="ob-footer">
+        <span>Cuando completes todos los pasos, tu negocio estará listo para recibir reservas.</span>
+        {onOpenGuide && (
+          <button onClick={onOpenGuide} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--gold)', fontWeight:600, fontSize:'var(--text-xs)', padding:'0 0 0 var(--sp-2)', textDecoration:'underline' }}>
+            Ver guía
+          </button>
+        )}
+      </div>
     </div>
   );
 }
