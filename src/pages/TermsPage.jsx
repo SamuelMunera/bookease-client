@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const UPDATED_CO = '28 de abril de 2026';
-const UPDATED_US = 'April 28, 2026';
+const UPDATED_US = '28 de abril de 2026';
 
 function CountryToggle({ country, onChange }) {
   return (
@@ -133,34 +133,34 @@ function TermsUS() {
     <>
       <section className="legal-section">
         <p className="legal-intro">
-          By accessing or using Bookease you agree to these Terms in full. If you disagree, please do not use the platform.
-          These Terms are governed by the laws of the <strong>State of Florida, United States</strong>.
+          Al acceder o usar Bookease aceptas estos términos en su totalidad. Si no estás de acuerdo, no uses la plataforma.
+          Estos términos se rigen por las leyes del <strong>Estado de Florida, Estados Unidos</strong>.
         </p>
       </section>
 
       <section className="legal-section">
-        <h2>1. What is Bookease</h2>
-        <p>Bookease is a digital marketplace that connects clients with personal care and wellness businesses (barbershops, spas, salons, and similar services), enabling real-time appointment booking with licensed professionals.</p>
-        <p>Bookease acts solely as a technology intermediary. We are not a party to any service agreement between a client and a business or professional, and we do not guarantee the continuous availability of any registered business.</p>
+        <h2>1. Qué es Bookease</h2>
+        <p>Bookease es un mercado digital que conecta clientes con negocios de cuidado personal y bienestar (barberías, spas, salones y servicios similares), permitiendo reservar citas en tiempo real con profesionales.</p>
+        <p>Bookease actúa exclusivamente como intermediario tecnológico. No somos parte de ningún acuerdo de servicio entre un cliente y un negocio o profesional, y no garantizamos la disponibilidad permanente de ningún negocio registrado.</p>
       </section>
 
       <section className="legal-section">
-        <h2>2. Account Registration</h2>
-        <p>You must create a client account to make bookings. You may register with an email address and password or via Google OAuth. You are solely responsible for maintaining the confidentiality of your credentials and for all activity that occurs under your account.</p>
-        <p>Professionals and business owners have access to dedicated dashboards with additional features. Professional access requires approval by a registered business.</p>
-        <p>We reserve the right to suspend or terminate accounts that violate these Terms, contain false information, or engage in misuse of the platform.</p>
-        <p>You represent that you are at least <strong>18 years of age</strong>. Bookease does not knowingly collect information from persons under 13 in compliance with the Children's Online Privacy Protection Act (COPPA).</p>
+        <h2>2. Registro y cuentas</h2>
+        <p>Debes crear una cuenta de cliente para realizar reservas. Puedes registrarte con un correo electrónico y contraseña o mediante Google. Eres el único responsable de mantener la confidencialidad de tus credenciales y de toda la actividad que ocurra en tu cuenta.</p>
+        <p>Los profesionales y dueños de negocio tienen acceso a paneles específicos con funciones adicionales. El acceso de profesionales requiere aprobación de un negocio registrado.</p>
+        <p>Nos reservamos el derecho de suspender o eliminar cuentas que violen estos términos, contengan información falsa o hagan un uso indebido de la plataforma.</p>
+        <p>Declaras tener al menos <strong>18 años de edad</strong>. Bookease no recopila intencionalmente información de personas menores de 13 años, en cumplimiento de la <em>Children's Online Privacy Protection Act</em> (COPPA).</p>
       </section>
 
       <section className="legal-section">
-        <h2>3. Bookings and Appointments</h2>
-        <p>Bookings remain pending until confirmed by the business or professional. A confirmed booking constitutes an agreement between the client and the business. Bookease facilitates management but is not liable for service failures caused by the business or professional.</p>
+        <h2>3. Reservas y citas</h2>
+        <p>Las reservas quedan pendientes hasta que el negocio o profesional las confirme. Una reserva confirmada constituye un acuerdo entre el cliente y el negocio. Bookease facilita la gestión pero no es responsable de fallas en el servicio causadas por el negocio o profesional.</p>
         <div className="legal-list">
           {[
-            'You may cancel a booking from your dashboard before the appointment time, subject to the business\'s cancellation policy.',
-            'You may reschedule a booking by selecting a new available date and time.',
-            'Businesses may cancel bookings for legitimate reasons and must notify clients promptly.',
-            'Bookease does not process payments or issue refunds directly. Payment disputes are between you and the business, subject to applicable federal and state consumer protection laws.',
+            'Puedes cancelar una reserva desde tu panel antes de la hora de la cita, sujeto a la política de cancelación del negocio.',
+            'Puedes reprogramar una cita seleccionando una nueva fecha y hora disponible.',
+            'Los negocios pueden cancelar reservas por razones justificadas y deben notificar al cliente con prontitud.',
+            'Bookease no procesa pagos ni emite reembolsos directamente. Las disputas de pago son entre tú y el negocio, sujetas a las leyes de protección al consumidor federales y estatales aplicables.',
           ].map((t, i) => (
             <div key={i} className="legal-list-item">
               <span className="legal-list-dot" />
@@ -171,67 +171,67 @@ function TermsUS() {
       </section>
 
       <section className="legal-section">
-        <h2>4. Cancellation Policy</h2>
-        <p>Each business may set its own cancellation policy, including a minimum notice period before the appointment. This policy is displayed before you confirm a booking. Bookease is not responsible for enforcing or adjudicating cancellation disputes between clients and businesses.</p>
-        <p>Refund rights may vary by state. Nothing in these Terms limits any rights you may have under applicable state consumer protection statutes.</p>
+        <h2>4. Política de cancelación</h2>
+        <p>Cada negocio puede establecer su propia política de cancelación, incluyendo un período mínimo de anticipación antes de la cita. Esta política se muestra antes de confirmar la reserva. Bookease no es responsable de hacer cumplir ni de resolver disputas de cancelación entre clientes y negocios.</p>
+        <p>Los derechos de reembolso pueden variar según el estado. Nada en estos términos limita los derechos que puedas tener bajo las leyes estatales de protección al consumidor aplicables.</p>
       </section>
 
       <section className="legal-section">
-        <h2>5. Businesses and Professionals</h2>
-        <p>Registered businesses are solely responsible for the accuracy of their information (services, pricing, hours, photos) and for fulfilling their obligations to clients in accordance with applicable federal, state, and local laws, including applicable licensing requirements.</p>
-        <p>Bookease does not verify professional licenses or certifications and makes no representations regarding the quality of services provided by any business or professional listed on the platform.</p>
+        <h2>5. Negocios y profesionales</h2>
+        <p>Los negocios registrados son los únicos responsables de la exactitud de su información (servicios, precios, horarios, fotos) y de cumplir sus obligaciones con los clientes conforme a las leyes federales, estatales y locales aplicables, incluidos los requisitos de licencia correspondientes.</p>
+        <p>Bookease no verifica licencias ni certificaciones profesionales y no hace ninguna declaración respecto a la calidad de los servicios prestados por los negocios o profesionales listados en la plataforma.</p>
       </section>
 
       <section className="legal-section">
-        <h2>6. Reviews and User-Generated Content</h2>
-        <p>Clients may leave reviews about businesses. Reviews must be honest, based on genuine experience, and must not contain offensive, discriminatory, or defamatory content. We reserve the right to remove reviews that violate these guidelines.</p>
-        <p>By submitting content (photos, profile text, reviews) to the platform, you grant Bookease a non-exclusive, royalty-free, worldwide license to display such content within the service. You represent that you have all rights necessary to grant this license.</p>
+        <h2>6. Reseñas y contenido generado por el usuario</h2>
+        <p>Los clientes pueden dejar reseñas sobre los negocios. Las reseñas deben ser honestas, basadas en experiencia real y no contener lenguaje ofensivo, discriminatorio ni difamatorio. Nos reservamos el derecho de eliminar reseñas que incumplan estas condiciones.</p>
+        <p>Al subir contenido a la plataforma (fotos, textos de perfil, reseñas), nos concedes una licencia no exclusiva, libre de regalías y mundial para mostrar dicho contenido dentro del servicio. Declaras tener todos los derechos necesarios para otorgar esta licencia.</p>
       </section>
 
       <section className="legal-section">
-        <h2>7. Intellectual Property &amp; DMCA</h2>
-        <p>The design, code, brand, and original content of Bookease are protected by U.S. copyright, trademark, and intellectual property laws. You may not copy, redistribute, or use them for commercial purposes without express written authorization.</p>
-        <p>Bookease complies with the <strong>Digital Millennium Copyright Act (DMCA)</strong>. If you believe that content on the platform infringes your copyright, please send a notice to <strong>dmca@bookease.app</strong> containing: (i) identification of the copyrighted work; (ii) identification of the infringing material; (iii) your contact information; (iv) a statement of good faith belief; and (v) your signature.</p>
+        <h2>7. Propiedad intelectual y DMCA</h2>
+        <p>El diseño, código, marca y contenidos originales de Bookease están protegidos por las leyes de derechos de autor, marcas registradas y propiedad intelectual de los Estados Unidos. No puedes copiarlos, redistribuirlos ni usarlos con fines comerciales sin autorización expresa por escrito.</p>
+        <p>Bookease cumple con la <strong>Digital Millennium Copyright Act (DMCA)</strong>. Si consideras que algún contenido en la plataforma infringe tus derechos de autor, envía una notificación a <strong>dmca@bookease.app</strong> indicando: (i) identificación de la obra protegida; (ii) identificación del material infractor; (iii) tus datos de contacto; (iv) una declaración de buena fe; y (v) tu firma.</p>
       </section>
 
       <section className="legal-section">
-        <h2>8. Privacy &amp; California Residents (CCPA)</h2>
-        <p>Our collection and use of personal data is described in our <Link to="/privacy" style={{ color: 'var(--gold)' }}>Privacy Policy</Link>. We do not sell your personal information to third parties.</p>
-        <p>If you are a California resident, you have additional rights under the <strong>California Consumer Privacy Act (CCPA)</strong>, including the right to know what personal data we collect, the right to delete your data, and the right to opt out of the sale of your data. To exercise these rights, contact us at <strong>privacy@bookease.app</strong>.</p>
+        <h2>8. Privacidad y derechos CCPA (residentes de California)</h2>
+        <p>El uso de tus datos personales se describe en nuestra <Link to="/privacy" style={{ color: 'var(--gold)' }}>Política de Privacidad</Link>. No vendemos tu información personal a terceros.</p>
+        <p>Si eres residente de California, tienes derechos adicionales bajo la <strong>California Consumer Privacy Act (CCPA)</strong>, incluyendo el derecho a saber qué datos recopilamos, el derecho a eliminar tus datos y el derecho a optar por no participar en la venta de tus datos. Para ejercer estos derechos, contáctanos en <strong>privacidad@bookease.app</strong>.</p>
       </section>
 
       <section className="legal-section">
-        <h2>9. Disclaimer of Warranties</h2>
-        <p>THE PLATFORM IS PROVIDED <strong>"AS IS"</strong> AND <strong>"AS AVAILABLE"</strong> WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. BOOKEASE DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.</p>
+        <h2>9. Exención de garantías</h2>
+        <p>LA PLATAFORMA SE OFRECE <strong>"TAL CUAL"</strong> Y <strong>"SEGÚN DISPONIBILIDAD"</strong>, SIN GARANTÍAS DE NINGÚN TIPO, YA SEAN EXPRESAS O IMPLÍCITAS, INCLUYENDO, ENTRE OTRAS, LAS GARANTÍAS IMPLÍCITAS DE COMERCIABILIDAD, IDONEIDAD PARA UN FIN DETERMINADO Y NO INFRACCIÓN. BOOKEASE NO GARANTIZA QUE EL SERVICIO SEA ININTERRUMPIDO, LIBRE DE ERRORES O SEGURO.</p>
       </section>
 
       <section className="legal-section">
-        <h2>10. Limitation of Liability</h2>
-        <p>TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, BOOKEASE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE PLATFORM, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
-        <p>OUR TOTAL LIABILITY TO YOU FOR ANY CLAIM ARISING OUT OF OR RELATING TO THESE TERMS OR THE PLATFORM SHALL NOT EXCEED THE GREATER OF (A) $100 USD OR (B) THE AMOUNT PAID BY YOU TO BOOKEASE IN THE 12 MONTHS PRECEDING THE CLAIM.</p>
+        <h2>10. Limitación de responsabilidad</h2>
+        <p>EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY APLICABLE, BOOKEASE NO SERÁ RESPONSABLE DE DAÑOS INDIRECTOS, INCIDENTALES, ESPECIALES, CONSECUENTES NI PUNITIVOS, INCLUYENDO PÉRDIDA DE GANANCIAS, DATOS O CLIENTELA, QUE SURJAN DE O ESTÉN RELACIONADOS CON EL USO DE LA PLATAFORMA, INCLUSO SI SE HA ADVERTIDO DE LA POSIBILIDAD DE TALES DAÑOS.</p>
+        <p>NUESTRA RESPONSABILIDAD TOTAL ANTE TI POR CUALQUIER RECLAMACIÓN NO EXCEDERÁ EL MAYOR DE (A) $100 USD O (B) EL MONTO PAGADO POR TI A BOOKEASE EN LOS 12 MESES ANTERIORES A LA RECLAMACIÓN.</p>
       </section>
 
       <section className="legal-section">
-        <h2>11. Dispute Resolution &amp; Arbitration</h2>
-        <p>PLEASE READ THIS SECTION CAREFULLY. IT AFFECTS YOUR LEGAL RIGHTS.</p>
-        <p>Any dispute arising out of or relating to these Terms or the platform shall be resolved by <strong>binding arbitration</strong> administered by the American Arbitration Association (AAA) under its Consumer Arbitration Rules, rather than in court, except that either party may bring individual claims in small claims court.</p>
-        <p><strong>Class Action Waiver:</strong> You agree to resolve any disputes on an individual basis and waive your right to participate in a class action lawsuit or class-wide arbitration.</p>
-        <p>This arbitration agreement does not apply to claims for injunctive or equitable relief.</p>
+        <h2>11. Resolución de disputas y arbitraje</h2>
+        <p><strong>Lee esta sección con atención. Afecta tus derechos legales.</strong></p>
+        <p>Cualquier disputa derivada de o relacionada con estos términos o la plataforma se resolverá mediante <strong>arbitraje vinculante</strong> administrado por la American Arbitration Association (AAA) bajo sus Reglas de Arbitraje del Consumidor, en lugar de ante un tribunal, salvo que cualquiera de las partes pueda presentar reclamaciones individuales ante el tribunal de pequeñas causas (<em>small claims court</em>).</p>
+        <p><strong>Renuncia a demandas colectivas:</strong> Aceptas resolver cualquier disputa de forma individual y renuncias a tu derecho de participar en una demanda colectiva (<em>class action</em>) o en un arbitraje colectivo.</p>
+        <p>Este acuerdo de arbitraje no se aplica a reclamaciones de medidas cautelares o equitativas.</p>
       </section>
 
       <section className="legal-section">
-        <h2>12. Governing Law &amp; Jurisdiction</h2>
-        <p>These Terms are governed by the laws of the <strong>State of Florida</strong>, without regard to conflict of law principles. To the extent arbitration does not apply, you consent to the exclusive jurisdiction of the state and federal courts located in <strong>Miami-Dade County, Florida</strong>.</p>
+        <h2>12. Ley aplicable y jurisdicción</h2>
+        <p>Estos términos se rigen por las leyes del <strong>Estado de Florida</strong>, sin tener en cuenta los principios de conflicto de leyes. En la medida en que el arbitraje no aplique, aceptas la jurisdicción exclusiva de los tribunales estatales y federales ubicados en el <strong>Condado de Miami-Dade, Florida</strong>.</p>
       </section>
 
       <section className="legal-section">
-        <h2>13. Changes to These Terms</h2>
-        <p>We may update these Terms from time to time. If the change is material, we will provide at least 30 days' notice via email or a prominent notice on the platform. Your continued use of the platform after the effective date of the revised Terms constitutes your acceptance.</p>
+        <h2>13. Cambios en los términos</h2>
+        <p>Podemos actualizar estos términos periódicamente. Si el cambio es sustancial, te notificaremos con al menos 30 días de anticipación mediante correo electrónico o un aviso destacado en la plataforma. El uso continuado de la plataforma después de la fecha de entrada en vigor de los términos revisados constituye tu aceptación.</p>
       </section>
 
       <section className="legal-section">
-        <h2>14. Contact</h2>
-        <p>For questions about these Terms, contact us at <strong>legal@bookease.app</strong>.</p>
+        <h2>14. Contacto</h2>
+        <p>Para consultas sobre estos términos, contáctanos en <strong>legal@bookease.app</strong>.</p>
       </section>
     </>
   );
@@ -244,14 +244,8 @@ export default function TermsPage() {
     <div className="legal-page">
       <div className="legal-hero">
         <p className="section-label">Legal</p>
-        <h1 className="legal-title">
-          {country === 'CO' ? 'Términos y condiciones' : 'Terms & Conditions'}
-        </h1>
-        <p className="legal-updated">
-          {country === 'CO'
-            ? `Última actualización: ${UPDATED_CO}`
-            : `Last updated: ${UPDATED_US}`}
-        </p>
+        <h1 className="legal-title">Términos y condiciones</h1>
+        <p className="legal-updated">Última actualización: {country === 'CO' ? UPDATED_CO : UPDATED_US}</p>
         <div style={{ marginTop: 'var(--sp-5)' }}>
           <CountryToggle country={country} onChange={setCountry} />
         </div>
@@ -261,13 +255,9 @@ export default function TermsPage() {
         {country === 'CO' ? <TermsCO /> : <TermsUS />}
 
         <div className="legal-footer-nav">
-          <Link to="/privacy" className="legal-nav-link">
-            {country === 'CO' ? 'Política de privacidad' : 'Privacy Policy'}
-          </Link>
+          <Link to="/privacy" className="legal-nav-link">Política de privacidad</Link>
           <span className="footer-bottom-sep">·</span>
-          <Link to="/cookies" className="legal-nav-link">
-            {country === 'CO' ? 'Política de cookies' : 'Cookie Policy'}
-          </Link>
+          <Link to="/cookies" className="legal-nav-link">Política de cookies</Link>
         </div>
       </div>
     </div>
