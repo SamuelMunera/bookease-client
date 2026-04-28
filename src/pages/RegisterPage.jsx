@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import GoogleAuthButton from '../components/GoogleAuthButton';
+import { COUNTRIES, COUNTRY_CONFIG } from '../utils/countryConfig';
 
 const ACCOUNT_TYPES = [
   {
@@ -22,7 +23,7 @@ const ACCOUNT_TYPES = [
 export default function RegisterPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT', country: 'CO' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +43,7 @@ export default function RegisterPage() {
   }
 
   const set = (f) => (e) => setForm({ ...form, [f]: e.target.value });
+  const cfg = COUNTRY_CONFIG[form.country] || COUNTRY_CONFIG.CO;
 
   return (
     <div className="auth-wrap">
@@ -134,13 +136,37 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Country */}
+            <div className="form-group">
+              <label className="form-label">País</label>
+              <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                {COUNTRIES.map(c => (
+                  <button
+                    key={c.code}
+                    type="button"
+                    onClick={() => setForm(p => ({ ...p, country: c.code }))}
+                    style={{
+                      flex: 1, padding: 'var(--sp-3)', borderRadius: 'var(--r-lg)', cursor: 'pointer',
+                      border: `1.5px solid ${form.country === c.code ? 'var(--gold)' : 'var(--border)'}`,
+                      background: form.country === c.code ? 'var(--gold-subtle)' : 'var(--surface-2)',
+                      color: form.country === c.code ? 'var(--gold)' : 'var(--text-muted)',
+                      fontWeight: form.country === c.code ? 700 : 500,
+                      fontSize: 'var(--text-sm)', transition: 'all .12s',
+                    }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="form-group">
               <label className="form-label" htmlFor="phone">Teléfono</label>
               <input
                 id="phone"
                 className="input"
                 type="tel"
-                placeholder="+57 300 000 0000"
+                placeholder={cfg.phonePlaceholder}
                 value={form.phone}
                 onChange={set('phone')}
                 required
