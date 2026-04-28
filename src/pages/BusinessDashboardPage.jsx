@@ -65,6 +65,8 @@ export default function BusinessDashboardPage() {
   const [cancelMinHours, setCancelMinHours] = useState(0);
   const [savingPolicy, setSavingPolicy] = useState(false);
   const [policyMsg, setPolicyMsg] = useState('');
+  const [sendingVerify, setSendingVerify] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState('');
 
   useEffect(() => {
     api.getBusinesses()
@@ -164,6 +166,20 @@ export default function BusinessDashboardPage() {
     finally { setPwSaving(false); setTimeout(() => setPwMsg(''), 4000); }
   }
 
+  async function handleResendVerify() {
+    setSendingVerify(true);
+    setVerifyMsg('');
+    try {
+      await api.sendBusinessVerifyEmail();
+      setVerifyMsg('Correo enviado. Revisa tu bandeja.');
+    } catch (e) {
+      setVerifyMsg(e.message);
+    } finally {
+      setSendingVerify(false);
+      setTimeout(() => setVerifyMsg(''), 6000);
+    }
+  }
+
   function copyCode() {
     if (!joinCode) return;
     navigator.clipboard.writeText(joinCode).then(() => {
@@ -230,6 +246,41 @@ export default function BusinessDashboardPage() {
 
   return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', paddingBottom: 'var(--sp-16)' }}>
+
+      {/* ── Email verification banner ── */}
+      {business && !business.emailVerified && (
+        <div style={{
+          background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
+          borderRadius: 'var(--r-xl)', padding: 'var(--sp-4) var(--sp-5)',
+          marginBottom: 'var(--sp-4)',
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="#d97706"/>
+          </svg>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 2 }}>
+              Email del negocio sin verificar
+            </p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+              Tu negocio no aparecerá como verificado en el catálogo hasta que confirmes tu correo.
+              {verifyMsg && <span style={{ marginLeft: 8, color: verifyMsg.includes('enviado') ? 'var(--success)' : '#ef4444' }}>{verifyMsg}</span>}
+            </p>
+          </div>
+          <button
+            onClick={handleResendVerify}
+            disabled={sendingVerify}
+            style={{
+              padding: '6px 16px', borderRadius: 999, border: '1px solid #d97706',
+              background: 'transparent', color: '#d97706',
+              fontWeight: 700, fontSize: 'var(--text-xs)', cursor: 'pointer',
+              opacity: sendingVerify ? 0.6 : 1,
+            }}
+          >
+            {sendingVerify ? 'Enviando…' : 'Reenviar correo'}
+          </button>
+        </div>
+      )}
 
       {/* ── Business hero ── */}
       <div style={{

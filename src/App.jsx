@@ -34,6 +34,7 @@ import AdminFinancesPage from './pages/admin/AdminFinancesPage';
 import AdminBusinessesPage from './pages/admin/AdminBusinessesPage';
 import AdminProfessionalsPage from './pages/admin/AdminProfessionalsPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import VerifyBusinessEmailPage from './pages/VerifyBusinessEmailPage';
 
 export default function App() {
   return (
@@ -61,6 +62,7 @@ export default function App() {
             <Route path="privacy" element={<PrivacyPage />} />
             <Route path="terms" element={<TermsPage />} />
             <Route path="cookies" element={<CookiesPage />} />
+            <Route path="verify-business-email" element={<VerifyBusinessEmailPage />} />
             <Route path="book" element={
               <ProtectedRoute><BookingPage /></ProtectedRoute>
             } />
