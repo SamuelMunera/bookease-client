@@ -152,6 +152,9 @@ export default function AnalyticsPanel({ role = 'business' }) {
             {data.customers.total > 0 && (
               <InsightPill icon="🔄" label="Recurrentes" value={`${data.insights.recurringPct}%`} />
             )}
+            {data.insights.noShowRate > 0 && (
+              <InsightPill icon="⚠️" label="Tasa no-show" value={`${data.insights.noShowRate}%`} />
+            )}
           </div>
 
           {/* Summary cards */}
@@ -320,6 +323,42 @@ export default function AnalyticsPanel({ role = 'business' }) {
             </div>
           )}
 
+          {/* No-shows por servicio */}
+          {data.servicesByNoShow && data.servicesByNoShow.length > 0 && (
+            <div style={{
+              background: 'var(--surface-2)', border: '1px solid rgba(239,68,68,0.2)',
+              borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)',
+            }}>
+              <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)', color: 'var(--text)' }}>
+                Servicios con más ausencias
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                {data.servicesByNoShow.map((s, i) => {
+                  const rate = s.count > 0 ? Math.round((s.noShow / s.count) * 100) : 0;
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+                      padding: 'var(--sp-3) var(--sp-4)',
+                      border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+                    }}>
+                      <span style={{ flex: 1, fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)' }}>{s.name}</span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        {s.noShow} ausencia{s.noShow !== 1 ? 's' : ''}
+                      </span>
+                      <span style={{
+                        fontSize: 'var(--text-xs)', fontWeight: 700, color: '#ef4444',
+                        background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
+                        borderRadius: 999, padding: '2px 8px',
+                      }}>
+                        {rate}% de sus citas
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Per-professional (business only) */}
           {role === 'business' && data.professionals && data.professionals.length > 0 && (
             <div style={{
@@ -345,9 +384,9 @@ export default function AnalyticsPanel({ role = 'business' }) {
                       {p.name[0].toUpperCase()}
                     </div>
                     <p style={{ flex: 1, fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text)', minWidth: 100 }}>{p.name}</p>
-                    <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap', alignItems: 'center' }}>
                       {[
-                        { label: 'Citas', val: p.confirmed },
+                        { label: 'Atendidas', val: p.confirmed },
                         { label: 'Canceladas', val: p.cancelled },
                         { label: 'Ingresos', val: fmt(p.revenue, currency), gold: true },
                       ].map(item => (
@@ -358,6 +397,15 @@ export default function AnalyticsPanel({ role = 'business' }) {
                           </p>
                         </div>
                       ))}
+                      {p.noShow > 0 && (
+                        <div style={{ textAlign: 'center', minWidth: 64 }}>
+                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 2, fontWeight: 600 }}>No-shows</p>
+                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: '#ef4444', fontFamily: 'var(--font-heading)' }}>
+                            {p.noShow}
+                            {p.noShowRate > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 3 }}>({p.noShowRate}%)</span>}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
