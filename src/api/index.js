@@ -86,6 +86,9 @@ const api = {
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
   resetPassword: (body) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify(body) }),
 
+  // Duplicate check (pre-submit)
+  checkBusinessDuplicate: (body) => request('/businesses/check-duplicate', { method: 'POST', body: JSON.stringify(body) }),
+
   // Business email verification
   sendBusinessVerifyEmail: () => request('/businesses/me/verify-email/send', { method: 'POST' }),
   verifyBusinessEmail: (token) => request(`/businesses/verify-email/${token}`),
