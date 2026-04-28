@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import BusinessWelcomeModal from '../components/BusinessWelcomeModal';
+import BusinessOnboardingChecklist from '../components/BusinessOnboardingChecklist';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 const CAT_COLOR = { BARBERSHOP: 'var(--gold)', SPA: 'var(--violet)', SALON: 'var(--gold-light)' };
@@ -67,6 +69,7 @@ export default function BusinessDashboardPage() {
   const [policyMsg, setPolicyMsg] = useState('');
   const [sendingVerify, setSendingVerify] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     api.getBusinesses()
@@ -81,6 +84,15 @@ export default function BusinessDashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user.id]);
+
+  useEffect(() => {
+    if (!business) return;
+    const key = `bk_welcome_${business.id}`;
+    if (!localStorage.getItem(key)) {
+      setShowWelcome(true);
+      localStorage.setItem(key, '1');
+    }
+  }, [business?.id]);
 
   useEffect(() => {
     if (!business) return;
@@ -247,6 +259,11 @@ export default function BusinessDashboardPage() {
   return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', paddingBottom: 'var(--sp-16)' }}>
 
+      {/* ── Welcome modal (first visit only) ── */}
+      {showWelcome && (
+        <BusinessWelcomeModal business={business} onClose={() => setShowWelcome(false)} />
+      )}
+
       {/* ── Email verification banner ── */}
       {business && !business.emailVerified && (
         <div style={{
@@ -380,6 +397,9 @@ export default function BusinessDashboardPage() {
       {/* ══════════ PANEL TAB ══════════ */}
       {tab === 'panel' && (
         <>
+          {/* Onboarding checklist */}
+          <BusinessOnboardingChecklist business={business} onSwitchTab={setTab} />
+
           {/* Services + Professionals */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
             <SectionCard
@@ -392,9 +412,20 @@ export default function BusinessDashboardPage() {
               }
             >
               {!business.services?.length ? (
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
-                  Sin servicios.{' '}<Link to="/agenda" style={{ color: 'var(--gold)' }}>Agregar uno</Link>
-                </p>
+                <div style={{ textAlign:'center', padding:'var(--sp-6) var(--sp-3)' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.25" style={{ marginBottom:'var(--sp-3)' }}>
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                  <p style={{ fontSize:'var(--text-sm)', color:'var(--text-subtle)', marginBottom:'var(--sp-1)' }}>Aún no tienes servicios</p>
+                  <p style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)', marginBottom:'var(--sp-4)', lineHeight:1.5 }}>
+                    Necesitas al menos uno para que los clientes puedan reservar.
+                  </p>
+                  <Link to="/agenda" className="btn btn-primary btn-sm">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Agregar servicio
+                  </Link>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
                   {business.services.map(s => (
@@ -418,9 +449,15 @@ export default function BusinessDashboardPage() {
 
             <SectionCard title="Profesionales">
               {!business.professionals?.length ? (
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', textAlign: 'center', padding: 'var(--sp-6) 0' }}>
-                  Sin profesionales registrados.
-                </p>
+                <div style={{ textAlign:'center', padding:'var(--sp-6) var(--sp-3)' }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.25" style={{ marginBottom:'var(--sp-3)' }}>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <p style={{ fontSize:'var(--text-sm)', color:'var(--text-subtle)', marginBottom:'var(--sp-1)' }}>Aún no hay profesionales</p>
+                  <p style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)', lineHeight:1.5 }}>
+                    Comparte el código de vinculación con tu equipo para que se unan.
+                  </p>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
                   {business.professionals.map(p => (
