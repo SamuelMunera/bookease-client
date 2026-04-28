@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
@@ -19,8 +19,19 @@ function isToday(dateStr) {
   return d.getTime() === t.getTime();
 }
 
-const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada' };
-const STATUS_BADGE = { CONFIRMED: 'badge-confirmed', PENDING: 'badge-pending', CANCELLED: 'badge-cancelled' };
+const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada', COMPLETED: 'Completada', NO_SHOW: 'No asistió' };
+const STATUS_BADGE = { CONFIRMED: 'badge-confirmed', PENDING: 'badge-pending', CANCELLED: 'badge-cancelled', COMPLETED: 'badge-confirmed', NO_SHOW: 'badge-cancelled' };
+
+function isPast(b) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (b.date.slice(0, 10) < today) return true;
+  if (b.date.slice(0, 10) === today) {
+    const now = new Date();
+    const [h, m] = (b.startTime || '00:00').split(':').map(Number);
+    return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+  }
+  return false;
+}
 
 /* ── Quick date nav ──────────────────────────────────────── */
 function DateNav({ value, onChange }) {
@@ -81,12 +92,15 @@ function StatCard({ num, label, color, icon }) {
 }
 
 /* ── Timeline row ────────────────────────────────────────── */
-function TimelineRow({ b, onConfirm, onCancel }) {
+function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
+  const [confirm, setConfirm] = useState(null); // 'no-show' | 'complete' | null
   const statusColor = {
     CONFIRMED: 'var(--success)',
     PENDING:   'var(--warning)',
     CANCELLED: 'var(--text-subtle)',
-  }[b.status];
+    COMPLETED: 'var(--text-muted)',
+    NO_SHOW:   'var(--red, #ef4444)',
+  }[b.status] ?? 'var(--text-subtle)';
 
   return (
     <div className={`agenda-timeline-row${b.status === 'CANCELLED' ? ' cancelled' : ''}`}>
@@ -143,19 +157,64 @@ function TimelineRow({ b, onConfirm, onCancel }) {
         </div>
 
         {/* Actions */}
-        {b.status !== 'CANCELLED' && (
+        {!['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status) && (
           <div className="agenda-row-actions">
             {b.status === 'PENDING' && (
               <button className="btn btn-success btn-sm" onClick={() => onConfirm(b.id)}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 Confirmar
               </button>
             )}
-            <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
-              Cancelar
-            </button>
+            {isPast(b) && confirm === null && (
+              <>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'var(--gold-subtle)', color: 'var(--gold)', border: '1px solid var(--gold-border)', fontWeight: 700 }}
+                  onClick={() => setConfirm('complete')}
+                >
+                  ✓ Completar
+                </button>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontWeight: 700 }}
+                  onClick={() => setConfirm('no-show')}
+                >
+                  ✕ No asistió
+                </button>
+              </>
+            )}
+            {confirm !== null && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
+                padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
+                background: confirm === 'no-show' ? 'rgba(239,68,68,0.08)' : 'var(--gold-subtle)',
+                border: `1px solid ${confirm === 'no-show' ? 'rgba(239,68,68,0.2)' : 'var(--gold-border)'}`,
+              }}>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: confirm === 'no-show' ? '#ef4444' : 'var(--gold)' }}>
+                  {confirm === 'no-show' ? '¿Marcar como no asistió?' : '¿Marcar como completada?'}
+                </span>
+                <button
+                  className="btn btn-sm"
+                  style={{ padding: '3px 12px', fontWeight: 700, background: confirm === 'no-show' ? '#ef4444' : 'var(--gold)', color: '#000', border: 'none' }}
+                  onClick={() => { setConfirm(null); confirm === 'no-show' ? onNoShow(b.id) : onComplete(b.id); }}
+                >
+                  Sí
+                </button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setConfirm(null)}>
+                  No
+                </button>
+              </div>
+            )}
+            {!isPast(b) && (
+              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
+                Cancelar
+              </button>
+            )}
+            {isPast(b) && confirm === null && (
+              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
+                Cancelar
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -236,14 +295,23 @@ export default function BusinessAgendaPage() {
     load();
   }
   async function handleCancel(id) {
-    if (!confirm('¿Cancelar esta reserva?')) return;
+    if (!window.confirm('¿Cancelar esta reserva?')) return;
     await api.cancelBookingAsOwner(id);
     load();
+  }
+  async function handleNoShow(id) {
+    try { await api.markNoShow(id); load(); }
+    catch (e) { alert(e.message); }
+  }
+  async function handleComplete(id) {
+    try { await api.markComplete(id); load(); }
+    catch (e) { alert(e.message); }
   }
 
   const pending   = bookings.filter(b => b.status === 'PENDING');
   const confirmed = bookings.filter(b => b.status === 'CONFIRMED');
   const cancelled = bookings.filter(b => b.status === 'CANCELLED');
+  const noShows   = bookings.filter(b => b.status === 'NO_SHOW');
 
   const sorted = [...bookings].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
@@ -379,6 +447,14 @@ export default function BusinessAgendaPage() {
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
             />
           )}
+          {noShows.length > 0 && (
+            <StatCard
+              num={noShows.length}
+              label="No asistieron"
+              color="#ef4444"
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>}
+            />
+          )}
         </div>
       )}
 
@@ -424,6 +500,8 @@ export default function BusinessAgendaPage() {
               b={b}
               onConfirm={handleConfirm}
               onCancel={handleCancel}
+              onNoShow={handleNoShow}
+              onComplete={handleComplete}
               isLast={idx === sorted.length - 1}
             />
           ))}

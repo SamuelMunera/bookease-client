@@ -18,8 +18,19 @@ function isAgendaToday(dateStr) {
   return new Date(dateStr + 'T00:00:00').getTime() === t.getTime();
 }
 
-const AGENDA_STATUS_BADGE = { CONFIRMED:'badge-confirmed', PENDING:'badge-pending', CANCELLED:'badge-cancelled', COMPLETED:'badge-confirmed' };
-const AGENDA_STATUS_LABEL = { CONFIRMED:'Confirmada', PENDING:'Pendiente', CANCELLED:'Cancelada', COMPLETED:'Completada' };
+const AGENDA_STATUS_BADGE = { CONFIRMED:'badge-confirmed', PENDING:'badge-pending', CANCELLED:'badge-cancelled', COMPLETED:'badge-confirmed', NO_SHOW:'badge-cancelled' };
+const AGENDA_STATUS_LABEL = { CONFIRMED:'Confirmada', PENDING:'Pendiente', CANCELLED:'Cancelada', COMPLETED:'Completada', NO_SHOW:'No asistió' };
+
+function isPastBooking(b) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (b.date.slice(0, 10) < today) return true;
+  if (b.date.slice(0, 10) === today) {
+    const now = new Date();
+    const [h, m] = (b.startTime || '00:00').split(':').map(Number);
+    return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+  }
+  return false;
+}
 
 function AgendaDateNav({ value, onChange }) {
   const today = new Date().toISOString().split('T')[0];
@@ -61,26 +72,32 @@ function AgendaStatCard({ num, label, color, icon }) {
   );
 }
 
-function ProTimelineRow({ b }) {
-  const statusColor = { CONFIRMED:'var(--success)', PENDING:'var(--warning)', CANCELLED:'var(--text-subtle)', COMPLETED:'var(--text-muted)' }[b.status] ?? 'var(--text-subtle)';
+function ProTimelineRow({ b, onNoShow, onComplete }) {
+  const [confirmAction, setConfirmAction] = useState(null);
+  const statusColor = {
+    CONFIRMED: 'var(--success)', PENDING: 'var(--warning)',
+    CANCELLED: 'var(--text-subtle)', COMPLETED: 'var(--text-muted)', NO_SHOW: '#ef4444',
+  }[b.status] ?? 'var(--text-subtle)';
+  const isTerminal = ['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status);
+
   return (
-    <div className={`agenda-timeline-row${b.status === 'CANCELLED' ? ' cancelled' : ''}`}>
+    <div className={`agenda-timeline-row${['CANCELLED','NO_SHOW'].includes(b.status) ? ' cancelled' : ''}`}>
       <div className="agenda-time-col">
-        <div className="agenda-time-dot" style={{ background: statusColor, boxShadow: b.status !== 'CANCELLED' ? `0 0 8px ${statusColor}` : 'none' }} />
+        <div className="agenda-time-dot" style={{ background: statusColor, boxShadow: !isTerminal ? `0 0 8px ${statusColor}` : 'none' }} />
         <span className="agenda-time-label">{b.startTime}</span>
         {b.endTime && <span className="agenda-time-end">{b.endTime}</span>}
       </div>
-      <div className="agenda-vline" style={{ borderLeftColor: b.status === 'CANCELLED' ? 'var(--border)' : statusColor + '40' }} />
+      <div className="agenda-vline" style={{ borderLeftColor: isTerminal ? 'var(--border)' : statusColor + '40' }} />
       <div className="agenda-row-card">
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'var(--sp-3)', flexWrap:'wrap', marginBottom:'var(--sp-3)' }}>
           <div>
-            <p className="agenda-row-service">{b.service?.name ?? '—'}</p>
+            <p className="agenda-row-service">{b.service?.name ?? b.homeService?.name ?? '—'}</p>
             <div className="agenda-row-meta">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
               {b.startTime}{b.endTime ? `–${b.endTime}` : ''}
-              {b.service?.duration && <><span className="agenda-meta-sep">·</span>{b.service.duration} min</>}
+              {(b.service?.duration ?? b.homeService?.duration) && <><span className="agenda-meta-sep">·</span>{b.service?.duration ?? b.homeService?.duration} min</>}
             </div>
           </div>
           <span className={`badge ${AGENDA_STATUS_BADGE[b.status] ?? 'badge-pending'}`}>
@@ -95,6 +112,51 @@ function ProTimelineRow({ b }) {
             {b.client?.phone && <p className="agenda-client-email">{b.client.phone}</p>}
           </div>
         </div>
+
+        {/* Actions for past, non-terminal bookings */}
+        {!isTerminal && isPastBooking(b) && (
+          <div className="agenda-row-actions" style={{ marginTop: 'var(--sp-3)' }}>
+            {confirmAction === null ? (
+              <>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'var(--gold-subtle)', color: 'var(--gold)', border: '1px solid var(--gold-border)', fontWeight: 700 }}
+                  onClick={() => setConfirmAction('complete')}
+                >
+                  ✓ Completar
+                </button>
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontWeight: 700 }}
+                  onClick={() => setConfirmAction('no-show')}
+                >
+                  ✕ No asistió
+                </button>
+              </>
+            ) : (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
+                padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
+                background: confirmAction === 'no-show' ? 'rgba(239,68,68,0.08)' : 'var(--gold-subtle)',
+                border: `1px solid ${confirmAction === 'no-show' ? 'rgba(239,68,68,0.2)' : 'var(--gold-border)'}`,
+              }}>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: confirmAction === 'no-show' ? '#ef4444' : 'var(--gold)' }}>
+                  {confirmAction === 'no-show' ? '¿Marcar como no asistió?' : '¿Marcar como completada?'}
+                </span>
+                <button
+                  className="btn btn-sm"
+                  style={{ padding: '3px 12px', fontWeight: 700, background: confirmAction === 'no-show' ? '#ef4444' : 'var(--gold)', color: '#000', border: 'none' }}
+                  onClick={() => { const a = confirmAction; setConfirmAction(null); a === 'no-show' ? onNoShow(b.id) : onComplete(b.id); }}
+                >
+                  Sí
+                </button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setConfirmAction(null)}>
+                  No
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -297,6 +359,7 @@ export default function ProfessionalDashboardPage() {
 
   // Agenda tab
   const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [agendaError, setAgendaError] = useState('');
 
   // Schedule
   const [weekOffset, setWeekOffset]     = useState(0);
@@ -1259,6 +1322,22 @@ export default function ProfessionalDashboardPage() {
         const aPending   = agendaBookings.filter(b => b.status === 'PENDING');
         const aConfirmed = agendaBookings.filter(b => b.status === 'CONFIRMED');
         const aCancelled = agendaBookings.filter(b => b.status === 'CANCELLED');
+        const aNoShow    = agendaBookings.filter(b => b.status === 'NO_SHOW');
+
+        async function handleProNoShow(id) {
+          setAgendaError('');
+          try {
+            await api.markNoShow(id);
+            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'NO_SHOW' } : b));
+          } catch (e) { setAgendaError(e.message); }
+        }
+        async function handleProComplete(id) {
+          setAgendaError('');
+          try {
+            await api.markComplete(id);
+            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'COMPLETED' } : b));
+          } catch (e) { setAgendaError(e.message); }
+        }
         return (
           <div className="pro-agenda">
             {/* Header */}
@@ -1300,6 +1379,18 @@ export default function ProfessionalDashboardPage() {
                     icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>}
                   />
                 )}
+                {aNoShow.length > 0 && (
+                  <AgendaStatCard num={aNoShow.length} label="No asistieron" color="#ef4444"
+                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Error */}
+            {agendaError && (
+              <div style={{ background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:'var(--r-lg)', padding:'var(--sp-3) var(--sp-4)', fontSize:'var(--text-sm)', color:'#ef4444', marginTop:'var(--sp-3)' }}>
+                {agendaError}
               </div>
             )}
 
@@ -1339,7 +1430,14 @@ export default function ProfessionalDashboardPage() {
             {/* Timeline */}
             {!loadingBookings && agendaBookings.length > 0 && (
               <div className="agenda-timeline">
-                {agendaBookings.map(b => <ProTimelineRow key={b.id} b={b} />)}
+                {agendaBookings.map(b => (
+                  <ProTimelineRow
+                    key={b.id}
+                    b={b}
+                    onNoShow={handleProNoShow}
+                    onComplete={handleProComplete}
+                  />
+                ))}
               </div>
             )}
           </div>
