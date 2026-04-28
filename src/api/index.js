@@ -62,6 +62,10 @@ const api = {
   updateBusinessSettings: (body) => request('/businesses/me/settings', { method: 'PATCH', body: JSON.stringify(body) }),
   getProRevenue: () => request('/pro/me/revenue'),
 
+  // Analytics
+  getBusinessAnalytics: (period = 'month') => request(`/businesses/me/analytics?period=${period}`),
+  getProAnalytics: (period = 'month') => request(`/pro/me/analytics?period=${period}`),
+
   // Professional service configs & buffer
   getProServiceConfigs: () => request('/pro/me/service-configs'),
   saveProServiceConfigs: (configs) => request('/pro/me/service-configs', { method: 'PUT', body: JSON.stringify({ configs }) }),
