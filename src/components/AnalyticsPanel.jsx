@@ -155,16 +155,25 @@ export default function AnalyticsPanel({ role = 'business' }) {
           </div>
 
           {/* Summary cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 'var(--sp-3)' }}>
-            <StatCard label="Ingresos" value={fmt(data.summary.revenue, currency)} accent />
-            <StatCard label="Total citas" value={data.summary.total} />
-            <StatCard label="Confirmadas" value={data.summary.confirmed + data.summary.completed}
-              sub={data.summary.completed > 0 ? `${data.summary.completed} completadas` : undefined} />
-            <StatCard label="Canceladas" value={data.summary.cancelled} />
-            {data.summary.noShow > 0 && (
-              <StatCard label="No asistieron" value={data.summary.noShow} />
-            )}
-          </div>
+          {(() => {
+            const attended = data.summary.confirmed + data.summary.completed;
+            const noShowRate = data.summary.total > 0
+              ? Math.round((data.summary.noShow / data.summary.total) * 100) : 0;
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 'var(--sp-3)' }}>
+                <StatCard label="Ingresos" value={fmt(data.summary.revenue, currency)} accent />
+                <StatCard label="Total citas" value={data.summary.total} />
+                <StatCard label="Atendidas" value={attended}
+                  sub={data.summary.completed > 0 ? `${data.summary.completed} completadas` : undefined} />
+                <StatCard label="Canceladas" value={data.summary.cancelled} />
+                <StatCard
+                  label="No asistieron"
+                  value={data.summary.noShow}
+                  sub={data.summary.noShow > 0 ? `${noShowRate}% del total` : 'Sin ausencias'}
+                />
+              </div>
+            );
+          })()}
 
           {/* Clientes */}
           <div style={{
