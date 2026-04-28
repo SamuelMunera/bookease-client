@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig';
+import AnalyticsPanel from '../components/AnalyticsPanel';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 const CAT_COLOR = { BARBERSHOP: 'var(--gold)', SPA: 'var(--violet)', SALON: 'var(--gold-light)' };
@@ -31,9 +32,10 @@ const CATS = ['BARBERSHOP', 'SPA', 'SALON'];
 const CAT_NAME = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 
 const TABS = [
-  { key: 'panel',    label: 'Panel' },
-  { key: 'finanzas', label: 'Finanzas' },
-  { key: 'perfil',   label: 'Perfil' },
+  { key: 'panel',     label: 'Panel' },
+  { key: 'analytics', label: 'Analytics' },
+  { key: 'finanzas',  label: 'Finanzas' },
+  { key: 'perfil',    label: 'Perfil' },
 ];
 
 export default function BusinessDashboardPage() {
@@ -708,6 +710,10 @@ export default function BusinessDashboardPage() {
       )}
 
       {/* ══════════ FINANZAS TAB ══════════ */}
+      {tab === 'analytics' && (
+        <AnalyticsPanel role="business" />
+      )}
+
       {tab === 'finanzas' && (
         <>
           {/* Toggle visibilidad profesionales */}

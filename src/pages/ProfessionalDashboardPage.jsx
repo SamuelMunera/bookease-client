@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
 import { COUNTRIES, US_TIMEZONES } from '../utils/countryConfig';
+import AnalyticsPanel from '../components/AnalyticsPanel';
 
 /* ── Agenda helpers ─────────────────────────────────────── */
 const AGENDA_DAYS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -699,7 +700,7 @@ export default function ProfessionalDashboardPage() {
 
       {/* ── Tab navigation ── */}
       <div style={{ display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)', borderBottom: '1px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'agenda', label: 'Agenda' }, { key: 'domicilio', label: 'A domicilio' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
+        {[{ key: 'dashboard', label: 'Dashboard' }, { key: 'analytics', label: 'Analytics' }, { key: 'agenda', label: 'Agenda' }, { key: 'domicilio', label: 'A domicilio' }, { key: 'perfil', label: 'Perfil & Seguridad' }].map(t => (
           <button
             key={t.key}
             onClick={() => setActiveTab(t.key)}
@@ -715,6 +716,11 @@ export default function ProfessionalDashboardPage() {
           </button>
         ))}
       </div>
+
+      {/* ── Analytics tab ── */}
+      {activeTab === 'analytics' && (
+        <AnalyticsPanel role="professional" />
+      )}
 
       {/* ── Dashboard tab ── */}
       {activeTab === 'dashboard' && (<>
