@@ -6,6 +6,7 @@ import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig'
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import BusinessWelcomeModal from '../components/BusinessWelcomeModal';
 import BusinessOnboardingChecklist from '../components/BusinessOnboardingChecklist';
+import { PLAN_NAMES_ES, getPlanLimit } from '../utils/plans';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 const CAT_COLOR = { BARBERSHOP: 'var(--gold)', SPA: 'var(--violet)', SALON: 'var(--gold-light)' };
@@ -70,6 +71,7 @@ export default function BusinessDashboardPage() {
   const [sendingVerify, setSendingVerify] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
   const [showWelcome, setShowWelcome] = useState(false);
+  const [planLimitMsg, setPlanLimitMsg] = useState('');
 
   useEffect(() => {
     api.getBusinesses()
@@ -108,7 +110,15 @@ export default function BusinessDashboardPage() {
       await api.approveJoinRequest(id);
       setJoinRequests(prev => prev.filter(r => r.id !== id));
       setActionMsg('Profesional aprobado');
-    } catch (err) { setActionMsg(err.message); }
+    } catch (err) {
+      if (err.code === 'PLAN_LIMIT_EXCEEDED') {
+        setActionMsg('Límite de plan alcanzado');
+        setPlanLimitMsg(err.message);
+        setTimeout(() => setPlanLimitMsg(''), 8000);
+      } else {
+        setActionMsg(err.message);
+      }
+    }
     finally { setTimeout(() => setActionMsg(''), 3000); }
   }
 
@@ -299,6 +309,28 @@ export default function BusinessDashboardPage() {
         </div>
       )}
 
+      {/* ── Plan limit banner ── */}
+      {planLimitMsg && (
+        <div style={{
+          background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.3)',
+          borderRadius: 'var(--r-xl)', padding: 'var(--sp-4) var(--sp-5)',
+          marginBottom: 'var(--sp-4)',
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--violet)" strokeWidth="2" style={{ flexShrink: 0 }}>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 2 }}>Límite de plan alcanzado</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{planLimitMsg}</p>
+          </div>
+          <Link to="/pricing" className="btn btn-ghost btn-sm" style={{ color: 'var(--violet)', borderColor: 'var(--violet)', flexShrink: 0 }}>
+            Ver planes →
+          </Link>
+        </div>
+      )}
+
       {/* ── Business hero ── */}
       <div style={{
         background: 'var(--surface-2)', border: '1px solid var(--border)',
@@ -331,6 +363,14 @@ export default function BusinessDashboardPage() {
                 background: `${catColor}18`, color: catColor,
               }}>
                 {CAT_LABEL[business.category]}
+              </span>
+              <span style={{
+                fontSize: 'var(--text-xs)', fontWeight: 700, letterSpacing: '0.06em',
+                padding: '2px 10px', borderRadius: 'var(--r-full)',
+                background: 'var(--violet-subtle)', color: 'var(--violet)',
+                textTransform: 'uppercase',
+              }}>
+                {PLAN_NAMES_ES[business.plan] ?? business.plan}
               </span>
             </div>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -457,7 +497,23 @@ export default function BusinessDashboardPage() {
               )}
             </SectionCard>
 
-            <SectionCard title="Profesionales">
+            <SectionCard
+              title="Profesionales"
+              action={(() => {
+                const limit = getPlanLimit(business.plan ?? 'team');
+                const count = business.professionals?.length ?? 0;
+                if (limit === Infinity) return null;
+                const atLimit = count >= limit;
+                return (
+                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: atLimit ? 'var(--error)' : 'var(--text-subtle)' }}>
+                    {count}/{limit}
+                    {atLimit && (
+                      <Link to="/pricing" style={{ marginLeft: 6, color: 'var(--violet)', textDecoration: 'none' }}>Upgrade →</Link>
+                    )}
+                  </span>
+                );
+              })()}
+            >
               {!business.professionals?.length ? (
                 <div style={{ textAlign:'center', padding:'var(--sp-6) var(--sp-3)' }}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.25" style={{ marginBottom:'var(--sp-3)' }}>
@@ -800,6 +856,20 @@ export default function BusinessDashboardPage() {
                 )}
               </div>
             </form>
+          </div>
+
+          {/* ── Plan actual ── */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--sp-4)', flexWrap:'wrap', gap:'var(--sp-3)' }}>
+              <div>
+                <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 4px' }}>Plan de suscripción</h3>
+                <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', margin:0 }}>
+                  Plan activo: <strong style={{ color:'var(--violet)' }}>{PLAN_NAMES_ES[business.plan] ?? business.plan}</strong>
+                  {' · '}hasta {getPlanLimit(business.plan) === Infinity ? '∞' : getPlanLimit(business.plan)} profesional{getPlanLimit(business.plan) !== 1 ? 'es' : ''}
+                </p>
+              </div>
+              <Link to="/pricing" className="btn btn-secondary btn-sm">Ver todos los planes →</Link>
+            </div>
           </div>
 
           {/* Política de cancelación */}

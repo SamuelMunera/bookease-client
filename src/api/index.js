@@ -189,6 +189,10 @@ const api = {
   createManualBookingBusiness: (businessId, body) => request(`/businesses/${businessId}/bookings/manual`, { method: 'POST', body: JSON.stringify(body) }),
   createManualBookingPro: (body) => request('/pro/me/bookings/manual', { method: 'POST', body: JSON.stringify(body) }),
 
+  // Plans
+  getPlans: (country = 'CO') => request(`/businesses/plans?country=${country}`),
+  updateBusinessPlan: (plan) => request('/businesses/me/plan', { method: 'PATCH', body: JSON.stringify({ plan }) }),
+
   // Reviews
   getBusinessReviews:       (id)       => request(`/businesses/${id}/reviews`),
   getBusinessStats:         (id)       => request(`/businesses/${id}/stats`),
