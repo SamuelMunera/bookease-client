@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPlansForCountry } from '../utils/plans';
 
-const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 United States' };
+const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 Estados Unidos' };
 
 function CheckIcon() {
   return (
@@ -12,13 +12,12 @@ function CheckIcon() {
   );
 }
 
-function PlanCard({ plan, country, isCurrentPlan, onSelect, selecting }) {
-  const isCO = country === 'CO';
+function PlanCard({ plan, isCurrentPlan, onSelect, selecting }) {
 
   return (
     <div className={`pricing-card${plan.popular ? ' pricing-card--popular' : ''}${isCurrentPlan ? ' pricing-card--current' : ''}`}>
-      {plan.popular && <div className="pricing-popular-badge">{isCO ? 'Más popular' : 'Most popular'}</div>}
-      {isCurrentPlan && <div className="pricing-current-badge">{isCO ? 'Plan actual' : 'Current plan'}</div>}
+      {plan.popular && <div className="pricing-popular-badge">Más popular</div>}
+      {isCurrentPlan && <div className="pricing-current-badge">Plan actual</div>}
 
       <div className="pricing-card-head">
         <p className="pricing-plan-name">{plan.name}</p>
@@ -40,7 +39,7 @@ function PlanCard({ plan, country, isCurrentPlan, onSelect, selecting }) {
       <div className="pricing-limit-pill">
         {plan.professionals
           ? `${plan.professionals === 1 ? '1' : `1 – ${plan.professionals}`} profesional${plan.professionals !== 1 ? 'es' : ''}`
-          : isCO ? '6 o más profesionales' : '6+ professionals'
+          : '6 o más profesionales'
         }
       </div>
 
@@ -60,11 +59,11 @@ function PlanCard({ plan, country, isCurrentPlan, onSelect, selecting }) {
             className="btn btn-secondary"
             style={{ width: '100%', justifyContent: 'center' }}
           >
-            {isCO ? 'Contactar ventas' : 'Contact sales'}
+            Contactar ventas
           </a>
         ) : isCurrentPlan ? (
           <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }} disabled>
-            {isCO ? 'Plan activo' : 'Active plan'}
+            Plan activo
           </button>
         ) : (
           <button
@@ -73,7 +72,7 @@ function PlanCard({ plan, country, isCurrentPlan, onSelect, selecting }) {
             onClick={() => onSelect(plan.id)}
             disabled={selecting}
           >
-            {selecting ? (isCO ? 'Actualizando…' : 'Updating…') : (isCO ? 'Elegir plan' : 'Choose plan')}
+            {selecting ? 'Actualizando…' : 'Elegir plan'}
           </button>
         )}
       </div>
@@ -87,7 +86,6 @@ export default function PricingPage({ currentPlan, businessCountry, onPlanSelect
   const [msg, setMsg] = useState('');
 
   const plans = getPlansForCountry(country);
-  const isCO  = country === 'CO';
 
   async function handleSelect(planId) {
     if (!onPlanSelected) return;
@@ -95,7 +93,7 @@ export default function PricingPage({ currentPlan, businessCountry, onPlanSelect
     setMsg('');
     try {
       await onPlanSelected(planId);
-      setMsg(isCO ? '✓ Plan actualizado' : '✓ Plan updated');
+      setMsg('✓ Plan actualizado');
     } catch (err) {
       setMsg(err.message);
     } finally {
@@ -110,15 +108,15 @@ export default function PricingPage({ currentPlan, businessCountry, onPlanSelect
       {/* ── Header ── */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--sp-10)' }}>
         <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 'var(--sp-2)' }}>
-          {isCO ? 'Planes y precios' : 'Plans & pricing'}
+          Planes y precios
         </p>
         <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'var(--text)', marginBottom: 'var(--sp-3)', fontFamily: 'var(--font-heading)' }}>
-          {isCO ? 'Elige el plan que se adapta a tu negocio' : 'Choose the plan that fits your business'}
+          Elige el plan que se adapta a tu negocio
         </h1>
         <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)', maxWidth: 520, margin: '0 auto var(--sp-6)' }}>
-          {isCO
+          {country === 'CO'
             ? 'Precios fijos en pesos colombianos. Sin sorpresas, sin conversiones.'
-            : 'Fixed prices in USD. No surprises, no conversions.'}
+            : 'Precios fijos en dólares. Sin sorpresas, sin conversiones.'}
         </p>
 
         {/* Country toggle */}
@@ -147,7 +145,6 @@ export default function PricingPage({ currentPlan, businessCountry, onPlanSelect
           <PlanCard
             key={plan.id}
             plan={plan}
-            country={country}
             isCurrentPlan={currentPlan === plan.id}
             onSelect={handleSelect}
             selecting={selecting === plan.id}
@@ -163,9 +160,7 @@ export default function PricingPage({ currentPlan, businessCountry, onPlanSelect
 
       {/* ── Footer note ── */}
       <p style={{ textAlign: 'center', marginTop: 'var(--sp-8)', fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', lineHeight: 1.6 }}>
-        {isCO
-          ? 'Todos los planes incluyen soporte básico por email. Los pagos se habilitarán próximamente.'
-          : 'All plans include basic email support. Payments coming soon.'}
+        Todos los planes incluyen soporte básico por email. Los pagos se habilitarán próximamente.
       </p>
     </div>
   );
