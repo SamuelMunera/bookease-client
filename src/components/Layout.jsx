@@ -26,7 +26,7 @@ const FOOTER_COLS = [
       { label: 'Registrar mi negocio', to: '/register' },
       { label: 'Panel de agenda', to: '/agenda' },
       { label: 'Gestión de reservas', to: '/agenda' },
-      { label: 'Planes y precios', to: '/' },
+      { label: 'Planes y precios', to: '/pricing' },
     ],
   },
   {
