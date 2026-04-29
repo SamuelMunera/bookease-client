@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../../api';
+import { PLAN_NAMES_ES } from '../../utils/plans';
+
+const SOLO_PLAN_OPTIONS = [
+  { id: 'solo',       label: 'Independiente (1)' },
+  { id: 'team',       label: 'Equipo (3)' },
+  { id: 'studio',     label: 'Estudio (5)' },
+  { id: 'enterprise', label: 'Empresarial (6+)' },
+];
 
 function Avatar({ name }) {
   const initials = name?.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -15,6 +23,45 @@ function Avatar({ name }) {
   );
 }
 
+function ProPlanSelector({ proId, currentPlan, onUpdated }) {
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg]       = useState('');
+
+  async function handleChange(e) {
+    const plan = e.target.value;
+    setSaving(true); setMsg('');
+    try {
+      const res = await api.adminUpdateProfessionalPlan(proId, plan);
+      onUpdated(proId, res.plan);
+      setMsg('✓');
+    } catch (err) { setMsg(err.message); }
+    finally { setSaving(false); setTimeout(() => setMsg(''), 2500); }
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+      <span style={{
+        fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase',
+        padding: '2px 8px', borderRadius: 'var(--r-full)',
+        background: 'var(--gold-subtle)', color: 'var(--gold)',
+        border: '1px solid var(--gold-border)',
+      }}>
+        {PLAN_NAMES_ES[currentPlan] ?? currentPlan}
+      </span>
+      <select
+        className="input"
+        value={currentPlan}
+        onChange={handleChange}
+        disabled={saving}
+        style={{ fontSize: 'var(--text-xs)', padding: '4px 8px', height: 'auto' }}
+      >
+        {SOLO_PLAN_OPTIONS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+      </select>
+      {msg && <span style={{ fontSize: 'var(--text-xs)', color: msg.startsWith('✓') ? 'var(--success)' : 'var(--error)' }}>{msg}</span>}
+    </div>
+  );
+}
+
 export default function AdminProfessionalsPage() {
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +70,10 @@ export default function AdminProfessionalsPage() {
   useEffect(() => {
     api.adminProfessionals().then(setProfessionals).catch(() => {}).finally(() => setLoading(false));
   }, []);
+
+  function handlePlanUpdated(id, newPlan) {
+    setProfessionals(prev => prev.map(p => p.id === id ? { ...p, plan: newPlan } : p));
+  }
 
   const filtered = professionals.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -89,6 +140,18 @@ export default function AdminProfessionalsPage() {
               {p.user?.email && (
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>✉️ {p.user.email}</p>
               )}
+
+              {/* Plan selector — show for all professionals */}
+              <div style={{ paddingTop: 'var(--sp-2)', borderTop: '1px solid var(--border)' }}>
+                <p style={{ fontSize: 10, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 'var(--sp-2)', fontWeight: 700 }}>
+                  {p.business ? 'Plan personal' : 'Plan independiente'}
+                </p>
+                <ProPlanSelector
+                  proId={p.id}
+                  currentPlan={p.plan ?? 'solo'}
+                  onUpdated={handlePlanUpdated}
+                />
+              </div>
             </div>
           ))}
         </div>
