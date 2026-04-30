@@ -15,6 +15,7 @@ const FOOTER_COLS = [
     title: 'Para clientes',
     links: [
       { label: 'Explorar negocios', to: '/businesses' },
+      { label: 'Servicios a domicilio', to: '/home-service' },
       { label: 'Mis reservas', to: '/my-bookings' },
       { label: 'Cómo funciona', to: '/how-it-works' },
       { label: 'Crear cuenta', to: '/register' },
@@ -24,8 +25,9 @@ const FOOTER_COLS = [
     title: 'Para negocios',
     links: [
       { label: 'Registrar mi negocio', to: '/register' },
-      { label: 'Panel de agenda', to: '/agenda' },
-      { label: 'Gestión de reservas', to: '/agenda' },
+      { label: 'Panel de control', to: '/dashboard' },
+      { label: 'Agenda y reservas', to: '/agenda' },
+      { label: 'Para profesionales', to: '/pro/register' },
       { label: 'Planes y precios', to: '/pricing' },
     ],
   },
@@ -35,7 +37,15 @@ const FOOTER_COLS = [
       { label: 'Barberías', to: '/businesses?category=BARBERSHOP' },
       { label: 'Spas & Wellness', to: '/businesses?category=SPA' },
       { label: 'Salones de belleza', to: '/businesses?category=SALON' },
-      { label: 'Ver todas', to: '/businesses' },
+      { label: 'Ver todas las categorías', to: '/businesses' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacidad', to: '/privacy' },
+      { label: 'Términos de uso', to: '/terms' },
+      { label: 'Cookies', to: '/cookies' },
     ],
   },
 ];
@@ -448,13 +458,6 @@ export default function Layout() {
           <p className="footer-copy">
             © {new Date().getFullYear()} Bookease · Todos los derechos reservados
           </p>
-          <div className="footer-bottom-links">
-            <Link to="/privacy" className="footer-bottom-link">Privacidad</Link>
-            <span className="footer-bottom-sep">·</span>
-            <Link to="/terms" className="footer-bottom-link">Términos</Link>
-            <span className="footer-bottom-sep">·</span>
-            <Link to="/cookies" className="footer-bottom-link">Cookies</Link>
-          </div>
           <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
             <button
               onClick={() => setFeedbackOpen(true)}

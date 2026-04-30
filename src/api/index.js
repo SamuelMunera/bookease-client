@@ -110,6 +110,46 @@ const api = {
       body: form,
     }).then(r => r.json());
   },
+  uploadBusinessCover: (file) => {
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('file', file);
+    return fetch(`${BASE}/businesses/me/cover`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: form,
+    }).then(r => r.json());
+  },
+  updateBusinessCustomization: (body) => request('/businesses/me/customization', { method: 'PATCH', body: JSON.stringify(body) }),
+
+  // Business gallery
+  getMyBusinessGallery: () => request('/businesses/me/gallery'),
+  uploadBusinessGalleryPhoto: (file, caption) => {
+    const token = localStorage.getItem('token');
+    const form = new FormData();
+    form.append('file', file);
+    if (caption) form.append('caption', caption);
+    return fetch(`${BASE}/businesses/me/gallery`, {
+      method: 'POST',
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: form,
+    }).then(r => r.json());
+  },
+  updateBusinessGalleryPhoto: (id, body) => request(`/businesses/me/gallery/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteBusinessGalleryPhoto: (id) => request(`/businesses/me/gallery/${id}`, { method: 'DELETE' }),
+  getBusinessGallery: (id) => request(`/businesses/${id}/gallery`),
+
+  // Business service categories
+  getMyServiceCategories: () => request('/businesses/me/service-categories'),
+  createServiceCategory: (body) => request('/businesses/me/service-categories', { method: 'POST', body: JSON.stringify(body) }),
+  updateServiceCategory: (id, body) => request(`/businesses/me/service-categories/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteServiceCategory: (id) => request(`/businesses/me/service-categories/${id}`, { method: 'DELETE' }),
+  getBusinessServiceCategories: (id) => request(`/businesses/${id}/service-categories`),
+
+  // Business hours
+  getMyBusinessHours: () => request('/businesses/me/hours'),
+  setMyBusinessHours: (hours) => request('/businesses/me/hours', { method: 'PUT', body: JSON.stringify({ hours }) }),
+  getBusinessHours: (id) => request(`/businesses/${id}/hours`),
 
   // Professional profile
   updateProProfile: (body) => request('/pro/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),

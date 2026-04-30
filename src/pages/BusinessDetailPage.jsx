@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-/* ── Avatar colours based on initial letter ───────────────── */
 const AVATAR_PALETTES = [
   { bg: 'linear-gradient(135deg,#D4A853,#A8833F)', color: '#0A0808' },
   { bg: 'linear-gradient(135deg,#7C5CFC,#5B3FD9)', color: '#fff' },
@@ -15,45 +15,42 @@ const AVATAR_PALETTES = [
   { bg: 'linear-gradient(135deg,#EC4899,#9D174D)', color: '#fff' },
 ];
 function avatarPalette(name) {
-  const idx = (name?.charCodeAt(0) ?? 0) % AVATAR_PALETTES.length;
-  return AVATAR_PALETTES[idx];
+  return AVATAR_PALETTES[(name?.charCodeAt(0) ?? 0) % AVATAR_PALETTES.length];
 }
 
-/* ── Skeleton shimmer block ───────────────────────────────── */
 function Skel({ w, h, r = 'var(--r-sm)' }) {
   return <div className="skeleton" style={{ width: w, height: h, borderRadius: r }} />;
 }
 
-/* ── Star row ─────────────────────────────────────────────── */
 function Stars({ rating = 4.8 }) {
-  const full  = Math.floor(rating);
-  const half  = rating % 1 >= 0.5 ? 1 : 0;
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.5 ? 1 : 0;
   const empty = 5 - full - half;
   return <span className="stars">{'★'.repeat(full)}{'½'.repeat(half)}{'☆'.repeat(empty)}</span>;
 }
 
 function formatBookingCount(n) {
   if (n < 100) return String(n);
-  const hundreds = Math.floor(n / 100) * 100;
-  return `${hundreds}+`;
+  return `${Math.floor(n / 100) * 100}+`;
 }
 
-
 /* ══════════════════════════════════════════════════════════
-   HERO
+   HERO — with cover photo support
    ══════════════════════════════════════════════════════════ */
 function BizHero({ business, stats }) {
-  const avgRating    = stats?.avgRating ?? null;
-  const reviewCount  = stats?.reviewCount ?? 0;
+  const avgRating   = stats?.avgRating ?? null;
+  const reviewCount = stats?.reviewCount ?? 0;
   const bookingCount = stats?.bookingCount ?? 0;
-
   const pal = avatarPalette(business.name);
 
   return (
-    <div className="biz-hero biz-hero--detail">
+    <div
+      className="biz-hero biz-hero--detail"
+      style={business.coverUrl ? {
+        background: `linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.7) 100%), url(${business.coverUrl}) center/cover no-repeat`,
+      } : undefined}
+    >
       <div className="biz-hero-inner">
-
-        {/* ── Left: text content ── */}
         <div className="biz-hero-text">
           <div className="biz-hero-breadcrumb">
             <Link to="/" className="biz-hero-back">
@@ -62,9 +59,7 @@ function BizHero({ business, stats }) {
               </svg>
               Inicio
             </Link>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="biz-hero-breadcrumb-sep">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="biz-hero-breadcrumb-sep"><path d="M9 18l6-6-6-6"/></svg>
             <span className="biz-hero-cat">
               <span className="biz-hero-cat-dot" />
               {CAT_LABEL[business.category] || business.category}
@@ -122,7 +117,6 @@ function BizHero({ business, stats }) {
           </div>
         </div>
 
-        {/* ── Right: logo ── */}
         <div className="biz-hero-logo" style={{
           background: business.logoUrl ? 'transparent' : pal.bg,
           color: pal.color,
@@ -132,9 +126,188 @@ function BizHero({ business, stats }) {
             : business.name[0].toUpperCase()
           }
         </div>
-
       </div>
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   GALLERY LIGHTBOX
+   ══════════════════════════════════════════════════════════ */
+function GallerySection({ photos }) {
+  const [lightbox, setLightbox] = useState(null);
+
+  if (!photos.length) return null;
+
+  return (
+    <section className="biz-gallery-section">
+      <div className="detail-section-label" style={{ marginBottom: 'var(--sp-5)' }}>
+        <div className="detail-section-label-line" />
+        <span>Galería</span>
+        <div className="detail-section-label-line" />
+      </div>
+
+      <div className="biz-gallery-grid">
+        {photos.slice(0, 8).map((p, i) => (
+          <button
+            key={p.id}
+            className={`biz-gallery-item${i === 0 ? ' biz-gallery-item--featured' : ''}`}
+            onClick={() => setLightbox(i)}
+            aria-label={p.caption || `Foto ${i + 1}`}
+          >
+            <img src={p.url} alt={p.caption || ''} loading="lazy" />
+            {i === 7 && photos.length > 8 && (
+              <div className="biz-gallery-more">+{photos.length - 8}</div>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {lightbox !== null && (
+        <div className="biz-lightbox" onClick={() => setLightbox(null)}>
+          <button className="biz-lightbox-close" onClick={() => setLightbox(null)} aria-label="Cerrar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <button
+            className="biz-lightbox-nav biz-lightbox-prev"
+            onClick={(e) => { e.stopPropagation(); setLightbox(l => Math.max(0, l - 1)); }}
+            disabled={lightbox === 0}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div className="biz-lightbox-img" onClick={(e) => e.stopPropagation()}>
+            <img src={photos[lightbox].url} alt={photos[lightbox].caption || ''} />
+            {photos[lightbox].caption && (
+              <p className="biz-lightbox-caption">{photos[lightbox].caption}</p>
+            )}
+          </div>
+          <button
+            className="biz-lightbox-nav biz-lightbox-next"
+            onClick={(e) => { e.stopPropagation(); setLightbox(l => Math.min(photos.length - 1, l + 1)); }}
+            disabled={lightbox === photos.length - 1}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   BUSINESS HOURS
+   ══════════════════════════════════════════════════════════ */
+function HoursSection({ hours }) {
+  if (!hours.length) return null;
+
+  const today = new Date().getDay();
+  const sorted = [...hours].sort((a, b) => {
+    const da = (a.dayOfWeek - today + 7) % 7;
+    const db = (b.dayOfWeek - today + 7) % 7;
+    return da - db;
+  });
+
+  function fmt(t) {
+    const [h, m] = t.split(':');
+    const hh = parseInt(h);
+    const ampm = hh >= 12 ? 'pm' : 'am';
+    const h12 = hh % 12 || 12;
+    return `${h12}:${m} ${ampm}`;
+  }
+
+  const todayHours = hours.find(h => h.dayOfWeek === today);
+  const isOpenNow = (() => {
+    if (!todayHours?.isOpen) return false;
+    const now = new Date();
+    const [oh, om] = todayHours.openTime.split(':').map(Number);
+    const [ch, cm] = todayHours.closeTime.split(':').map(Number);
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    return nowMins >= oh * 60 + om && nowMins < ch * 60 + cm;
+  })();
+
+  return (
+    <section className="biz-hours-section">
+      <div className="biz-hours-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span className="biz-hours-title">Horarios</span>
+        <span className={`biz-hours-badge${isOpenNow ? ' open' : ' closed'}`}>
+          {isOpenNow ? 'Abierto ahora' : 'Cerrado'}
+        </span>
+      </div>
+
+      <div className="biz-hours-list">
+        {sorted.map((h) => {
+          const isToday = h.dayOfWeek === today;
+          return (
+            <div key={h.dayOfWeek} className={`biz-hours-row${isToday ? ' today' : ''}`}>
+              <span className="biz-hours-day">{DAY_NAMES[h.dayOfWeek]}</span>
+              {h.isOpen
+                ? <span className="biz-hours-time">{fmt(h.openTime)} – {fmt(h.closeTime)}</span>
+                : <span className="biz-hours-closed">Cerrado</span>
+              }
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   MAP SECTION
+   ══════════════════════════════════════════════════════════ */
+function MapSection({ business }) {
+  const { lat, lng, address, city, country } = business;
+  const hasCoords = lat && lng;
+
+  const mapSrc = hasCoords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.008},${lat - 0.005},${lng + 0.008},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}`
+    : null;
+
+  const mapsLink = hasCoords
+    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${address}, ${city}`)}`;
+
+  return (
+    <section className="biz-map-section">
+      <div className="biz-map-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span className="biz-map-title">Ubicación</span>
+      </div>
+      <p className="biz-map-address">{address}, {city}{country !== 'CO' ? `, ${country}` : ''}</p>
+
+      {mapSrc ? (
+        <div className="biz-map-frame">
+          <iframe
+            title="Mapa de ubicación"
+            src={mapSrc}
+            loading="lazy"
+            allowFullScreen
+          />
+        </div>
+      ) : (
+        <div className="biz-map-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          <p>Sin coordenadas configuradas</p>
+        </div>
+      )}
+
+      <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="biz-map-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Ver en Google Maps
+      </a>
+    </section>
   );
 }
 
@@ -147,36 +320,23 @@ function ProfCard({ p, selected, onSelect }) {
     <div
       className={`prof-card2${selected ? ' selected' : ''}`}
       onClick={() => onSelect(p.id)}
-      role="button"
-      tabIndex={0}
+      role="button" tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onSelect(p.id)}
       aria-pressed={selected}
     >
-      {/* Selection indicator strip */}
       <div className="prof-card2-strip" />
-
-      {/* Avatar */}
       <div className="prof-card2-avatar" style={{ background: p.avatarUrl ? 'transparent' : pal.bg, overflow: 'hidden', padding: 0 }}>
         {p.avatarUrl
-          ? <img src={p.avatarUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          : <span style={{ color: pal.color, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 22 }}>{p.name[0].toUpperCase()}</span>
+          ? <img src={p.avatarUrl} alt={p.name} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+          : <span style={{ color: pal.color, fontFamily:'var(--font-heading)', fontWeight:700, fontSize:22 }}>{p.name[0].toUpperCase()}</span>
         }
       </div>
-
-      {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)', flexWrap:'wrap' }}>
           <p className="prof-card2-name" style={{ margin:0 }}>{p.name}</p>
-          <Link
-            to={`/professionals/${p.id}`}
-            className="prof-card2-profile-link"
-            onClick={(e) => e.stopPropagation()}
-            tabIndex={0}
-          >
+          <Link to={`/professionals/${p.id}`} className="prof-card2-profile-link" onClick={(e) => e.stopPropagation()} tabIndex={0}>
             Ver perfil
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
         </div>
         {p.bio && <p className="prof-card2-bio">{p.bio}</p>}
@@ -185,40 +345,20 @@ function ProfCard({ p, selected, onSelect }) {
           Disponible hoy
         </div>
       </div>
-
-      {/* Checkmark */}
       <div className={`prof-card2-check${selected ? ' visible' : ''}`}>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
     </div>
   );
 }
 
 /* ══════════════════════════════════════════════════════════
-   SERVICE CARD v3 — rich vertical card
+   SERVICE CARD
    ══════════════════════════════════════════════════════════ */
 const SVC_ICON = {
-  BARBERSHOP: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
-      <line x1="20" y1="4" x2="8.12" y2="15.88"/>
-      <line x1="14.47" y1="14.48" x2="20" y2="20"/>
-      <line x1="8.12" y1="8.12" x2="12" y2="12"/>
-    </svg>
-  ),
-  SPA: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 22c-4.97 0-9-3.13-9-7 0-1.8.7-3.44 1.86-4.72C6.1 8.85 9.5 7 12 7s5.9 1.85 7.14 3.28C20.3 11.56 21 13.2 21 15c0 3.87-4.03 7-9 7z"/>
-      <path d="M12 7V2M9 4l3-2 3 2"/>
-    </svg>
-  ),
-  SALON: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-    </svg>
-  ),
+  BARBERSHOP: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
+  SPA: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22c-4.97 0-9-3.13-9-7 0-1.8.7-3.44 1.86-4.72C6.1 8.85 9.5 7 12 7s5.9 1.85 7.14 3.28C20.3 11.56 21 13.2 21 15c0 3.87-4.03 7-9 7z"/><path d="M12 7V2M9 4l3-2 3 2"/></svg>,
+  SALON: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
 };
 
 function ServiceCard({ sv, selected, onSelect, category }) {
@@ -226,18 +366,13 @@ function ServiceCard({ sv, selected, onSelect, category }) {
     <div
       className={`svc-card3${selected ? ' selected' : ''}`}
       onClick={() => onSelect(sv.id)}
-      role="button"
-      tabIndex={0}
+      role="button" tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onSelect(sv.id)}
       aria-pressed={selected}
     >
       <div className="svc-card3-strip" />
-
-      {/* Top: category icon + duration badge */}
       <div className="svc-card3-top">
-        <div className="svc-card3-icon">
-          {SVC_ICON[category] ?? SVC_ICON.BARBERSHOP}
-        </div>
+        <div className="svc-card3-icon">{SVC_ICON[category] ?? SVC_ICON.BARBERSHOP}</div>
         <span className="svc-card3-duration">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -245,29 +380,15 @@ function ServiceCard({ sv, selected, onSelect, category }) {
           {sv.duration} min
         </span>
       </div>
-
-      {/* Name + description */}
       <p className="svc-card3-name">{sv.name}</p>
       {sv.description && <p className="svc-card3-desc">{sv.description}</p>}
-
-      {/* Footer: price + CTA */}
       <div className="svc-card3-footer">
         <p className="svc-card3-price">${Number(sv.price).toLocaleString('es-CO')}</p>
         <div className={`svc-card3-cta${selected ? ' selected' : ''}`}>
           {selected ? (
-            <>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              Seleccionado
-            </>
+            <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>Seleccionado</>
           ) : (
-            <>
-              Elegir
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </>
+            <>Elegir<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
           )}
         </div>
       </div>
@@ -276,17 +397,71 @@ function ServiceCard({ sv, selected, onSelect, category }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   REVIEWS SECTION
+   CATEGORIZED SERVICES
+   ══════════════════════════════════════════════════════════ */
+function CategorizedServices({ services, categories, selectedService, onSelect, category: bizCategory }) {
+  const [activeTab, setActiveTab] = useState('all');
+
+  const uncategorized = services.filter(s => !s.categoryId);
+  const hasCats = categories.length > 0;
+
+  const tabs = hasCats
+    ? [{ id: 'all', name: 'Todos' }, ...categories, ...(uncategorized.length ? [{ id: 'uncategorized', name: 'Otros' }] : [])]
+    : [];
+
+  function getVisible() {
+    if (!hasCats || activeTab === 'all') return services;
+    if (activeTab === 'uncategorized') return uncategorized;
+    return services.filter(s => s.categoryId === activeTab);
+  }
+
+  const visible = getVisible();
+
+  return (
+    <div>
+      {hasCats && (
+        <div className="svc-cat-tabs">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              className={`svc-cat-tab${activeTab === t.id ? ' active' : ''}`}
+              onClick={() => setActiveTab(t.id)}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {visible.length === 0 ? (
+        <div className="empty-state" style={{ padding: 'var(--sp-8) var(--sp-4)' }}>
+          <p style={{ fontSize: 'var(--text-sm)' }}>Sin servicios en esta categoría.</p>
+        </div>
+      ) : (
+        <div className="svc-cards-grid">
+          {visible.map((sv) => (
+            <ServiceCard
+              key={sv.id}
+              sv={sv}
+              selected={selectedService === sv.id}
+              onSelect={onSelect}
+              category={bizCategory}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   REVIEWS
    ══════════════════════════════════════════════════════════ */
 function StarPicker({ value, onChange }) {
   return (
     <div style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
       {[1,2,3,4,5].map(n => (
-        <span
-          key={n}
-          onClick={() => onChange(n)}
-          style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}
-        >★</span>
+        <span key={n} onClick={() => onChange(n)} style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}>★</span>
       ))}
     </div>
   );
@@ -294,19 +469,9 @@ function StarPicker({ value, onChange }) {
 
 function ReviewCard({ review }) {
   return (
-    <div style={{
-      background: 'var(--surface)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--r-xl)',
-      padding: 'var(--sp-4) var(--sp-5)',
-    }}>
+    <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-4) var(--sp-5)' }}>
       <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginBottom:'var(--sp-2)' }}>
-        <div style={{
-          width:36, height:36, borderRadius:'50%',
-          background:'linear-gradient(135deg,#D4A853,#A8833F)',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          fontFamily:'var(--font-heading)', fontWeight:700, fontSize:14, color:'#0A0808', flexShrink:0,
-        }}>
+        <div style={{ width:36, height:36, borderRadius:'50%', background:'linear-gradient(135deg,#D4A853,#A8833F)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--font-heading)', fontWeight:700, fontSize:14, color:'#0A0808', flexShrink:0 }}>
           {review.author?.name?.[0]?.toUpperCase() ?? '?'}
         </div>
         <div style={{ flex:1, minWidth:0 }}>
@@ -319,9 +484,7 @@ function ReviewCard({ review }) {
           </div>
         </div>
       </div>
-      {review.comment && (
-        <p style={{ margin:0, fontSize:'var(--text-sm)', color:'var(--text-muted)', lineHeight:1.6 }}>{review.comment}</p>
-      )}
+      {review.comment && <p style={{ margin:0, fontSize:'var(--text-sm)', color:'var(--text-muted)', lineHeight:1.6 }}>{review.comment}</p>}
     </div>
   );
 }
@@ -335,47 +498,26 @@ function ReviewsSection({ reviews, canReview, user, reviewForm, setReviewForm, r
         <div className="detail-section-label-line" />
       </div>
 
-      {/* Write review form */}
       {user?.role === 'CLIENT' && canReview && !reviewSuccess && (
-        <form onSubmit={onSubmit} style={{
-          background:'var(--surface)', border:'1px solid var(--border)',
-          borderRadius:'var(--r-xl)', padding:'var(--sp-5)', marginBottom:'var(--sp-6)',
-        }}>
-          <p style={{ margin:'0 0 var(--sp-3)', fontWeight:600, fontSize:'var(--text-sm)', color:'var(--text)' }}>
-            Deja tu reseña
-          </p>
+        <form onSubmit={onSubmit} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-5)', marginBottom:'var(--sp-6)' }}>
+          <p style={{ margin:'0 0 var(--sp-3)', fontWeight:600, fontSize:'var(--text-sm)', color:'var(--text)' }}>Deja tu reseña</p>
           <StarPicker value={reviewForm.rating} onChange={r => setReviewForm(f => ({ ...f, rating: r }))} />
           <textarea
             value={reviewForm.comment}
             onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
             placeholder="Cuéntanos sobre tu experiencia (opcional)"
             rows={3}
-            style={{
-              width:'100%', marginTop:'var(--sp-3)',
-              background:'var(--bg)', border:'1px solid var(--border)',
-              borderRadius:'var(--r-md)', padding:'var(--sp-3)',
-              color:'var(--text)', fontSize:'var(--text-sm)', resize:'vertical',
-              outline:'none', boxSizing:'border-box',
-            }}
+            style={{ width:'100%', marginTop:'var(--sp-3)', background:'var(--bg)', border:'1px solid var(--border)', borderRadius:'var(--r-md)', padding:'var(--sp-3)', color:'var(--text)', fontSize:'var(--text-sm)', resize:'vertical', outline:'none', boxSizing:'border-box' }}
           />
           {reviewError && <p style={{ color:'var(--error)', fontSize:'var(--text-sm)', margin:'var(--sp-2) 0 0' }}>{reviewError}</p>}
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={submitting}
-            style={{ marginTop:'var(--sp-3)', height:40, fontSize:'var(--text-sm)' }}
-          >
+          <button type="submit" className="btn btn-primary" disabled={submitting} style={{ marginTop:'var(--sp-3)', height:40, fontSize:'var(--text-sm)' }}>
             {submitting ? 'Enviando…' : 'Publicar reseña'}
           </button>
         </form>
       )}
 
       {reviewSuccess && (
-        <div style={{
-          background:'rgba(34,197,94,.08)', border:'1px solid rgba(34,197,94,.2)',
-          borderRadius:'var(--r-xl)', padding:'var(--sp-4)', marginBottom:'var(--sp-6)',
-          color:'var(--text)', fontSize:'var(--text-sm)',
-        }}>
+        <div style={{ background:'rgba(34,197,94,.08)', border:'1px solid rgba(34,197,94,.2)', borderRadius:'var(--r-xl)', padding:'var(--sp-4)', marginBottom:'var(--sp-6)', color:'var(--text)', fontSize:'var(--text-sm)' }}>
           Tu reseña fue publicada. ¡Gracias!
         </div>
       )}
@@ -396,42 +538,30 @@ function ReviewsSection({ reviews, canReview, user, reviewForm, setReviewForm, r
 }
 
 /* ══════════════════════════════════════════════════════════
-   STICKY BOOKING CTA
+   STICKY BOOKING BAR
    ══════════════════════════════════════════════════════════ */
 function BookingBar({ service, error, onBook, ready }) {
   return (
     <div className={`booking-bar${ready ? ' booking-bar--ready' : ''}`}>
       <div className="booking-bar-inner">
-        {/* Left: selection summary */}
         <div className="booking-bar-info">
           {service ? (
             <>
               <p className="booking-bar-service">{service.name}</p>
               <p className="booking-bar-meta">
                 {service.duration} min
-                {error && <> · <span style={{ color: 'var(--error)' }}>{error}</span></>}
+                {error && <> · <span style={{ color:'var(--error)' }}>{error}</span></>}
               </p>
             </>
           ) : (
-            <p className="booking-bar-hint">
-              {error || 'Selecciona profesional y servicio'}
-            </p>
+            <p className="booking-bar-hint">{error || 'Selecciona profesional y servicio'}</p>
           )}
         </div>
-
-        {/* Right: price + button */}
         <div className="booking-bar-right">
-          {service && (
-            <p className="booking-bar-price">${Number(service.price).toLocaleString('es-CO')}</p>
-          )}
-          <button
-            className="btn btn-primary booking-bar-btn"
-            onClick={onBook}
-          >
+          {service && <p className="booking-bar-price">${Number(service.price).toLocaleString('es-CO')}</p>}
+          <button className="btn btn-primary booking-bar-btn" onClick={onBook}>
             Ver horarios
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </div>
       </div>
@@ -447,20 +577,23 @@ export default function BusinessDetailPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [business, setBusiness]       = useState(null);
-  const [professionals, setProfessionals] = useState([]);
-  const [allServices, setAllServices] = useState([]);
-  const [services, setServices]       = useState([]);
-  const [selectedProf, setSelectedProf]   = useState('');
+  const [business, setBusiness]             = useState(null);
+  const [professionals, setProfessionals]   = useState([]);
+  const [allServices, setAllServices]       = useState([]);
+  const [services, setServices]             = useState([]);
+  const [gallery, setGallery]               = useState([]);
+  const [categories, setCategories]         = useState([]);
+  const [hours, setHours]                   = useState([]);
+  const [selectedProf, setSelectedProf]     = useState('');
   const [selectedService, setSelectedService] = useState('');
-  const [error, setError]             = useState('');
-  const [loadError, setLoadError]     = useState('');
-  const [stats, setStats]             = useState(null);
-  const [reviews, setReviews]         = useState([]);
-  const [canReview, setCanReview]     = useState(false);
-  const [reviewForm, setReviewForm]   = useState({ rating: 5, comment: '' });
-  const [reviewError, setReviewError] = useState('');
-  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [error, setError]                   = useState('');
+  const [loadError, setLoadError]           = useState('');
+  const [stats, setStats]                   = useState(null);
+  const [reviews, setReviews]               = useState([]);
+  const [canReview, setCanReview]           = useState(false);
+  const [reviewForm, setReviewForm]         = useState({ rating: 5, comment: '' });
+  const [reviewError, setReviewError]       = useState('');
+  const [reviewSuccess, setReviewSuccess]   = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const contentRef = useRef(null);
 
@@ -471,7 +604,10 @@ export default function BusinessDetailPage() {
       api.getBusinessServices(id),
       api.getBusinessStats(id),
       api.getBusinessReviews(id),
-    ]).then(([biz, profs, svcs, bizStats, bizReviews]) => {
+      api.getBusinessGallery(id).catch(() => []),
+      api.getBusinessServiceCategories(id).catch(() => []),
+      api.getBusinessHours(id).catch(() => []),
+    ]).then(([biz, profs, svcs, bizStats, bizReviews, gal, cats, hrs]) => {
       if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
       setProfessionals(profs || []);
@@ -479,9 +615,10 @@ export default function BusinessDetailPage() {
       setServices(svcs || []);
       setStats(bizStats);
       setReviews(bizReviews || []);
-    }).catch((err) => {
-      setLoadError(err.message || 'No se pudo cargar el negocio.');
-    });
+      setGallery(gal || []);
+      setCategories(cats || []);
+      setHours(hrs || []);
+    }).catch((err) => setLoadError(err.message || 'No se pudo cargar el negocio.'));
   }, [id]);
 
   useEffect(() => {
@@ -490,17 +627,11 @@ export default function BusinessDetailPage() {
     }
   }, [id, user]);
 
-  // When professional changes, filter services to only those they can do
   useEffect(() => {
     if (!selectedProf) { setServices(allServices); setSelectedService(''); return; }
     api.getProfessionalServices(selectedProf)
       .then(proServices => {
-        if (!proServices?.length) {
-          // No services assigned yet → show all
-          setServices(allServices);
-        } else {
-          setServices(proServices);
-        }
+        setServices(proServices?.length ? proServices : allServices);
         setSelectedService('');
       })
       .catch(() => setServices(allServices));
@@ -518,41 +649,35 @@ export default function BusinessDetailPage() {
 
   const selectedServiceData = services.find((s) => s.id === selectedService);
 
-  /* ── Error state ── */
   if (loadError) {
     return (
-      <div className="page" style={{ paddingTop: 'var(--sp-16)', textAlign: 'center' }}>
+      <div className="page" style={{ paddingTop:'var(--sp-16)', textAlign:'center' }}>
         <div className="empty-state">
           <div className="empty-state-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <p style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--sp-2)' }}>
-            {loadError}
-          </p>
-          <Link to="/">
-            <button className="btn btn-secondary" style={{ marginTop: 'var(--sp-4)' }}>Volver al inicio</button>
-          </Link>
+          <p style={{ fontSize:'var(--text-base)', fontWeight:600, color:'var(--text)', marginBottom:'var(--sp-2)' }}>{loadError}</p>
+          <Link to="/"><button className="btn btn-secondary" style={{ marginTop:'var(--sp-4)' }}>Volver al inicio</button></Link>
         </div>
       </div>
     );
   }
 
-  /* ── Loading state ── */
   if (!business) {
     return (
       <>
-        <div className="biz-hero" style={{ paddingBottom: 'var(--sp-10)' }}>
+        <div className="biz-hero" style={{ paddingBottom:'var(--sp-10)' }}>
           <div className="biz-hero-inner">
             <Skel w={80} h={12} r="var(--r-full)" />
-            <div style={{ marginTop: 'var(--sp-4)' }}><Skel w="55%" h={36} /></div>
-            <div style={{ marginTop: 'var(--sp-2)' }}><Skel w="40%" h={14} /></div>
-            <div style={{ marginTop: 'var(--sp-4)' }}><Skel w="70%" h={12} /></div>
+            <div style={{ marginTop:'var(--sp-4)' }}><Skel w="55%" h={36} /></div>
+            <div style={{ marginTop:'var(--sp-2)' }}><Skel w="40%" h={14} /></div>
+            <div style={{ marginTop:'var(--sp-4)' }}><Skel w="70%" h={12} /></div>
           </div>
         </div>
         <div className="page">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-8)', marginBottom: 'var(--sp-8)' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'var(--sp-8)', marginBottom:'var(--sp-8)' }}>
             <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-3)' }}>
               {[1,2,3].map(n => <Skel key={n} w="100%" h={80} r="var(--r-xl)" />)}
             </div>
@@ -567,14 +692,15 @@ export default function BusinessDetailPage() {
 
   return (
     <>
-      {/* ══ Hero ══════════════════════════════════════════════ */}
       <BizHero business={business} stats={stats} />
 
-      {/* ══ Content ═══════════════════════════════════════════ */}
       <div className="page detail-page" ref={contentRef}>
 
+        {/* ── Gallery ── */}
+        <GallerySection photos={gallery} />
+
         {/* ── Section label ── */}
-        <div className="detail-section-label">
+        <div className="detail-section-label" style={{ marginTop: gallery.length ? 'var(--sp-10)' : 0 }}>
           <div className="detail-section-label-line" />
           <span>Tu elección</span>
           <div className="detail-section-label-line" />
@@ -595,38 +721,31 @@ export default function BusinessDetailPage() {
                 <p className="detail-col-title">Profesional</p>
                 <p className="detail-col-sub">
                   {professionals.length > 0
-                    ? `${professionals.length} especialista${professionals.length !== 1 ? 's' : ''} disponible${professionals.length !== 1 ? 's' : ''}`
+                    ? `${professionals.length} especialista${professionals.length !== 1 ? 's' : ''}`
                     : 'Sin profesionales'}
                 </p>
               </div>
               {selectedProf && (
                 <div className="detail-col-tick">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
               )}
             </div>
 
             {professionals.length === 0 ? (
-              <div className="empty-state" style={{ padding: 'var(--sp-8) var(--sp-4)' }}>
-                <p style={{ fontSize: 'var(--text-sm)' }}>Sin profesionales registrados.</p>
+              <div className="empty-state" style={{ padding:'var(--sp-8) var(--sp-4)' }}>
+                <p style={{ fontSize:'var(--text-sm)' }}>Sin profesionales registrados.</p>
               </div>
             ) : (
               <div className="detail-cards-list">
                 {professionals.map((p) => (
-                  <ProfCard
-                    key={p.id}
-                    p={p}
-                    selected={selectedProf === p.id}
-                    onSelect={(id) => { setSelectedProf(id); setError(''); }}
-                  />
+                  <ProfCard key={p.id} p={p} selected={selectedProf === p.id} onSelect={(id) => { setSelectedProf(id); setError(''); }} />
                 ))}
               </div>
             )}
           </section>
 
-          {/* ── RIGHT: Services ── */}
+          {/* ── RIGHT: Services (categorized) ── */}
           <section>
             <div className="detail-col-header">
               <div className="detail-col-icon">
@@ -640,91 +759,80 @@ export default function BusinessDetailPage() {
                 <p className="detail-col-title">Servicio</p>
                 <p className="detail-col-sub">
                   {services.length > 0
-                    ? `${services.length} servicio${services.length !== 1 ? 's' : ''} disponible${services.length !== 1 ? 's' : ''}`
+                    ? `${services.length} servicio${services.length !== 1 ? 's' : ''}`
                     : 'Sin servicios'}
                 </p>
               </div>
               {selectedService && (
                 <div className="detail-col-tick">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
               )}
             </div>
 
             {services.length === 0 ? (
-              <div className="empty-state" style={{ padding: 'var(--sp-8) var(--sp-4)' }}>
-                <p style={{ fontSize: 'var(--text-sm)' }}>Sin servicios registrados.</p>
+              <div className="empty-state" style={{ padding:'var(--sp-8) var(--sp-4)' }}>
+                <p style={{ fontSize:'var(--text-sm)' }}>Sin servicios registrados.</p>
               </div>
             ) : (
-              <div className="svc-cards-grid">
-                {services.map((sv) => (
-                  <ServiceCard
-                    key={sv.id}
-                    sv={sv}
-                    selected={selectedService === sv.id}
-                    onSelect={(id) => { setSelectedService(id); setError(''); }}
-                    category={business.category}
-                  />
-                ))}
-              </div>
+              <CategorizedServices
+                services={services}
+                categories={categories}
+                selectedService={selectedService}
+                onSelect={(id) => { setSelectedService(id); setError(''); }}
+                category={business.category}
+              />
             )}
           </section>
         </div>
 
-        {/* ── Desktop inline CTA (visible when something is selected) ── */}
+        {/* ── Inline CTA ── */}
         {(selectedProf || selectedService) && (
           <div className="detail-inline-cta">
             <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', flex:1, flexWrap:'wrap' }}>
               {selectedProf && (
                 <div className="detail-selection-pill">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   {professionals.find(p => p.id === selectedProf)?.name}
                 </div>
               )}
               {selectedService && (
                 <div className="detail-selection-pill">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   {selectedServiceData?.name} · {selectedServiceData?.duration} min
-                  <span style={{ fontWeight: 700, color: 'var(--gold)' }}>
+                  <span style={{ fontWeight:700, color:'var(--gold)' }}>
                     · ${Number(selectedServiceData?.price || 0).toLocaleString('es-CO')}
                   </span>
                 </div>
               )}
             </div>
-
             {error && <p className="error-msg" style={{ marginBottom:0, flex:'100%', order:-1 }}>{error}</p>}
-
-            <button
-              className="btn btn-primary"
-              onClick={handleBook}
-              style={{ flexShrink:0, minWidth:180 }}
-            >
+            <button className="btn btn-primary" onClick={handleBook} style={{ flexShrink:0, minWidth:180 }}>
               Ver disponibilidad
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
           </div>
         )}
 
-        {/* ── "nothing selected" CTA ── */}
         {!selectedProf && !selectedService && (
           <div className="detail-cta-prompt">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
             <span>Selecciona un profesional y un servicio para reservar</span>
-            {error && <span style={{ color: 'var(--error)', marginLeft: 'var(--sp-2)' }}>— {error}</span>}
+            {error && <span style={{ color:'var(--error)', marginLeft:'var(--sp-2)' }}>— {error}</span>}
           </div>
         )}
 
-        {/* ══ Reviews section ═══════════════════════════════ */}
+        {/* ── Info strip: Hours + Map ── */}
+        {(hours.length > 0 || business.lat || business.address) && (
+          <div className="biz-info-strip">
+            <HoursSection hours={hours} />
+            <MapSection business={business} />
+          </div>
+        )}
+
+        {/* ── Reviews ── */}
         <ReviewsSection
           reviews={reviews}
           canReview={canReview}
@@ -754,7 +862,6 @@ export default function BusinessDetailPage() {
         />
       </div>
 
-      {/* ══ Sticky mobile bar ═════════════════════════════════ */}
       <BookingBar
         service={selectedServiceData}
         error={error}

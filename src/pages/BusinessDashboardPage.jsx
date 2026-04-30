@@ -35,11 +35,15 @@ const CATS = ['BARBERSHOP', 'SPA', 'SALON'];
 const CAT_NAME = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 
 const TABS = [
-  { key: 'panel',     label: 'Panel' },
-  { key: 'analytics', label: 'Analytics' },
-  { key: 'finanzas',  label: 'Finanzas' },
-  { key: 'perfil',    label: 'Perfil' },
+  { key: 'panel',      label: 'Panel' },
+  { key: 'analytics',  label: 'Analytics' },
+  { key: 'finanzas',   label: 'Finanzas' },
+  { key: 'apariencia', label: 'Apariencia' },
+  { key: 'perfil',     label: 'Perfil' },
 ];
+
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DEFAULT_HOURS = DAY_NAMES.map((_, i) => ({ dayOfWeek: i, openTime: '09:00', closeTime: '18:00', isOpen: i >= 1 && i <= 6 }));
 
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
@@ -72,6 +76,25 @@ export default function BusinessDashboardPage() {
   const [verifyMsg, setVerifyMsg] = useState('');
   const [showWelcome, setShowWelcome] = useState(false);
   const [planLimitMsg, setPlanLimitMsg] = useState('');
+  // Appearance
+  const [gallery, setGallery] = useState([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryMsg, setGalleryMsg] = useState('');
+  const galleryInputRef = useRef(null);
+  const coverInputRef = useRef(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [accentColor, setAccentColor] = useState('');
+  const [savingAccent, setSavingAccent] = useState(false);
+  const [accentMsg, setAccentMsg] = useState('');
+  // Service categories
+  const [svcCats, setSvcCats] = useState([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [savingCat, setSavingCat] = useState(false);
+  const [catMsg, setCatMsg] = useState('');
+  // Business hours
+  const [hours, setHours] = useState(DEFAULT_HOURS);
+  const [savingHours, setSavingHours] = useState(false);
+  const [hoursMsg, setHoursMsg] = useState('');
 
   useEffect(() => {
     api.getBusinesses()
@@ -100,9 +123,17 @@ export default function BusinessDashboardPage() {
     if (!business) return;
     setShowRevenue(business.showRevenueToProf ?? false);
     setCancelMinHours(business.cancelMinHours ?? 0);
+    setAccentColor(business.accentColor || '');
     api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
     api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
     api.getBusinessRevenue().then(d => setRevenue(d)).catch(() => {});
+    api.getMyBusinessGallery().then(g => setGallery(g || [])).catch(() => {});
+    api.getMyServiceCategories().then(c => setSvcCats(c || [])).catch(() => {});
+    api.getMyBusinessHours().then(h => {
+      if (h?.length) {
+        setHours(DEFAULT_HOURS.map(d => h.find(x => x.dayOfWeek === d.dayOfWeek) || d));
+      }
+    }).catch(() => {});
   }, [business?.id]);
 
   async function handleApprove(id) {
@@ -208,6 +239,77 @@ export default function BusinessDashboardPage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  async function handleGalleryUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setGalleryUploading(true); setGalleryMsg('');
+    try {
+      const item = await api.uploadBusinessGalleryPhoto(file, '');
+      if (item.error) throw new Error(item.error);
+      setGallery(prev => [...prev, item]);
+      setGalleryMsg('Foto añadida');
+    } catch (err) { setGalleryMsg('Error: ' + err.message); }
+    finally { setGalleryUploading(false); setTimeout(() => setGalleryMsg(''), 3000); }
+  }
+
+  async function handleGalleryDelete(id) {
+    try {
+      await api.deleteBusinessGalleryPhoto(id);
+      setGallery(prev => prev.filter(p => p.id !== id));
+    } catch (err) { setGalleryMsg('Error al eliminar'); setTimeout(() => setGalleryMsg(''), 3000); }
+  }
+
+  async function handleCoverUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverUploading(true);
+    try {
+      const res = await api.uploadBusinessCover(file);
+      if (res.error) throw new Error(res.error);
+      setBusiness(prev => ({ ...prev, coverUrl: res.url }));
+      setGalleryMsg('Portada actualizada');
+    } catch (err) { setGalleryMsg('Error: ' + err.message); }
+    finally { setCoverUploading(false); setTimeout(() => setGalleryMsg(''), 3000); }
+  }
+
+  async function saveAccentColor() {
+    setSavingAccent(true); setAccentMsg('');
+    try {
+      await api.updateBusinessCustomization({ accentColor: accentColor || null });
+      setBusiness(prev => ({ ...prev, accentColor }));
+      setAccentMsg('Guardado');
+    } catch (err) { setAccentMsg('Error'); }
+    finally { setSavingAccent(false); setTimeout(() => setAccentMsg(''), 2500); }
+  }
+
+  async function createServiceCategory() {
+    if (!newCatName.trim()) return;
+    setSavingCat(true); setCatMsg('');
+    try {
+      const cat = await api.createServiceCategory({ name: newCatName.trim() });
+      setSvcCats(prev => [...prev, cat]);
+      setNewCatName('');
+      setCatMsg('Categoría creada');
+    } catch (err) { setCatMsg('Error: ' + err.message); }
+    finally { setSavingCat(false); setTimeout(() => setCatMsg(''), 3000); }
+  }
+
+  async function deleteServiceCategory(id) {
+    try {
+      await api.deleteServiceCategory(id);
+      setSvcCats(prev => prev.filter(c => c.id !== id));
+    } catch (err) { setCatMsg('Error al eliminar'); setTimeout(() => setCatMsg(''), 3000); }
+  }
+
+  async function saveHours() {
+    setSavingHours(true); setHoursMsg('');
+    try {
+      await api.setMyBusinessHours(hours);
+      setHoursMsg('Horarios guardados');
+    } catch (err) { setHoursMsg('Error: ' + err.message); }
+    finally { setSavingHours(false); setTimeout(() => setHoursMsg(''), 3000); }
   }
 
   if (loading) {
@@ -872,6 +974,88 @@ export default function BusinessDashboardPage() {
             </div>
           </div>
 
+          {/* ── Horarios de atención ── */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>Horarios de atención</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
+              Se muestran en tu perfil público para que los clientes sepan cuándo estás abierto.
+            </p>
+            <div className="biz-hours-config">
+              {hours.map((h, i) => (
+                <div key={h.dayOfWeek} className="biz-hours-config-row">
+                  <span className="biz-hours-config-day">{DAY_NAMES[h.dayOfWeek]}</span>
+                  <input
+                    type="time"
+                    className="biz-hours-config-time"
+                    value={h.openTime}
+                    disabled={!h.isOpen}
+                    onChange={e => setHours(prev => prev.map((x, j) => j === i ? { ...x, openTime: e.target.value } : x))}
+                  />
+                  <input
+                    type="time"
+                    className="biz-hours-config-time"
+                    value={h.closeTime}
+                    disabled={!h.isOpen}
+                    onChange={e => setHours(prev => prev.map((x, j) => j === i ? { ...x, closeTime: e.target.value } : x))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setHours(prev => prev.map((x, j) => j === i ? { ...x, isOpen: !x.isOpen } : x))}
+                    style={{
+                      width:40, height:22, borderRadius:11, border:'none', cursor:'pointer',
+                      background: h.isOpen ? 'var(--violet)' : 'var(--border)',
+                      position:'relative', transition:'background .2s', flexShrink:0,
+                    }}
+                  >
+                    <span style={{ position:'absolute', top:4, left: h.isOpen ? 20 : 4, width:14, height:14, borderRadius:'50%', background:'#fff', transition:'left .2s' }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginTop:'var(--sp-4)' }}>
+              <button className="btn btn-primary btn-sm" onClick={saveHours} disabled={savingHours}>
+                {savingHours ? 'Guardando…' : 'Guardar horarios'}
+              </button>
+              {hoursMsg && <span style={{ fontSize:'var(--text-xs)', color: hoursMsg.includes('Error') ? 'var(--error)' : 'var(--success)' }}>{hoursMsg}</span>}
+            </div>
+          </div>
+
+          {/* ── Categorías de servicios ── */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>Categorías de servicios</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
+              Agrupa tus servicios en categorías para que los clientes los encuentren más fácil.
+              Asigna la categoría a cada servicio desde la agenda.
+            </p>
+            {svcCats.length > 0 && (
+              <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-2)', marginBottom:'var(--sp-4)' }}>
+                {svcCats.map(c => (
+                  <div key={c.id} style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', padding:'var(--sp-2) var(--sp-3)', background:'var(--surface-3)', borderRadius:'var(--r-lg)', border:'1px solid var(--border)' }}>
+                    <span style={{ flex:1, fontSize:'var(--text-sm)', fontWeight:600, color:'var(--text)' }}>{c.name}</span>
+                    <span style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)' }}>{c.services?.length ?? 0} servicio{c.services?.length !== 1 ? 's' : ''}</span>
+                    <button onClick={() => deleteServiceCategory(c.id)} style={{ width:28, height:28, borderRadius:'50%', border:'none', background:'var(--surface-2)', color:'var(--text-subtle)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display:'flex', gap:'var(--sp-2)', alignItems:'center' }}>
+              <input
+                className="input"
+                placeholder="Nueva categoría (ej: Coloración, Cortes, Tratamientos)"
+                value={newCatName}
+                onChange={e => setNewCatName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && createServiceCategory()}
+                style={{ flex:1 }}
+              />
+              <button className="btn btn-primary btn-sm" onClick={createServiceCategory} disabled={savingCat || !newCatName.trim()}>
+                {savingCat ? '…' : 'Crear'}
+              </button>
+            </div>
+            {catMsg && <p style={{ fontSize:'var(--text-xs)', color: catMsg.includes('Error') ? 'var(--error)' : 'var(--success)', marginTop:'var(--sp-2)' }}>{catMsg}</p>}
+          </div>
+
           {/* Política de cancelación */}
           <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
             <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>Política de cancelación</h3>
@@ -896,9 +1080,116 @@ export default function BusinessDashboardPage() {
         </div>
       )}
 
-      {/* ══════════ FINANZAS TAB ══════════ */}
+      {/* ══════════ ANALYTICS TAB ══════════ */}
       {tab === 'analytics' && (
         <AnalyticsPanel role="business" />
+      )}
+
+      {/* ══════════ APARIENCIA TAB ══════════ */}
+      {tab === 'apariencia' && (
+        <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-5)' }}>
+
+          {/* Portada */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, marginBottom:'var(--sp-2)' }}>Imagen de portada</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
+              Aparece como fondo en el perfil público. Recomendado: 1440×480 px.
+            </p>
+            {business.coverUrl && (
+              <div style={{ width:'100%', height:180, borderRadius:'var(--r-xl)', overflow:'hidden', marginBottom:'var(--sp-4)', border:'1px solid var(--border)' }}>
+                <img src={business.coverUrl} alt="portada" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+              </div>
+            )}
+            <input ref={coverInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleCoverUpload} />
+            <button className="btn btn-secondary btn-sm" onClick={() => coverInputRef.current?.click()} disabled={coverUploading}>
+              {coverUploading ? 'Subiendo…' : (business.coverUrl ? 'Cambiar portada' : 'Subir portada')}
+            </button>
+            {galleryMsg && <span style={{ fontSize:'var(--text-xs)', color:'var(--success)', marginLeft:'var(--sp-3)' }}>{galleryMsg}</span>}
+          </div>
+
+          {/* Color de acento */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, marginBottom:'var(--sp-2)' }}>Color de acento</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
+              Color personalizado para tu perfil. Deja en blanco para usar el predeterminado.
+            </p>
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', flexWrap:'wrap' }}>
+              <input
+                type="color"
+                value={accentColor || '#D4A853'}
+                onChange={e => setAccentColor(e.target.value)}
+                style={{ width:44, height:44, borderRadius:'var(--r-lg)', border:'1px solid var(--border)', cursor:'pointer', padding:2 }}
+              />
+              <input
+                className="input"
+                type="text"
+                value={accentColor}
+                onChange={e => setAccentColor(e.target.value)}
+                placeholder="#D4A853"
+                maxLength={7}
+                style={{ width:120 }}
+              />
+              <button className="btn btn-primary btn-sm" onClick={saveAccentColor} disabled={savingAccent}>
+                {savingAccent ? 'Guardando…' : 'Guardar'}
+              </button>
+              {accentColor && (
+                <button className="btn btn-ghost btn-sm" onClick={() => setAccentColor('')}>
+                  Quitar color
+                </button>
+              )}
+              {accentMsg && <span style={{ fontSize:'var(--text-xs)', color:'var(--success)' }}>{accentMsg}</span>}
+            </div>
+          </div>
+
+          {/* Galería */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--sp-2)' }}>
+              <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:0 }}>Galería de fotos</h3>
+              <span style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>{gallery.length}/20</span>
+            </div>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)' }}>
+              Muestra tu espacio y trabajo. Los clientes ven estas fotos en tu perfil.
+            </p>
+            <div className="biz-gallery-manage">
+              {gallery.map(p => (
+                <div key={p.id} className="biz-gallery-thumb">
+                  <img src={p.url} alt={p.caption || ''} />
+                  <button className="biz-gallery-thumb-del" onClick={() => handleGalleryDelete(p.id)} title="Eliminar">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {gallery.length < 20 && (
+                <button
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={galleryUploading}
+                  style={{
+                    aspectRatio:'1', border:'2px dashed var(--border)', borderRadius:'var(--r-lg)',
+                    background:'var(--surface-2)', cursor:'pointer', display:'flex', flexDirection:'column',
+                    alignItems:'center', justifyContent:'center', gap:'var(--sp-1)',
+                    color:'var(--text-subtle)', fontSize:'var(--text-xs)', fontWeight:600,
+                    transition:'border-color .15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor='var(--gold)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor='var(--border)'}
+                >
+                  {galleryUploading
+                    ? <div className="skeleton" style={{ width:20, height:20, borderRadius:'50%' }} />
+                    : <>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        Añadir
+                      </>
+                  }
+                </button>
+              )}
+            </div>
+            <input ref={galleryInputRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handleGalleryUpload} />
+          </div>
+        </div>
       )}
 
       {tab === 'finanzas' && (
