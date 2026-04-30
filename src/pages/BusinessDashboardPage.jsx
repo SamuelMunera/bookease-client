@@ -1104,7 +1104,7 @@ export default function BusinessDashboardPage() {
             <button className="btn btn-secondary btn-sm" onClick={() => coverInputRef.current?.click()} disabled={coverUploading}>
               {coverUploading ? 'Subiendo…' : (business.coverUrl ? 'Cambiar portada' : 'Subir portada')}
             </button>
-            {galleryMsg && <span style={{ fontSize:'var(--text-xs)', color:'var(--success)', marginLeft:'var(--sp-3)' }}>{galleryMsg}</span>}
+            {galleryMsg && <span style={{ fontSize:'var(--text-xs)', color: galleryMsg.startsWith('Error') ? 'var(--error, #e53e3e)' : 'var(--success)', marginLeft:'var(--sp-3)' }}>{galleryMsg}</span>}
           </div>
 
           {/* Color de acento */}
@@ -1137,7 +1137,7 @@ export default function BusinessDashboardPage() {
                   Quitar color
                 </button>
               )}
-              {accentMsg && <span style={{ fontSize:'var(--text-xs)', color:'var(--success)' }}>{accentMsg}</span>}
+              {accentMsg && <span style={{ fontSize:'var(--text-xs)', color: accentMsg === 'Error' ? 'var(--error, #e53e3e)' : 'var(--success)' }}>{accentMsg}</span>}
             </div>
           </div>
 

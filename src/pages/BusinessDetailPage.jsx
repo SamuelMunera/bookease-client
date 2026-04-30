@@ -691,8 +691,12 @@ export default function BusinessDetailPage() {
     );
   }
 
+  const accentVars = business.accentColor
+    ? { '--gold': business.accentColor, '--gold-dark': business.accentColor, '--gold-light': business.accentColor }
+    : undefined;
+
   return (
-    <>
+    <div style={accentVars}>
       <BizHero business={business} stats={stats} />
 
       <div className="page detail-page" ref={contentRef}>
@@ -876,6 +880,6 @@ export default function BusinessDetailPage() {
         onBook={handleBook}
         ready={!!(selectedProf && selectedService)}
       />
-    </>
+    </div>
   );
 }
