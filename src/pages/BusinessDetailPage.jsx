@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import RecommendedBusinesses from '../components/RecommendedBusinesses';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -831,6 +832,13 @@ export default function BusinessDetailPage() {
             <MapSection business={business} />
           </div>
         )}
+
+        {/* ── Recommended nearby ── */}
+        <RecommendedBusinesses
+          currentBusinessId={id}
+          category={business.category}
+          city={business.city}
+        />
 
         {/* ── Reviews ── */}
         <ReviewsSection

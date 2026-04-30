@@ -339,22 +339,22 @@ export default function Layout() {
           <div className="footer-cta-inner">
             <div className="footer-cta-text">
               <h3 className="footer-cta-title">
-                ¿Listo para tu próxima cita?
+                Descubre los mejores profesionales de tu ciudad
               </h3>
               <p className="footer-cta-sub">
-                Reserva en segundos en las mejores barberías, spas y salones.
+                Barberías, spas y salones verificados — explora, compara servicios y reserva con un clic.
               </p>
             </div>
             <div className="footer-cta-actions">
-              <Link to="/" className="footer-cta-btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <Link to="/businesses" className="footer-cta-btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
                 Explorar negocios
               </Link>
               <Link to="/register" className="footer-cta-btn-secondary">
-                Crear cuenta gratis
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                Registrarme gratis
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
               </Link>
