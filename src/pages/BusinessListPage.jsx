@@ -208,11 +208,6 @@ export default function BusinessListPage() {
   const [cityInput, setCityInput]     = useState('');
   const [loading, setLoading]         = useState(false);
   const [apiError, setApiError]       = useState(false);
-  // location
-  const [userLocation, setUserLocation]       = useState(null); // { lat, lng, label }
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError]     = useState('');
-  const [radius, setRadius]                   = useState(10);
 
   // animated counters
   const c1 = useAnimatedCounter(2500);
@@ -231,66 +226,16 @@ export default function BusinessListPage() {
   useEffect(() => {
     setLoading(true);
     setApiError(false);
-    const params = {};
-    if (userLocation) { params.lat = userLocation.lat; params.lng = userLocation.lng; params.radius = radius; }
-    else if (city) params.city = city;
+    const params = city ? { city } : {};
     api.getBusinesses(params)
       .then((data) => setBusinesses(data || []))
       .catch(() => { setBusinesses([]); setApiError(true); })
       .finally(() => setLoading(false));
-  }, [city, userLocation, radius]);
+  }, [city]);
 
-  function requestGeolocation() {
-    if (!navigator.geolocation) { setLocationError('Tu navegador no soporta geolocalización'); return; }
-    setLocationLoading(true); setLocationError('');
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        // reverse geocode for label
-        let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers: { 'User-Agent': 'Bookease/1.0' } });
-          const d = await res.json();
-          label = d.address?.city || d.address?.town || d.address?.village || d.address?.suburb || d.display_name?.split(',')[0] || label;
-        } catch {}
-        setUserLocation({ lat, lng, label });
-        setCity(''); setCityInput('');
-        setLocationLoading(false);
-      },
-      (err) => {
-        setLocationLoading(false);
-        setLocationError(err.code === 1 ? 'Permiso de ubicación denegado. Puedes buscar por ciudad manualmente.' : 'No se pudo obtener tu ubicación.');
-      },
-      { timeout: 10000 }
-    );
-  }
-
-  function clearLocation() {
-    setUserLocation(null); setLocationError('');
-  }
-
-  async function handleSearch(e) {
+  function handleSearch(e) {
     e.preventDefault();
-    const q = cityInput.trim();
-    if (!q) { clearLocation(); setCity(''); scrollToGrid(); return; }
-    // try to geocode the input for distance sorting
-    setLocationLoading(true); setLocationError('');
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers: { 'User-Agent': 'Bookease/1.0' } });
-      const data = await res.json();
-      if (data.length > 0) {
-        const label = data[0].display_name?.split(',')[0] || q;
-        setUserLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label });
-        setCity('');
-      } else {
-        setCity(q);
-        setUserLocation(null);
-      }
-    } catch {
-      setCity(q); setUserLocation(null);
-    } finally {
-      setLocationLoading(false);
-    }
+    setCity(cityInput.trim());
     scrollToGrid();
   }
 
@@ -361,55 +306,9 @@ export default function BusinessListPage() {
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
             </div>
-            <input type="text" placeholder="Ciudad, barrio o dirección…" value={cityInput} onChange={e => setCityInput(e.target.value)} />
-            <button
-              type="button"
-              title={userLocation ? 'Limpiar ubicación' : 'Usar mi ubicación'}
-              onClick={userLocation ? () => { clearLocation(); setCityInput(''); } : requestGeolocation}
-              disabled={locationLoading}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px', marginRight: 4,
-                borderRadius: 'var(--r-md)',
-                border: `1px solid ${userLocation ? 'var(--teal)' : 'var(--border)'}`,
-                background: userLocation ? 'rgba(0,212,200,0.1)' : 'transparent',
-                color: userLocation ? 'var(--teal)' : 'var(--text-muted)',
-                fontSize: 'var(--text-xs)', fontWeight: 600, cursor: locationLoading ? 'wait' : 'pointer',
-                whiteSpace: 'nowrap', transition: 'all .15s',
-              }}
-            >
-              {locationLoading ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              ) : userLocation ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-              )}
-              <span className="loc-btn-label">{userLocation ? userLocation.label : 'Mi ubicación'}</span>
-            </button>
-            {userLocation && (
-              <select
-                value={radius}
-                onChange={e => setRadius(Number(e.target.value))}
-                style={{
-                  padding: '6px 10px', borderRadius: 'var(--r-md)',
-                  border: '1px solid var(--teal)', background: 'rgba(0,212,200,0.08)',
-                  color: 'var(--teal)', fontSize: 'var(--text-xs)', fontWeight: 600,
-                  cursor: 'pointer', marginRight: 4,
-                }}
-              >
-                <option value={2}>2 km</option>
-                <option value={5}>5 km</option>
-                <option value={10}>10 km</option>
-                <option value={25}>25 km</option>
-                <option value={50}>50 km</option>
-              </select>
-            )}
-            <button type="submit" className="search-bar-v2-btn" disabled={locationLoading}>Buscar</button>
+            <input type="text" placeholder="Buscar por ciudad…" value={cityInput} onChange={e => setCityInput(e.target.value)} />
+            <button type="submit" className="search-bar-v2-btn">Buscar</button>
           </form>
-          {locationError && (
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--error)', marginTop: 'var(--sp-2)', textAlign: 'center' }}>{locationError}</p>
-          )}
 
           {/* Secondary CTA */}
           {!user && (
@@ -546,15 +445,7 @@ export default function BusinessListPage() {
             <button key={c.slug} className={`chip${category === c.slug ? ' active' : ''}`} onClick={() => setCategory(c.slug)}>{c.name}</button>
           ))}
         </div>
-        {userLocation && (
-          <button className="chip active" style={{ display:'flex', alignItems:'center', gap:6, borderColor:'var(--teal)', color:'var(--teal)', background:'rgba(0,212,200,0.08)' }}
-            onClick={() => { clearLocation(); setCityInput(''); }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            Cerca de {userLocation.label} · {radius} km
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        )}
-        {city && !userLocation && (
+        {city && (
           <button className="chip" style={{ display:'flex', alignItems:'center', gap:6 }} onClick={() => { setCity(''); setCityInput(''); }}>
             {city}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -644,11 +535,6 @@ export default function BusinessListPage() {
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                         </svg>
                         {b.address}, {b.city}
-                        {b.distance != null && (
-                          <span style={{ marginLeft:6, padding:'1px 7px', borderRadius:'var(--r-full)', background:'rgba(0,212,200,0.1)', border:'1px solid rgba(0,212,200,0.25)', color:'var(--teal)', fontSize:'var(--text-xs)', fontWeight:600, verticalAlign:'middle' }}>
-                            {b.distance < 1 ? `${Math.round(b.distance * 1000)} m` : `${b.distance} km`}
-                          </span>
-                        )}
                       </p>
                       {b.rating && (
                         <div className="rating-row" style={{marginBottom:'var(--sp-2)'}}>
