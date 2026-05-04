@@ -201,8 +201,9 @@ export default function BusinessListPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [businesses, setBusinesses]   = useState([]);
-  // category only filters "Explorar todos los negocios"; trending/newest are always unfiltered
   const [category, setCategory]       = useState('');
+  const [heroCategory, setHeroCategory] = useState('');
+  const [timeSlot, setTimeSlot]       = useState('');
   const [categories, setCategories]   = useState([]);
   const [city, setCity]               = useState('');
   const [cityInput, setCityInput]     = useState('');
@@ -236,6 +237,7 @@ export default function BusinessListPage() {
   function handleSearch(e) {
     e.preventDefault();
     setCity(cityInput.trim());
+    if (heroCategory) setCategory(heroCategory);
     scrollToGrid();
   }
 
@@ -299,15 +301,102 @@ export default function BusinessListPage() {
             Reserva con los mejores profesionales en segundos.
           </p>
 
-          {/* Search v2 */}
-          <form className="search-bar-v2 animate-up animate-up-3" onSubmit={handleSearch}>
-            <div className="search-bar-v2-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          {/* ── Hero search panel ── */}
+          <form className="animate-up animate-up-3" onSubmit={handleSearch} style={{
+            width: '100%', maxWidth: 680, margin: '0 auto',
+            background: 'rgba(var(--surface-2-rgb, 18,18,24), 0.85)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r-2xl, 20px)',
+            overflow: 'hidden',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.04)',
+          }}>
+            {/* Row 1: city + button */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 10px 10px 20px', gap: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" style={{ flexShrink: 0 }}>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
               </svg>
+              <input
+                type="text"
+                placeholder="Ciudad o barrio…"
+                value={cityInput}
+                onChange={e => setCityInput(e.target.value)}
+                style={{
+                  flex: 1, background: 'none', border: 'none', outline: 'none',
+                  color: 'var(--text)', fontSize: 'var(--text-base)',
+                  fontFamily: 'var(--font-body)', fontWeight: 500,
+                }}
+              />
+              <button type="submit" style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                background: 'var(--gold)', color: '#0A0808',
+                border: 'none', borderRadius: 'var(--r-lg)', padding: '10px 22px',
+                fontSize: 'var(--text-sm)', fontWeight: 700, cursor: 'pointer',
+                flexShrink: 0, transition: 'opacity .15s',
+              }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                Buscar
+              </button>
             </div>
-            <input type="text" placeholder="Buscar por ciudad…" value={cityInput} onChange={e => setCityInput(e.target.value)} />
-            <button type="submit" className="search-bar-v2-btn">Buscar</button>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: 'var(--border)', margin: '0 16px' }} />
+
+            {/* Row 2: filters */}
+            <div style={{ padding: '12px 20px 14px', display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
+
+              {/* Category chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em', flexShrink: 0 }}>Categoría</span>
+                {[{ slug: '', name: 'Todas' }, ...categories].map(cat => (
+                  <button key={cat.slug} type="button"
+                    onClick={() => setHeroCategory(s => s === cat.slug ? (cat.slug ? '' : '') : cat.slug)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '4px 12px', borderRadius: 'var(--r-full)',
+                      border: `1px solid ${heroCategory === cat.slug ? 'var(--gold)' : 'var(--border)'}`,
+                      background: heroCategory === cat.slug ? 'rgba(212,168,83,0.12)' : 'transparent',
+                      color: heroCategory === cat.slug ? 'var(--gold)' : 'var(--text-muted)',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    {cat.icon && <span style={{ fontSize: 13 }}>{cat.icon}</span>}
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+
+              {/* Separator */}
+              <div style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', margin: '2px 0', flexShrink: 0 }} />
+
+              {/* Time slot chips */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em', flexShrink: 0 }}>Horario</span>
+                {[
+                  { id: 'morning',   label: 'Mañana',  range: '7–12h',  icon: '🌅' },
+                  { id: 'afternoon', label: 'Tarde',   range: '12–18h', icon: '☀️' },
+                  { id: 'evening',   label: 'Noche',   range: '18–22h', icon: '🌙' },
+                ].map(ts => (
+                  <button key={ts.id} type="button"
+                    onClick={() => setTimeSlot(s => s === ts.id ? '' : ts.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '4px 12px', borderRadius: 'var(--r-full)',
+                      border: `1px solid ${timeSlot === ts.id ? 'var(--violet)' : 'var(--border)'}`,
+                      background: timeSlot === ts.id ? 'rgba(124,92,252,0.12)' : 'transparent',
+                      color: timeSlot === ts.id ? 'var(--violet)' : 'var(--text-muted)',
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all .15s',
+                      whiteSpace: 'nowrap',
+                    }}>
+                    <span style={{ fontSize: 11 }}>{ts.icon}</span>
+                    {ts.label}
+                    <span style={{ fontSize: 10, opacity: .65 }}>{ts.range}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </form>
 
           {/* Secondary CTA */}

@@ -5,7 +5,6 @@ import { useTheme } from '../context/ThemeContext';
 import FeedbackModal from './FeedbackModal';
 
 const NAV_LINKS = [
-  { to: '/', label: 'Explorar' },
   { to: '/businesses', label: 'Negocios' },
   { to: '/how-it-works', label: 'Cómo funciona' },
 ];
@@ -113,21 +112,15 @@ export default function Layout() {
           Book<span className="nav-brand-accent">ease</span>
         </Link>
 
-        {/* Center links — always visible */}
+        {/* Center links */}
         <div className="nav-center">
           {NAV_LINKS.map(l => (
-            <Link
-              key={l.to + l.label}
-              to={l.to}
-              className={`nav-link${isActive(l.to) ? ' active' : ''}`}
-            >
+            <Link key={l.to + l.label} to={l.to} className={`nav-link${isActive(l.to) ? ' active' : ''}`}>
               {l.label}
             </Link>
           ))}
-          <Link to="/home-service" className={`nav-link nav-link-home${isActive('/home-service') ? ' active' : ''}`}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
+          <Link to="/home-service" className={`nav-link${isActive('/home-service') ? ' active' : ''}`}
+            style={{ color: 'var(--gold)', fontWeight: 600 }}>
             A domicilio
           </Link>
         </div>
@@ -157,22 +150,8 @@ export default function Layout() {
           {/* — Guest — */}
           {!user && (
             <>
-              <Link to="/pro/login" className="nav-link" style={{ color: 'var(--violet)', fontWeight: 600 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
-                Soy profesional
-              </Link>
               <Link to="/login" className="nav-link">Iniciar sesión</Link>
-              <Link to="/register" className="nav-cta">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <line x1="19" y1="8" x2="19" y2="14"/>
-                  <line x1="22" y1="11" x2="16" y2="11"/>
-                </svg>
-                Registrarse gratis
-              </Link>
+              <Link to="/register" className="nav-cta">Comenzar gratis</Link>
             </>
           )}
 
@@ -270,13 +249,12 @@ export default function Layout() {
         <div className="nav-mobile-menu" onClick={() => setMenuOpen(false)}>
           {!user && (
             <>
-              <Link to="/" className="nav-mobile-link">Explorar</Link>
               <Link to="/businesses" className="nav-mobile-link">Negocios</Link>
               <Link to="/home-service" className="nav-mobile-link" style={{ color:'var(--gold)', fontWeight:600 }}>A domicilio</Link>
               <Link to="/how-it-works" className="nav-mobile-link">Cómo funciona</Link>
-              <Link to="/login" className="nav-mobile-link">Iniciar sesión</Link>
               <Link to="/pro/login" className="nav-mobile-link" style={{ color: 'var(--violet)' }}>Soy profesional</Link>
-              <Link to="/register" className="nav-mobile-cta">Registrarse gratis</Link>
+              <Link to="/login" className="nav-mobile-link">Iniciar sesión</Link>
+              <Link to="/register" className="nav-mobile-cta">Comenzar gratis</Link>
             </>
           )}
           {user?.role === 'CLIENT' && (
