@@ -71,7 +71,7 @@ export default function RegisterBusinessPage() {
         state:       form.state.trim() || undefined,
         zipCode:     form.zipCode.trim() || undefined,
       });
-      navigate('/dashboard');
+      navigate('/pricing');
     } catch (err) {
       setError(err.message);
     } finally {
