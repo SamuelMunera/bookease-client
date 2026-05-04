@@ -271,7 +271,7 @@ function BookingRow({ booking }) {
 const DAYS_LABEL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DEFAULT_SCHEDULE = [0,1,2,3,4,5,6].map(d => ({
   dayOfWeek: d, startTime: '09:00', endTime: '18:00', isActive: false, isOverride: false,
-  scheduleType: 'fulltime', secondStartTime: '14:00', secondEndTime: '18:00',
+  scheduleType: 'fulltime', secondStartTime: null, secondEndTime: null,
 }));
 
 function getWeekStart(offset = 0) {
@@ -586,9 +586,11 @@ export default function ProfessionalDashboardPage() {
         updated.secondEndTime   = null;
       }
       if (field === 'scheduleType' && value === 'part_time') {
-        // Initialize second block defaults so controlled inputs are never null
-        if (!d.secondStartTime) updated.secondStartTime = '14:00';
-        if (!d.secondEndTime)   updated.secondEndTime   = '18:00';
+        // Split the existing block at noon by default: 09:00-12:00 / 14:00-<original end>
+        // This guarantees the second block always starts after the first ends.
+        updated.endTime         = '12:00';
+        updated.secondStartTime = '14:00';
+        updated.secondEndTime   = d.endTime || '18:00';
       }
       return updated;
     }));
