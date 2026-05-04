@@ -284,21 +284,14 @@ export default function BusinessListPage() {
   const dateRef                       = useRef(null);
   const timeRef                       = useRef(null);
 
-  useEffect(() => {
-    function close(e) {
-      if (catRef.current  && !catRef.current.contains(e.target))  setCatOpen(false);
-      if (dateRef.current && !dateRef.current.contains(e.target)) setDateOpen(false);
-      if (timeRef.current && !timeRef.current.contains(e.target)) setTimeOpen(false);
-    }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
+  function closeAll() { setCatOpen(false); setDateOpen(false); }
 
-  function openAt(key, ref, setter) {
+  function openAt(key, ref, setter, closeSelf) {
+    closeAll();
+    if (closeSelf) return; // toggle off
     const rect = ref.current?.getBoundingClientRect();
-    // Always set pos (fallback to 0,0 if ref not ready)
-    setDropPos(p => ({ ...p, [key]: rect ? { top: rect.bottom + 8, left: rect.left } : { top: 200, left: 200 } }));
-    setter(o => !o);
+    setDropPos(p => ({ ...p, [key]: rect ? { top: rect.bottom + 8, left: rect.left } : { top: 200, left: 100 } }));
+    setter(true);
   }
   const [categories, setCategories]   = useState([]);
   const [city, setCity]               = useState('');
@@ -418,7 +411,7 @@ export default function BusinessListPage() {
 
             {/* Sección 1: Categoría con dropdown */}
             <div ref={catRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-              <button type="button" onClick={() => openAt('cat', catRef, setCatOpen)} style={{
+              <button type="button" onClick={() => openAt('cat', catRef, setCatOpen, catOpen)} style={{
                 width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
               }}>
@@ -467,7 +460,7 @@ export default function BusinessListPage() {
 
             {/* Sección 3: Fecha — custom calendar */}
             <div ref={dateRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-              <button type="button" onClick={() => openAt('date', dateRef, setDateOpen)} style={{
+              <button type="button" onClick={() => openAt('date', dateRef, setDateOpen, dateOpen)} style={{
                 width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
               }}>
@@ -479,105 +472,35 @@ export default function BusinessListPage() {
                 </span>
               </button>
 
-              {/* date dropdown rendered via portal below */}
-              {false && dropPos.date && (
-                <div style={{
-                  position: 'fixed', top: dropPos.date.top, left: dropPos.date.left, zIndex: 9999,
-                  background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 16, boxShadow: '0 8px 28px rgba(0,0,0,0.3)',
-                  width: 270, padding: '14px 16px',
-                }}>
-                  {/* Month nav */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <button type="button" onClick={() => setCalView(v => { const d = new Date(v.year, v.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-                    </button>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                      {MONTHS_ES[calView.month]} {calView.year}
-                    </span>
-                    <button type="button" onClick={() => setCalView(v => { const d = new Date(v.year, v.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: 6 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
-                    </button>
-                  </div>
-                  {/* Day headers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 6 }}>
-                    {WEEK_DAYS.map(d => <span key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', padding: '2px 0' }}>{d}</span>)}
-                  </div>
-                  {/* Days */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-                    {getCalDays(calView.year, calView.month).map((day, i) => {
-                      if (!day) return <span key={i} />;
-                      const iso = `${calView.year}-${String(calView.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                      const todayISO = new Date().toISOString().split('T')[0];
-                      const isPast = iso < todayISO;
-                      const isSelected = iso === heroDate;
-                      return (
-                        <button key={i} type="button" disabled={isPast}
-                          onClick={() => { setHeroDate(iso); setDateOpen(false); }}
-                          style={{
-                            padding: '5px 0', border: 'none', borderRadius: 8, cursor: isPast ? 'default' : 'pointer',
-                            background: isSelected ? 'var(--gold)' : 'none',
-                            color: isSelected ? '#0A0808' : isPast ? 'var(--text-subtle)' : 'var(--text)',
-                            fontWeight: isSelected ? 700 : 400, fontSize: 12, textAlign: 'center',
-                            opacity: isPast ? 0.4 : 1,
-                          }}
-                          onMouseEnter={e => { if (!isPast && !isSelected) e.currentTarget.style.background = 'var(--surface-2)'; }}
-                          onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'none'; }}
-                        >{day}</button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* calendar rendered via portal at end of component */}
             </div>
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 4: Hora — custom time picker */}
-            <div ref={timeRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-              <button type="button" onClick={() => openAt('time', timeRef, setTimeOpen)} style={{
-                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
-                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-              }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroTime ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-                  <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
-                  {heroTime || 'Cualquier hora'}
-                  {heroTime && <button type="button" onClick={e => { e.stopPropagation(); setHeroTime(''); }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>}
-                </span>
-              </button>
-
-              {/* time dropdown rendered via portal below */}
-              {false && dropPos.time && (
-                <div style={{
-                  position: 'fixed', top: dropPos.time.top, left: dropPos.time.left, zIndex: 9999,
-                  background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 14, boxShadow: '0 8px 28px rgba(0,0,0,0.3)',
-                  width: 140, maxHeight: 220, overflowY: 'auto',
-                  scrollbarWidth: 'thin',
-                }}>
-                  {TIME_OPTIONS.map(t => (
-                    <button key={t} type="button"
-                      onClick={() => { setHeroTime(t); setTimeOpen(false); }}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 14px', background: 'none', border: 'none',
-                        cursor: 'pointer', textAlign: 'left', fontSize: 13,
-                        color: heroTime === t ? 'var(--gold)' : 'var(--text)',
-                        fontWeight: heroTime === t ? 700 : 400,
-                        background: heroTime === t ? 'rgba(212,168,83,0.08)' : 'none',
-                      }}
-                      onMouseEnter={e => { if (heroTime !== t) e.currentTarget.style.background = 'var(--surface-2)'; }}
-                      onMouseLeave={e => { if (heroTime !== t) e.currentTarget.style.background = 'none'; }}
-                    >
-                      <ClockIcon h={parseInt(t.split(':')[0])} m={parseInt(t.split(':')[1])} size={12} />
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Sección 4: Hora — input directo siempre visible */}
+            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}
+              onClick={closeAll}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
+                <input
+                  type="time"
+                  value={heroTime}
+                  onChange={e => setHeroTime(e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
+                    fontSize: 'var(--text-sm)', fontWeight: 500, cursor: 'pointer',
+                    color: heroTime ? 'var(--text)' : 'var(--text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    colorScheme: 'dark',
+                  }}
+                />
+                {heroTime && (
+                  <button type="button" onClick={e => { e.stopPropagation(); setHeroTime(''); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
+                )}
+              </div>
             </div>
 
             {/* Botón buscar */}
@@ -839,10 +762,16 @@ export default function BusinessListPage() {
         )}
       </div>
 
-      {/* ── Portals: dropdowns rendered at body level to escape any stacking context ── */}
+      {/* ── Overlay: closes any open dropdown on outside click ── */}
+      {(catOpen || dateOpen) && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99997 }} onClick={closeAll} />,
+        document.body
+      )}
+
+      {/* ── Portals: dropdowns rendered at body level ── */}
 
       {catOpen && dropPos.cat && createPortal(
-        <div ref={catRef} style={{
+        <div style={{
           position: 'fixed', top: dropPos.cat.top, left: dropPos.cat.left, zIndex: 99999,
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.32)',
