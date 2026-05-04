@@ -19,6 +19,10 @@ export default function RegisterBusinessPage() {
   const cfg = COUNTRY_CONFIG[form.country] || COUNTRY_CONFIG.CO;
 
   useEffect(() => {
+    // If user already has a business, send them to dashboard directly
+    api.getMyBusiness().then(b => {
+      if (b) navigate('/dashboard', { replace: true });
+    }).catch(() => {});
     api.getCategories().then(cats => {
       setCategories(cats);
       if (cats.length && !form.category) setForm(p => ({ ...p, category: cats[0].slug }));
