@@ -129,7 +129,14 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
     fetch?.then(setSubscription).catch(() => {});
   }, [user]);
 
-  const plans = getPlansForCountry(country);
+  const allPlans = getPlansForCountry(country);
+  const plans = !user
+    ? allPlans
+    : user.role === 'PROFESSIONAL'
+      ? allPlans.filter(p => p.forType === 'professional')
+      : user.role === 'BUSINESS_OWNER'
+        ? allPlans.filter(p => p.forType === 'business')
+        : allPlans;
   const hasStripeSubscription = !!(
     subscription?.stripeSubscriptionId &&
     ['ACTIVE', 'TRIALING'].includes(subscription?.status)
@@ -202,6 +209,18 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
           ))}
         </div>
       </div>
+
+      {/* ── Role context hint ── */}
+      {user?.role === 'PROFESSIONAL' && (
+        <p style={{ textAlign: 'center', marginTop: 'calc(var(--sp-6) * -1)', marginBottom: 'var(--sp-8)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+          Como profesional independiente solo puedes contratar el plan Independiente.
+        </p>
+      )}
+      {user?.role === 'BUSINESS_OWNER' && (
+        <p style={{ textAlign: 'center', marginTop: 'calc(var(--sp-6) * -1)', marginBottom: 'var(--sp-8)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+          Estos planes son para tu negocio. El plan Independiente es para profesionales sin negocio.
+        </p>
+      )}
 
       {/* ── Subscription status banner — only for active Stripe subscriptions ── */}
       {hasStripeSubscription && subscription && (
