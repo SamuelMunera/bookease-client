@@ -401,31 +401,30 @@ export default function BusinessListPage() {
 
               {catOpen && (
                 <div style={{
-                  position: 'absolute', top: 'calc(100% + 10px)', left: 0, zIndex: 100,
+                  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 200,
                   background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--r-xl)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                  minWidth: 200, overflow: 'hidden',
+                  borderRadius: 12, boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+                  width: 190, overflow: 'hidden',
                 }}>
                   {[{ slug: '', name: 'Todos los servicios', icon: null }, ...categories].map((cat, i) => (
                     <button key={cat.slug} type="button"
                       onClick={() => { setHeroCategory(cat.slug); setCatOpen(false); }}
                       style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '10px 16px', background: 'none', border: 'none',
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '7px 12px', background: 'none', border: 'none',
                         borderTop: i > 0 ? '1px solid var(--border)' : 'none',
                         cursor: 'pointer', textAlign: 'left',
                         color: heroCategory === cat.slug ? 'var(--gold)' : 'var(--text)',
-                        fontWeight: heroCategory === cat.slug ? 700 : 400,
-                        fontSize: 'var(--text-sm)',
-                        transition: 'background .12s',
+                        fontWeight: heroCategory === cat.slug ? 600 : 400,
+                        fontSize: 12,
                       }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
-                      {cat.icon && <span style={{ fontSize: 18 }}>{cat.icon}</span>}
-                      {cat.name}
+                      {cat.icon && <span style={{ fontSize: 14, lineHeight: 1 }}>{cat.icon}</span>}
+                      <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
                       {heroCategory === cat.slug && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12"/></svg>
                       )}
                     </button>
                   ))}
