@@ -295,7 +295,8 @@ export default function BusinessListPage() {
 
   function openAt(key, ref, setter) {
     const rect = ref.current?.getBoundingClientRect();
-    if (rect) setDropPos(p => ({ ...p, [key]: { top: rect.bottom + 8, left: rect.left } }));
+    // Always set pos (fallback to 0,0 if ref not ready)
+    setDropPos(p => ({ ...p, [key]: rect ? { top: rect.bottom + 8, left: rect.left } : { top: 200, left: 200 } }));
     setter(o => !o);
   }
   const [categories, setCategories]   = useState([]);
@@ -317,6 +318,9 @@ export default function BusinessListPage() {
   ];
 
   useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);
+
+  // Live category filter — applies immediately on selection like Fresha
+  useEffect(() => { setCategory(heroCategory); }, [heroCategory]);
 
   useEffect(() => {
     setLoading(true);
@@ -418,10 +422,13 @@ export default function BusinessListPage() {
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
               }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Categoría</span>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroCategory ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                  {heroCategory ? (categories.find(c => c.slug === heroCategory)?.name ?? 'Todos') : 'Todos los servicios'}
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto', opacity: .5, transform: catOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="M6 9l6 6 6-6"/></svg>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroCategory ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <span style={{ flex: 1 }}>{heroCategory ? (categories.find(c => c.slug === heroCategory)?.name ?? 'Categoría') : 'Categoría'}</span>
+                  {heroCategory
+                    ? <button type="button" onClick={e => { e.stopPropagation(); setHeroCategory(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 15, flexShrink: 0 }}>×</button>
+                    : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity: .5, transform: catOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}><path d="M6 9l6 6 6-6"/></svg>
+                  }
                 </span>
               </button>
 
@@ -432,7 +439,7 @@ export default function BusinessListPage() {
                   borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
                   width: 185, overflow: 'hidden',
                 }}>
-                  {[{ slug: '', name: 'Todos los servicios' }, ...categories].map((cat, i) => (
+                  {categories.map((cat, i) => (
                     <button key={cat.slug} type="button"
                       onClick={() => { setHeroCategory(cat.slug); setCatOpen(false); }}
                       style={{
