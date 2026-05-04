@@ -272,6 +272,7 @@ export default function BusinessListPage() {
   const [category, setCategory]       = useState('');
   const [heroCategory, setHeroCategory] = useState('');
   const [heroTime, setHeroTime]       = useState('');
+  const [ampm, setAmpm]               = useState('AM');
   const [heroDate, setHeroDate]       = useState('');
   const [searchTime, setSearchTime]   = useState('');
   const [catOpen, setCatOpen]         = useState(false);
@@ -333,7 +334,16 @@ export default function BusinessListPage() {
     e.preventDefault();
     setCity(cityInput.trim());
     setCategory(heroCategory);
-    setSearchTime(heroTime);
+    // Convert AM/PM to 24h for backend
+    let time24 = heroTime;
+    if (heroTime) {
+      const [h, m] = heroTime.split(':').map(Number);
+      let h24 = h;
+      if (ampm === 'PM' && h !== 12) h24 = h + 12;
+      if (ampm === 'AM' && h === 12) h24 = 0;
+      time24 = `${String(h24).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+    setSearchTime(time24);
     scrollToGrid();
   }
 
@@ -512,6 +522,17 @@ export default function BusinessListPage() {
                   <button type="button" onClick={() => setHeroTime('')}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
                 )}
+                {/* AM / PM toggle */}
+                <div style={{ display: 'flex', borderRadius: 6, border: '1px solid var(--border)', overflow: 'hidden', flexShrink: 0 }}>
+                  {['AM','PM'].map(p => (
+                    <button key={p} type="button" onClick={() => setAmpm(p)} style={{
+                      padding: '2px 7px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700,
+                      background: ampm === p ? 'var(--gold)' : 'transparent',
+                      color: ampm === p ? '#0A0808' : 'var(--text-muted)',
+                      transition: 'all .15s',
+                    }}>{p}</button>
+                  ))}
+                </div>
               </div>
             </div>
 
