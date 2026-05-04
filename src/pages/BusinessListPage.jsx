@@ -6,6 +6,30 @@ import api from '../api';
 /* ─── constants ─────────────────────────────────────────── */
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
+const TIME_SLOTS = [
+  { id: '',          label: 'Cualquier momento', range: '',              h: 10, m: 10 },
+  { id: 'morning',   label: 'Mañana',            range: '7:00 – 12:00',  h: 9,  m: 0  },
+  { id: 'afternoon', label: 'Tarde',             range: '12:00 – 18:00', h: 15, m: 0  },
+  { id: 'evening',   label: 'Noche',             range: '18:00 – 22:00', h: 20, m: 0  },
+];
+
+function ClockIcon({ h = 10, m = 10, size = 14 }) {
+  const r  = size / 2;
+  const hr = ((h % 12) / 12) * 360 + (m / 60) * 30 - 90;
+  const mn = (m / 60) * 360 - 90;
+  const hx = r + r * 0.5 * Math.cos(hr * Math.PI / 180);
+  const hy = r + r * 0.5 * Math.sin(hr * Math.PI / 180);
+  const mx = r + r * 0.72 * Math.cos(mn * Math.PI / 180);
+  const my = r + r * 0.72 * Math.sin(mn * Math.PI / 180);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx={r} cy={r} r={r - 0.8} />
+      <line x1={r} y1={r} x2={hx} y2={hy} strokeWidth="2" />
+      <line x1={r} y1={r} x2={mx} y2={my} />
+    </svg>
+  );
+}
+
 /* ─── category showcase data ────────────────────────────── */
 const CAT_TILES = [
   { value:'BARBERSHOP', name:'Barberías', count:'120+ locales', imgClass:'biz-card-img-barbershop',
@@ -205,14 +229,17 @@ export default function BusinessListPage() {
   const [heroCategory, setHeroCategory] = useState('');
   const [timeSlot, setTimeSlot]       = useState('');
   const [catOpen, setCatOpen]         = useState(false);
+  const [slotOpen, setSlotOpen]       = useState(false);
   const catRef                        = useRef(null);
+  const slotRef                       = useRef(null);
 
   useEffect(() => {
-    function handleClickOutside(e) {
+    function close(e) {
       if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false);
+      if (slotRef.current && !slotRef.current.contains(e.target)) setSlotOpen(false);
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
   }, []);
   const [categories, setCategories]   = useState([]);
   const [city, setCity]               = useState('');
@@ -328,7 +355,7 @@ export default function BusinessListPage() {
                 width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
               }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Servicio</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Categoría</span>
                 <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroCategory ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                   {heroCategory ? (categories.find(c => c.slug === heroCategory)?.name ?? 'Todos') : 'Todos los servicios'}
@@ -399,94 +426,57 @@ export default function BusinessListPage() {
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 3: Horario con dropdown tipo reloj */}
-            {(() => {
-              const SLOTS = [
-                { id: 'morning',   label: 'Mañana',  range: '7:00 – 12:00',  hands: { h: 9,  m: 0  } },
-                { id: 'afternoon', label: 'Tarde',   range: '12:00 – 18:00', hands: { h: 15, m: 0  } },
-                { id: 'evening',   label: 'Noche',   range: '18:00 – 22:00', hands: { h: 20, m: 0  } },
-              ];
-              const [slotOpen, setSlotOpen] = useState(false);
-              const slotRef = useRef(null);
+            {/* Sección 3: Horario */}
+            <div ref={slotRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+              <button type="button" onClick={() => setSlotOpen(o => !o)} style={{
+                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: timeSlot ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {(() => { const s = TIME_SLOTS.find(x => x.id === timeSlot) ?? TIME_SLOTS[0]; return <ClockIcon h={s.h} m={s.m} />; })()}
+                  {TIME_SLOTS.find(x => x.id === timeSlot)?.label ?? 'Cualquier momento'}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto', opacity: .5, transform: slotOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="M6 9l6 6 6-6"/></svg>
+                </span>
+              </button>
 
-              useEffect(() => {
-                function close(e) { if (slotRef.current && !slotRef.current.contains(e.target)) setSlotOpen(false); }
-                document.addEventListener('mousedown', close);
-                return () => document.removeEventListener('mousedown', close);
-              }, []);
-
-              function ClockIcon({ h = 10, m = 10, size = 13 }) {
-                const hr = ((h % 12) / 12) * 360 + (m / 60) * 30;
-                const mn = (m / 60) * 360;
-                const r = size / 2;
-                const hx = r + (r * 0.5) * Math.sin((hr - 90) * Math.PI / 180);
-                const hy = r - (r * 0.5) * Math.cos((hr - 90) * Math.PI / 180);
-                const mx = r + (r * 0.75) * Math.sin((mn - 90) * Math.PI / 180);
-                const my = r - (r * 0.75) * Math.cos((mn - 90) * Math.PI / 180);
-                return (
-                  <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                    <circle cx={r} cy={r} r={r - 0.5} />
-                    <line x1={r} y1={r} x2={hx} y2={hy} strokeWidth="1.8" />
-                    <line x1={r} y1={r} x2={mx} y2={my} />
-                  </svg>
-                );
-              }
-
-              const active = SLOTS.find(s => s.id === timeSlot);
-
-              return (
-                <div ref={slotRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-                  <button type="button" onClick={() => setSlotOpen(o => !o)} style={{
-                    width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
-                    padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: active ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <ClockIcon h={active?.hands.h ?? 10} m={active?.hands.m ?? 10} />
-                      {active ? `${active.label} · ${active.range}` : 'Cualquier momento'}
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto', opacity: .5, transform: slotOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="M6 9l6 6 6-6"/></svg>
-                    </span>
-                  </button>
-
-                  {slotOpen && (
-                    <div style={{
-                      position: 'absolute', top: 'calc(100% + 10px)', left: 0, zIndex: 100,
-                      background: 'var(--surface)', border: '1px solid var(--border)',
-                      borderRadius: 'var(--r-xl)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                      minWidth: 220, overflow: 'hidden',
-                    }}>
-                      {[{ id: '', label: 'Cualquier momento', range: '', hands: { h: 10, m: 10 } }, ...SLOTS].map((s, i) => (
-                        <button key={s.id} type="button"
-                          onClick={() => { setTimeSlot(s.id); setSlotOpen(false); }}
-                          style={{
-                            width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                            padding: '10px 16px', background: 'none', border: 'none',
-                            borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                            cursor: 'pointer', textAlign: 'left',
-                            color: timeSlot === s.id ? 'var(--violet)' : 'var(--text)',
-                            fontWeight: timeSlot === s.id ? 700 : 400,
-                            fontSize: 'var(--text-sm)',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                        >
-                          <span style={{ color: timeSlot === s.id ? 'var(--violet)' : 'var(--text-muted)' }}>
-                            <ClockIcon h={s.hands.h} m={s.hands.m} size={18} />
-                          </span>
-                          <span>
-                            <span style={{ display: 'block' }}>{s.label}</span>
-                            {s.range && <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>{s.range}</span>}
-                          </span>
-                          {timeSlot === s.id && (
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+              {slotOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 10px)', left: 0, zIndex: 100,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-xl)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                  minWidth: 220, overflow: 'hidden',
+                }}>
+                  {TIME_SLOTS.map((s, i) => (
+                    <button key={s.id} type="button"
+                      onClick={() => { setTimeSlot(s.id); setSlotOpen(false); }}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '10px 16px', background: 'none', border: 'none',
+                        borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                        cursor: 'pointer', textAlign: 'left',
+                        color: timeSlot === s.id ? 'var(--violet)' : 'var(--text)',
+                        fontWeight: timeSlot === s.id ? 700 : 400,
+                        fontSize: 'var(--text-sm)',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      <span style={{ color: timeSlot === s.id ? 'var(--violet)' : 'var(--text-muted)', flexShrink: 0 }}>
+                        <ClockIcon h={s.h} m={s.m} size={18} />
+                      </span>
+                      <span>
+                        <span style={{ display: 'block' }}>{s.label}</span>
+                        {s.range && <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>{s.range}</span>}
+                      </span>
+                      {timeSlot === s.id && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>
+                      )}
+                    </button>
+                  ))}
                 </div>
-              );
-            })()}
+              )}
+            </div>
 
             {/* Botón buscar */}
             <button type="submit" style={{
