@@ -56,8 +56,8 @@
   --error-border:   rgba(239,68,68,0.25);
 
   /* ── Typography ── */
-  --font-display:   'brioso-pro-caption', 'source-serif-4', Georgia, serif;
-  --font-heading:   'source-serif-4', 'Playfair Display', Georgia, serif;
+  --font-display:   'lora', 'source-serif-4', Georgia, serif;
+  --font-heading:   'lora', 'source-serif-4', Georgia, serif;
   --font-body:      'source-serif-4', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* ── Scale ── */
@@ -2422,10 +2422,13 @@ html { scroll-padding-top: 68px; }
 }
 
 .biz-hero-name {
-  font-family: var(--font-heading);
+  font-family: 'lora', serif;
+  font-weight: 400;
+  font-style: normal;
   font-size: clamp(28px, 4vw, 48px);
-  font-weight: 700; color: var(--text);
-  letter-spacing: -0.03em; line-height: 1.1;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   margin-bottom: var(--sp-4);
 }
 
@@ -2440,8 +2443,13 @@ html { scroll-padding-top: 68px; }
 }
 
 .biz-hero-desc {
-  font-size: var(--text-base); color: var(--text-muted);
-  max-width: 600px; line-height: 1.7;
+  font-family: 'lora', serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  max-width: 600px;
+  line-height: 1.8;
   margin-bottom: var(--sp-6);
 }
 
