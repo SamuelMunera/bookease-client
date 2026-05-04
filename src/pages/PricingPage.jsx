@@ -130,11 +130,12 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
   }, [user]);
 
   const plans = getPlansForCountry(country);
-  const currentPlan = propCurrentPlan || subscription?.plan;
   const hasStripeSubscription = !!(
     subscription?.stripeSubscriptionId &&
     ['ACTIVE', 'TRIALING'].includes(subscription?.status)
   );
+  // Only show a plan as "current" if they actually subscribed via Stripe
+  const currentPlan = hasStripeSubscription ? (propCurrentPlan || subscription?.plan) : null;
 
   function flash(text) {
     setMsg(text);
@@ -202,8 +203,8 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
         </div>
       </div>
 
-      {/* ── Subscription status banner ── */}
-      {subscription && (
+      {/* ── Subscription status banner — only for active Stripe subscriptions ── */}
+      {hasStripeSubscription && subscription && (
         <div style={{
           maxWidth: 640, margin: '0 auto var(--sp-8)',
           padding: 'var(--sp-3) var(--sp-4)',
@@ -213,28 +214,25 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
         }}>
           {subscription.status === 'TRIALING' && (
             <>Estás en periodo de prueba gratuita hasta el{' '}
-              <strong>{new Date(subscription.trialEndsAt).toLocaleDateString('es-CO')}</strong>.{' '}
-              {!hasStripeSubscription && 'Elige un plan para continuar sin interrupciones.'}</>
+              <strong>{new Date(subscription.trialEndsAt).toLocaleDateString('es-CO')}</strong>.</>
           )}
-          {subscription.status === 'ACTIVE' && hasStripeSubscription && (
+          {subscription.status === 'ACTIVE' && (
             <>Suscripción activa — Plan <strong>{subscription.plan}</strong>. Próxima renovación el{' '}
               <strong>{new Date(subscription.currentPeriodEnd).toLocaleDateString('es-CO')}</strong>.</>
           )}
-          {subscription.status === 'PAST_DUE' && (
-            <span style={{ color: 'var(--error)' }}>
-              Pago pendiente — actualiza tu método de pago para continuar.
-            </span>
-          )}
-          {subscription.status === 'CANCELLED' && (
-            <span style={{ color: 'var(--error)' }}>
-              Tu suscripción está cancelada. Elige un plan para reactivar.
-            </span>
-          )}
-          {subscription.status === 'EXPIRED' && (
-            <span style={{ color: 'var(--error)' }}>
-              Tu periodo de prueba expiró. Elige un plan para continuar.
-            </span>
-          )}
+        </div>
+      )}
+      {subscription && !hasStripeSubscription && ['PAST_DUE','CANCELLED','EXPIRED'].includes(subscription.status) && (
+        <div style={{
+          maxWidth: 640, margin: '0 auto var(--sp-8)',
+          padding: 'var(--sp-3) var(--sp-4)',
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--r-lg)', textAlign: 'center',
+          fontSize: 'var(--text-sm)', color: 'var(--error)',
+        }}>
+          {subscription.status === 'PAST_DUE' && 'Pago pendiente — actualiza tu método de pago.'}
+          {subscription.status === 'CANCELLED' && 'Tu suscripción está cancelada. Elige un plan para reactivar.'}
+          {subscription.status === 'EXPIRED' && 'Tu acceso expiró. Elige un plan para continuar.'}
         </div>
       )}
 
