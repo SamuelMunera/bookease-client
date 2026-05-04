@@ -204,6 +204,16 @@ export default function BusinessListPage() {
   const [category, setCategory]       = useState('');
   const [heroCategory, setHeroCategory] = useState('');
   const [timeSlot, setTimeSlot]       = useState('');
+  const [catOpen, setCatOpen]         = useState(false);
+  const catRef                        = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [categories, setCategories]   = useState([]);
   const [city, setCity]               = useState('');
   const [cityInput, setCityInput]     = useState('');
@@ -312,24 +322,53 @@ export default function BusinessListPage() {
             overflow: 'hidden',
           }}>
 
-            {/* Sección 1: Categoría */}
-            <button type="button"
-              onClick={() => {
-                const next = categories[(categories.findIndex(c => c.slug === heroCategory) + 1) % (categories.length + 1)];
-                setHeroCategory(next?.slug ?? '');
-              }}
-              style={{
-                flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column',
-                alignItems: 'flex-start', gap: 1,
-                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                textAlign: 'left',
+            {/* Sección 1: Categoría con dropdown */}
+            <div ref={catRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+              <button type="button" onClick={() => setCatOpen(o => !o)} style={{
+                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
               }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Servicio</span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroCategory ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                {heroCategory ? (categories.find(c => c.slug === heroCategory)?.name ?? 'Todos') : 'Todos los servicios'}
-              </span>
-            </button>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Servicio</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroCategory ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  {heroCategory ? (categories.find(c => c.slug === heroCategory)?.name ?? 'Todos') : 'Todos los servicios'}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto', opacity: .5, transform: catOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="M6 9l6 6 6-6"/></svg>
+                </span>
+              </button>
+
+              {catOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 10px)', left: 0, zIndex: 100,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-xl)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                  minWidth: 200, overflow: 'hidden',
+                }}>
+                  {[{ slug: '', name: 'Todos los servicios', icon: null }, ...categories].map((cat, i) => (
+                    <button key={cat.slug} type="button"
+                      onClick={() => { setHeroCategory(cat.slug); setCatOpen(false); }}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '10px 16px', background: 'none', border: 'none',
+                        borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                        cursor: 'pointer', textAlign: 'left',
+                        color: heroCategory === cat.slug ? 'var(--gold)' : 'var(--text)',
+                        fontWeight: heroCategory === cat.slug ? 700 : 400,
+                        fontSize: 'var(--text-sm)',
+                        transition: 'background .12s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                    >
+                      {cat.icon && <span style={{ fontSize: 18 }}>{cat.icon}</span>}
+                      {cat.name}
+                      {heroCategory === cat.slug && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
@@ -415,7 +454,7 @@ export default function BusinessListPage() {
           )}
 
           {/* Animated stats */}
-          <div className="hero-stats animate-in animate-in-1">
+          <div className="hero-stats animate-in animate-in-1" style={{ marginTop: 'var(--sp-10)' }}>
             {HERO_STATS.map((s, i) => (
               <div key={s.label} style={{ display:'flex', alignItems:'center', gap:'var(--sp-6)' }}>
                 {i > 0 && <div className="hero-stat-sep" />}
