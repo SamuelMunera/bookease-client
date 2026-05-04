@@ -485,11 +485,11 @@ export default function BusinessListPage() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             </div>
             <p style={{fontSize:'var(--text-base)',fontWeight:600,color:'var(--text)',marginBottom:'var(--sp-2)'}}>
-              {userLocation ? 'Sin negocios cercanos' : 'Sin resultados'}
+              Sin resultados
             </p>
-            <p>{userLocation ? `No hay negocios registrados cerca de ${userLocation.label}. Prueba con otra ubicación o explora todos.` : 'Prueba con otra categoría o ciudad.'}</p>
-            {(city || category || userLocation) && (
-              <button className="btn btn-secondary" style={{marginTop:'var(--sp-4)'}} onClick={() => { setCity(''); setCityInput(''); setCategory(''); clearLocation(); }}>
+            <p>Prueba con otra categoría o ciudad.</p>
+            {(city || category) && (
+              <button className="btn btn-secondary" style={{marginTop:'var(--sp-4)'}} onClick={() => { setCity(''); setCityInput(''); setCategory(''); }}>
                 Limpiar filtros
               </button>
             )}
