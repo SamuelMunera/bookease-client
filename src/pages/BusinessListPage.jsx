@@ -227,7 +227,8 @@ export default function BusinessListPage() {
   const [businesses, setBusinesses]   = useState([]);
   const [category, setCategory]       = useState('');
   const [heroCategory, setHeroCategory] = useState('');
-  const [timeSlot, setTimeSlot]       = useState('');
+  const [heroTime, setHeroTime]       = useState('');
+  const [searchTime, setSearchTime]   = useState('');
   const [catOpen, setCatOpen]         = useState(false);
   const [slotOpen, setSlotOpen]       = useState(false);
   const catRef                        = useRef(null);
@@ -264,17 +265,21 @@ export default function BusinessListPage() {
   useEffect(() => {
     setLoading(true);
     setApiError(false);
-    const params = city ? { city } : {};
+    const params = {};
+    if (city)       params.city     = city;
+    if (category)   params.category = category;
+    if (searchTime) params.time     = searchTime;
     api.getBusinesses(params)
       .then((data) => setBusinesses(data || []))
       .catch(() => { setBusinesses([]); setApiError(true); })
       .finally(() => setLoading(false));
-  }, [city]);
+  }, [city, category, searchTime]);
 
   function handleSearch(e) {
     e.preventDefault();
     setCity(cityInput.trim());
-    if (heroCategory) setCategory(heroCategory);
+    setCategory(heroCategory);
+    setSearchTime(heroTime);
     scrollToGrid();
   }
 
@@ -289,8 +294,8 @@ export default function BusinessListPage() {
   // trending / newest: always use the full (unfiltered-by-category) businesses list
   const trending = businesses.filter(b => b.isTrending);
   const newest   = businesses.filter(b => b.isNew);
-  // category filter applies only to the explore-all grid
-  const gridBusinesses = category ? businesses.filter(b => b.category === category) : businesses;
+  // Filtering is now server-side (category + time passed to API)
+  const gridBusinesses = businesses;
 
   return (
     <>
@@ -426,56 +431,26 @@ export default function BusinessListPage() {
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 3: Horario */}
-            <div ref={slotRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-              <button type="button" onClick={() => setSlotOpen(o => !o)} style={{
-                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
-                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-              }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: timeSlot ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {(() => { const s = TIME_SLOTS.find(x => x.id === timeSlot) ?? TIME_SLOTS[0]; return <ClockIcon h={s.h} m={s.m} />; })()}
-                  {TIME_SLOTS.find(x => x.id === timeSlot)?.label ?? 'Cualquier momento'}
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto', opacity: .5, transform: slotOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><path d="M6 9l6 6 6-6"/></svg>
-                </span>
-              </button>
-
-              {slotOpen && (
-                <div style={{
-                  position: 'absolute', top: 'calc(100% + 10px)', left: 0, zIndex: 100,
-                  background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 'var(--r-xl)', boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                  minWidth: 220, overflow: 'hidden',
-                }}>
-                  {TIME_SLOTS.map((s, i) => (
-                    <button key={s.id} type="button"
-                      onClick={() => { setTimeSlot(s.id); setSlotOpen(false); }}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                        padding: '10px 16px', background: 'none', border: 'none',
-                        borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                        cursor: 'pointer', textAlign: 'left',
-                        color: timeSlot === s.id ? 'var(--violet)' : 'var(--text)',
-                        fontWeight: timeSlot === s.id ? 700 : 400,
-                        fontSize: 'var(--text-sm)',
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                    >
-                      <span style={{ color: timeSlot === s.id ? 'var(--violet)' : 'var(--text-muted)', flexShrink: 0 }}>
-                        <ClockIcon h={s.h} m={s.m} size={18} />
-                      </span>
-                      <span>
-                        <span style={{ display: 'block' }}>{s.label}</span>
-                        {s.range && <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>{s.range}</span>}
-                      </span>
-                      {timeSlot === s.id && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 'auto' }}><polyline points="20 6 9 17 4 12"/></svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Sección 3: Hora exacta */}
+            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
+                <input
+                  type="time"
+                  value={heroTime}
+                  onChange={e => setHeroTime(e.target.value)}
+                  style={{
+                    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
+                    fontSize: 'var(--text-sm)', fontWeight: 500,
+                    color: heroTime ? 'var(--text)' : 'var(--text-muted)',
+                    fontFamily: 'var(--font-body)', cursor: 'pointer',
+                  }}
+                />
+                {heroTime && (
+                  <button type="button" onClick={() => setHeroTime('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
+                )}
+              </div>
             </div>
 
             {/* Botón buscar */}
