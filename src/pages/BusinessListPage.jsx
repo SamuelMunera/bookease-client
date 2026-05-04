@@ -470,25 +470,13 @@ export default function BusinessListPage() {
             </button>
           </form>
 
-          {/* Secondary CTA */}
-          {!user && (
-            <div className="hero-actions animate-up animate-up-4">
-              <Link to="/register">
-                <button className="btn btn-secondary btn-sm">
-                  Crear cuenta gratis
-                </button>
-              </Link>
-              <a href="#businesses" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', transition: 'color var(--ease)' }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-muted)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-subtle)'}>
-                Explorar negocios
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-              </a>
-            </div>
-          )}
+          {/* Search hint */}
+          <p style={{ textAlign: 'center', marginTop: 'var(--sp-3)', fontSize: 11, color: 'var(--text-subtle)', letterSpacing: '.02em' }}>
+            {[heroCategory && categories.find(c => c.slug === heroCategory)?.name, cityInput, heroTime].filter(Boolean).join(' · ') || 'Barberías · Spas · Salones en tu ciudad'}
+          </p>
 
           {/* Animated stats */}
-          <div className="hero-stats animate-in animate-in-1" style={{ marginTop: 'var(--sp-10)' }}>
+          <div className="hero-stats animate-in animate-in-1" style={{ marginTop: 'var(--sp-8)' }}>
             {HERO_STATS.map((s, i) => (
               <div key={s.label} style={{ display:'flex', alignItems:'center', gap:'var(--sp-6)' }}>
                 {i > 0 && <div className="hero-stat-sep" />}
