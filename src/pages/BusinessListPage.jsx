@@ -355,7 +355,7 @@ export default function BusinessListPage() {
           <div className="hero-orb" style={{ width: 350, height: 350, left: '80%', top: '60%', animationDelay: '3s', background: 'radial-gradient(ellipse, rgba(124,92,252,0.1) 0%, transparent 70%)' }} />
         </div>
 
-        <div className="hero-inner" style={{ position:'relative', zIndex:1 }}>
+        <div className="hero-inner" style={{ position:'relative', zIndex:1, isolation:'isolate' }}>
           <span className="hero-eyebrow animate-up animate-up-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -401,7 +401,7 @@ export default function BusinessListPage() {
 
               {catOpen && (
                 <div style={{
-                  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 200,
+                  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 9999,
                   background: 'var(--surface)', border: '1px solid var(--border)',
                   borderRadius: 12, boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
                   width: 190, overflow: 'hidden',
@@ -421,7 +421,6 @@ export default function BusinessListPage() {
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
-                      {cat.icon && <span style={{ fontSize: 14, lineHeight: 1 }}>{cat.icon}</span>}
                       <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
                       {heroCategory === cat.slug && (
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12"/></svg>
