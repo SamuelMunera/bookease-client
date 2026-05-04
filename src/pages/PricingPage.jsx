@@ -82,10 +82,10 @@ function PlanCard({ plan, isCurrentPlan, hasStripeSubscription, onSelect, onMana
           <button
             className={`btn${plan.popular ? ' btn-primary' : ' btn-secondary'}`}
             style={{ width: '100%', justifyContent: 'center' }}
-            onClick={onManage}
-            disabled={busy === 'portal'}
+            onClick={() => onSelect(plan.id)}
+            disabled={!!busy}
           >
-            {busy === 'portal' ? 'Redirigiendo…' : 'Cambiar a este plan'}
+            {busy === plan.id ? 'Actualizando…' : 'Cambiar a este plan'}
           </button>
         ) : (
           <button
@@ -137,9 +137,10 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
       : user.role === 'BUSINESS_OWNER'
         ? allPlans.filter(p => p.forType === 'business')
         : allPlans;
+  // Has a real Stripe subscription (not cancelled/expired)
   const hasStripeSubscription = !!(
     subscription?.stripeSubscriptionId &&
-    ['ACTIVE', 'TRIALING'].includes(subscription?.status)
+    !['CANCELLED', 'EXPIRED'].includes(subscription?.status)
   );
   // Only show a plan as "current" if they actually subscribed via Stripe
   const currentPlan = hasStripeSubscription ? (propCurrentPlan || subscription?.plan) : null;
@@ -153,8 +154,18 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
     if (!user) { navigate('/login'); return; }
     setBusy(planId);
     try {
-      const { url } = await api.createCheckoutSession(planId, country);
-      window.location.href = url;
+      const result = await api.createCheckoutSession(planId, country);
+      if (result.url) {
+        // New subscription — redirect to Stripe Checkout
+        window.location.href = result.url;
+      } else if (result.updated) {
+        // Plan changed on existing subscription
+        flash('✓ Plan actualizado correctamente.');
+        setBusy(null);
+        // Refresh subscription state
+        const fetch = user.role === 'BUSINESS_OWNER' ? api.getMySubscription() : api.getProSubscription();
+        fetch.then(setSubscription).catch(() => {});
+      }
     } catch (err) {
       flash(err.message);
       setBusy(null);
