@@ -477,27 +477,39 @@ export default function BusinessListPage() {
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 4: Hora — input directo siempre visible */}
-            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}
-              onClick={closeAll}>
+            {/* Sección 4: Hora — texto libre con validación HH:MM */}
+            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
                 <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
                 <input
-                  type="time"
+                  type="text"
+                  placeholder="ej. 10:30"
                   value={heroTime}
-                  onChange={e => setHeroTime(e.target.value)}
-                  onClick={e => e.stopPropagation()}
+                  maxLength={5}
+                  onChange={e => {
+                    let v = e.target.value.replace(/[^0-9:]/g, '');
+                    if (v.length === 2 && !v.includes(':')) v += ':';
+                    setHeroTime(v);
+                  }}
+                  onBlur={e => {
+                    const v = e.target.value.trim();
+                    if (!v) return;
+                    const match = v.match(/^(\d{1,2}):(\d{2})$/);
+                    if (!match) { setHeroTime(''); return; }
+                    const h = parseInt(match[1]), m = parseInt(match[2]);
+                    if (h > 23 || m > 59) { setHeroTime(''); return; }
+                    setHeroTime(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+                  }}
                   style={{
                     flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
-                    fontSize: 'var(--text-sm)', fontWeight: 500, cursor: 'pointer',
+                    fontSize: 'var(--text-sm)', fontWeight: 500,
                     color: heroTime ? 'var(--text)' : 'var(--text-muted)',
                     fontFamily: 'var(--font-body)',
-                    colorScheme: 'dark',
                   }}
                 />
                 {heroTime && (
-                  <button type="button" onClick={e => { e.stopPropagation(); setHeroTime(''); }}
+                  <button type="button" onClick={() => setHeroTime('')}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
                 )}
               </div>
