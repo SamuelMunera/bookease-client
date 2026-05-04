@@ -6,12 +6,26 @@ import api from '../api';
 /* ─── constants ─────────────────────────────────────────── */
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
-const TIME_SLOTS = [
-  { id: '',          label: 'Cualquier momento', range: '',              h: 10, m: 10 },
-  { id: 'morning',   label: 'Mañana',            range: '7:00 – 12:00',  h: 9,  m: 0  },
-  { id: 'afternoon', label: 'Tarde',             range: '12:00 – 18:00', h: 15, m: 0  },
-  { id: 'evening',   label: 'Noche',             range: '18:00 – 22:00', h: 20, m: 0  },
-];
+// Build list of 30-min time slots 7:00 → 21:30
+const TIME_OPTIONS = [];
+for (let h = 7; h <= 21; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    TIME_OPTIONS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  }
+}
+
+const WEEK_DAYS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function getCalDays(year, month) {
+  const first = new Date(year, month, 1).getDay(); // 0=Sun
+  const startOffset = first === 0 ? 6 : first - 1; // Mon-based grid
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  return cells;
+}
 
 function ClockIcon({ h = 10, m = 10, size = 15 }) {
   const cx = size / 2, cy = size / 2, r = size / 2 - 1;
@@ -260,18 +274,30 @@ export default function BusinessListPage() {
   const [heroDate, setHeroDate]       = useState('');
   const [searchTime, setSearchTime]   = useState('');
   const [catOpen, setCatOpen]         = useState(false);
-  const [slotOpen, setSlotOpen]       = useState(false);
+  const [dateOpen, setDateOpen]       = useState(false);
+  const [timeOpen, setTimeOpen]       = useState(false);
+  const today = new Date();
+  const [calView, setCalView]         = useState({ year: today.getFullYear(), month: today.getMonth() });
+  const [dropPos, setDropPos]         = useState({});
   const catRef                        = useRef(null);
-  const slotRef                       = useRef(null);
+  const dateRef                       = useRef(null);
+  const timeRef                       = useRef(null);
 
   useEffect(() => {
     function close(e) {
-      if (catRef.current && !catRef.current.contains(e.target)) setCatOpen(false);
-      if (slotRef.current && !slotRef.current.contains(e.target)) setSlotOpen(false);
+      if (catRef.current  && !catRef.current.contains(e.target))  setCatOpen(false);
+      if (dateRef.current && !dateRef.current.contains(e.target)) setDateOpen(false);
+      if (timeRef.current && !timeRef.current.contains(e.target)) setTimeOpen(false);
     }
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, []);
+
+  function openAt(key, ref, setter) {
+    const rect = ref.current?.getBoundingClientRect();
+    if (rect) setDropPos(p => ({ ...p, [key]: { top: rect.bottom + 8, left: rect.left } }));
+    setter(o => !o);
+  }
   const [categories, setCategories]   = useState([]);
   const [city, setCity]               = useState('');
   const [cityInput, setCityInput]     = useState('');
@@ -387,7 +413,7 @@ export default function BusinessListPage() {
 
             {/* Sección 1: Categoría con dropdown */}
             <div ref={catRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
-              <button type="button" onClick={() => setCatOpen(o => !o)} style={{
+              <button type="button" onClick={() => openAt('cat', catRef, setCatOpen)} style={{
                 width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
               }}>
@@ -399,31 +425,31 @@ export default function BusinessListPage() {
                 </span>
               </button>
 
-              {catOpen && (
+              {catOpen && dropPos.cat && (
                 <div style={{
-                  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 9999,
+                  position: 'fixed', top: dropPos.cat.top, left: dropPos.cat.left, zIndex: 9999,
                   background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 12, boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
-                  width: 190, overflow: 'hidden',
+                  borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
+                  width: 185, overflow: 'hidden',
                 }}>
-                  {[{ slug: '', name: 'Todos los servicios', icon: null }, ...categories].map((cat, i) => (
+                  {[{ slug: '', name: 'Todos los servicios' }, ...categories].map((cat, i) => (
                     <button key={cat.slug} type="button"
                       onClick={() => { setHeroCategory(cat.slug); setCatOpen(false); }}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                        padding: '7px 12px', background: 'none', border: 'none',
+                        padding: '8px 14px', background: 'none', border: 'none',
                         borderTop: i > 0 ? '1px solid var(--border)' : 'none',
                         cursor: 'pointer', textAlign: 'left',
                         color: heroCategory === cat.slug ? 'var(--gold)' : 'var(--text)',
                         fontWeight: heroCategory === cat.slug ? 600 : 400,
-                        fontSize: 12,
+                        fontSize: 13,
                       }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'none'}
                     >
-                      <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
+                      <span style={{ flex: 1 }}>{cat.name}</span>
                       {heroCategory === cat.slug && (
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><polyline points="20 6 9 17 4 12"/></svg>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                       )}
                     </button>
                   ))}
@@ -460,51 +486,117 @@ export default function BusinessListPage() {
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 3: Fecha */}
-            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Fecha</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-                <CalendarIcon size={13} />
-                <input
-                  type="date"
-                  value={heroDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={e => setHeroDate(e.target.value)}
-                  style={{
-                    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
-                    fontSize: 'var(--text-sm)', fontWeight: 500,
-                    color: heroDate ? 'var(--text)' : 'var(--text-muted)',
-                    fontFamily: 'var(--font-body)', cursor: 'pointer',
-                  }}
-                />
-                {heroDate && (
-                  <button type="button" onClick={() => setHeroDate('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
-                )}
-              </div>
+            {/* Sección 3: Fecha — custom calendar */}
+            <div ref={dateRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+              <button type="button" onClick={() => openAt('date', dateRef, setDateOpen)} style={{
+                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Fecha</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroDate ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                  <CalendarIcon size={13} />
+                  {heroDate ? new Date(heroDate + 'T00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) : 'Cualquier fecha'}
+                  {heroDate && <button type="button" onClick={e => { e.stopPropagation(); setHeroDate(''); }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>}
+                </span>
+              </button>
+
+              {dateOpen && dropPos.date && (
+                <div style={{
+                  position: 'fixed', top: dropPos.date.top, left: dropPos.date.left, zIndex: 9999,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 16, boxShadow: '0 8px 28px rgba(0,0,0,0.3)',
+                  width: 270, padding: '14px 16px',
+                }}>
+                  {/* Month nav */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <button type="button" onClick={() => setCalView(v => { const d = new Date(v.year, v.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: 6 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                      {MONTHS_ES[calView.month]} {calView.year}
+                    </span>
+                    <button type="button" onClick={() => setCalView(v => { const d = new Date(v.year, v.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: 6 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                  {/* Day headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 6 }}>
+                    {WEEK_DAYS.map(d => <span key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', padding: '2px 0' }}>{d}</span>)}
+                  </div>
+                  {/* Days */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+                    {getCalDays(calView.year, calView.month).map((day, i) => {
+                      if (!day) return <span key={i} />;
+                      const iso = `${calView.year}-${String(calView.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                      const todayISO = new Date().toISOString().split('T')[0];
+                      const isPast = iso < todayISO;
+                      const isSelected = iso === heroDate;
+                      return (
+                        <button key={i} type="button" disabled={isPast}
+                          onClick={() => { setHeroDate(iso); setDateOpen(false); }}
+                          style={{
+                            padding: '5px 0', border: 'none', borderRadius: 8, cursor: isPast ? 'default' : 'pointer',
+                            background: isSelected ? 'var(--gold)' : 'none',
+                            color: isSelected ? '#0A0808' : isPast ? 'var(--text-subtle)' : 'var(--text)',
+                            fontWeight: isSelected ? 700 : 400, fontSize: 12, textAlign: 'center',
+                            opacity: isPast ? 0.4 : 1,
+                          }}
+                          onMouseEnter={e => { if (!isPast && !isSelected) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                          onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'none'; }}
+                        >{day}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 4: Hora exacta */}
-            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-                <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
-                <input
-                  type="time"
-                  value={heroTime}
-                  onChange={e => setHeroTime(e.target.value)}
-                  style={{
-                    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
-                    fontSize: 'var(--text-sm)', fontWeight: 500,
-                    color: heroTime ? 'var(--text)' : 'var(--text-muted)',
-                    fontFamily: 'var(--font-body)', cursor: 'pointer',
-                  }}
-                />
-                {heroTime && (
-                  <button type="button" onClick={() => setHeroTime('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
-                )}
-              </div>
+            {/* Sección 4: Hora — custom time picker */}
+            <div ref={timeRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+              <button type="button" onClick={() => openAt('time', timeRef, setTimeOpen)} style={{
+                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroTime ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                  <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
+                  {heroTime || 'Cualquier hora'}
+                  {heroTime && <button type="button" onClick={e => { e.stopPropagation(); setHeroTime(''); }} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>}
+                </span>
+              </button>
+
+              {timeOpen && dropPos.time && (
+                <div style={{
+                  position: 'fixed', top: dropPos.time.top, left: dropPos.time.left, zIndex: 9999,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 14, boxShadow: '0 8px 28px rgba(0,0,0,0.3)',
+                  width: 140, maxHeight: 220, overflowY: 'auto',
+                  scrollbarWidth: 'thin',
+                }}>
+                  {TIME_OPTIONS.map(t => (
+                    <button key={t} type="button"
+                      onClick={() => { setHeroTime(t); setTimeOpen(false); }}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '8px 14px', background: 'none', border: 'none',
+                        cursor: 'pointer', textAlign: 'left', fontSize: 13,
+                        color: heroTime === t ? 'var(--gold)' : 'var(--text)',
+                        fontWeight: heroTime === t ? 700 : 400,
+                        background: heroTime === t ? 'rgba(212,168,83,0.08)' : 'none',
+                      }}
+                      onMouseEnter={e => { if (heroTime !== t) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                      onMouseLeave={e => { if (heroTime !== t) e.currentTarget.style.background = 'none'; }}
+                    >
+                      <ClockIcon h={parseInt(t.split(':')[0])} m={parseInt(t.split(':')[1])} size={12} />
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Botón buscar */}
