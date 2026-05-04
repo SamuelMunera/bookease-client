@@ -56,8 +56,8 @@
   --error-border:   rgba(239,68,68,0.25);
 
   /* ── Typography ── */
-  --font-heading:   'Space Grotesk', -apple-system, sans-serif;
-  --font-body:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading:   'source-serif-4', 'Playfair Display', Georgia, serif;
+  --font-body:      'source-serif-4', 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* ── Scale ── */
   --text-xs:   11px;
