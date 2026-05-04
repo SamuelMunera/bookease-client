@@ -13,19 +13,48 @@ const TIME_SLOTS = [
   { id: 'evening',   label: 'Noche',             range: '18:00 – 22:00', h: 20, m: 0  },
 ];
 
-function ClockIcon({ h = 10, m = 10, size = 14 }) {
-  const r  = size / 2;
-  const hr = ((h % 12) / 12) * 360 + (m / 60) * 30 - 90;
-  const mn = (m / 60) * 360 - 90;
-  const hx = r + r * 0.5 * Math.cos(hr * Math.PI / 180);
-  const hy = r + r * 0.5 * Math.sin(hr * Math.PI / 180);
-  const mx = r + r * 0.72 * Math.cos(mn * Math.PI / 180);
-  const my = r + r * 0.72 * Math.sin(mn * Math.PI / 180);
+function ClockIcon({ h = 10, m = 10, size = 15 }) {
+  const cx = size / 2, cy = size / 2, r = size / 2 - 1;
+  const toRad = deg => (deg - 90) * Math.PI / 180;
+  const hrDeg = ((h % 12) / 12) * 360 + (m / 60) * 30;
+  const mnDeg = (m / 60) * 360;
+  const hrLen = r * 0.52, mnLen = r * 0.72;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx={r} cy={r} r={r - 0.8} />
-      <line x1={r} y1={r} x2={hx} y2={hy} strokeWidth="2" />
-      <line x1={r} y1={r} x2={mx} y2={my} />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      {/* Face */}
+      <circle cx={cx} cy={cy} r={r} stroke="currentColor" strokeWidth="1.2" />
+      {/* Hour marks at 12, 3, 6, 9 */}
+      {[0, 90, 180, 270].map(deg => {
+        const a = toRad(deg); const inner = r * 0.82;
+        return <line key={deg}
+          x1={cx + inner * Math.cos(a)} y1={cy + inner * Math.sin(a)}
+          x2={cx + r * Math.cos(a)}     y2={cy + r * Math.sin(a)}
+          stroke="currentColor" strokeWidth="1.1" />;
+      })}
+      {/* Hour hand */}
+      <line x1={cx} y1={cy}
+        x2={cx + hrLen * Math.cos(toRad(hrDeg))}
+        y2={cy + hrLen * Math.sin(toRad(hrDeg))}
+        stroke="currentColor" strokeWidth="1.6" />
+      {/* Minute hand */}
+      <line x1={cx} y1={cy}
+        x2={cx + mnLen * Math.cos(toRad(mnDeg))}
+        y2={cy + mnLen * Math.sin(toRad(mnDeg))}
+        stroke="currentColor" strokeWidth="1.1" />
+      {/* Center dot */}
+      <circle cx={cx} cy={cy} r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="3" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <rect x="7" y="14" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -228,6 +257,7 @@ export default function BusinessListPage() {
   const [category, setCategory]       = useState('');
   const [heroCategory, setHeroCategory] = useState('');
   const [heroTime, setHeroTime]       = useState('');
+  const [heroDate, setHeroDate]       = useState('');
   const [searchTime, setSearchTime]   = useState('');
   const [catOpen, setCatOpen]         = useState(false);
   const [slotOpen, setSlotOpen]       = useState(false);
@@ -345,13 +375,14 @@ export default function BusinessListPage() {
 
           {/* ── Hero search — pill estilo Airbnb ── */}
           <form className="animate-up animate-up-3" onSubmit={handleSearch} style={{
-            width: '100%', maxWidth: 720, margin: '0 auto',
+            width: '100%', maxWidth: 820, margin: '0 auto',
             display: 'flex', alignItems: 'center',
             background: 'var(--surface)',
             border: '1.5px solid var(--border)',
             borderRadius: 9999,
             boxShadow: '0 4px 32px rgba(0,0,0,0.22)',
-            overflow: 'hidden',
+            /* overflow:hidden removed — clips absolute dropdowns */
+            position: 'relative',
           }}>
 
             {/* Sección 1: Categoría con dropdown */}
@@ -431,7 +462,32 @@ export default function BusinessListPage() {
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 3: Hora exacta */}
+            {/* Sección 3: Fecha */}
+            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Fecha</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                <CalendarIcon size={13} />
+                <input
+                  type="date"
+                  value={heroDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={e => setHeroDate(e.target.value)}
+                  style={{
+                    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
+                    fontSize: 'var(--text-sm)', fontWeight: 500,
+                    color: heroDate ? 'var(--text)' : 'var(--text-muted)',
+                    fontFamily: 'var(--font-body)', cursor: 'pointer',
+                  }}
+                />
+                {heroDate && (
+                  <button type="button" onClick={() => setHeroDate('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
+
+            {/* Sección 4: Hora exacta */}
             <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
