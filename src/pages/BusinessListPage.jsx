@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
@@ -432,36 +433,7 @@ export default function BusinessListPage() {
                 </span>
               </button>
 
-              {catOpen && dropPos.cat && (
-                <div style={{
-                  position: 'fixed', top: dropPos.cat.top, left: dropPos.cat.left, zIndex: 9999,
-                  background: 'var(--surface)', border: '1px solid var(--border)',
-                  borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.28)',
-                  width: 185, overflow: 'hidden',
-                }}>
-                  {categories.map((cat, i) => (
-                    <button key={cat.slug} type="button"
-                      onClick={() => { setHeroCategory(cat.slug); setCatOpen(false); }}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                        padding: '8px 14px', background: 'none', border: 'none',
-                        borderTop: i > 0 ? '1px solid var(--border)' : 'none',
-                        cursor: 'pointer', textAlign: 'left',
-                        color: heroCategory === cat.slug ? 'var(--gold)' : 'var(--text)',
-                        fontWeight: heroCategory === cat.slug ? 600 : 400,
-                        fontSize: 13,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                    >
-                      <span style={{ flex: 1 }}>{cat.name}</span>
-                      {heroCategory === cat.slug && (
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* category dropdown rendered via portal below */}
             </div>
 
             <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
@@ -507,7 +479,8 @@ export default function BusinessListPage() {
                 </span>
               </button>
 
-              {dateOpen && dropPos.date && (
+              {/* date dropdown rendered via portal below */}
+              {false && dropPos.date && (
                 <div style={{
                   position: 'fixed', top: dropPos.date.top, left: dropPos.date.left, zIndex: 9999,
                   background: 'var(--surface)', border: '1px solid var(--border)',
@@ -576,7 +549,8 @@ export default function BusinessListPage() {
                 </span>
               </button>
 
-              {timeOpen && dropPos.time && (
+              {/* time dropdown rendered via portal below */}
+              {false && dropPos.time && (
                 <div style={{
                   position: 'fixed', top: dropPos.time.top, left: dropPos.time.left, zIndex: 9999,
                   background: 'var(--surface)', border: '1px solid var(--border)',
@@ -864,6 +838,113 @@ export default function BusinessListPage() {
           </>
         )}
       </div>
+
+      {/* ── Portals: dropdowns rendered at body level to escape any stacking context ── */}
+
+      {catOpen && dropPos.cat && createPortal(
+        <div ref={catRef} style={{
+          position: 'fixed', top: dropPos.cat.top, left: dropPos.cat.left, zIndex: 99999,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.32)',
+          width: 185, overflow: 'hidden',
+        }}>
+          {categories.map((cat, i) => (
+            <button key={cat.slug} type="button"
+              onClick={() => { setHeroCategory(cat.slug); setCatOpen(false); }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', background: heroCategory === cat.slug ? 'rgba(212,168,83,0.1)' : 'none',
+                border: 'none', borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                cursor: 'pointer', textAlign: 'left',
+                color: heroCategory === cat.slug ? 'var(--gold)' : 'var(--text)',
+                fontWeight: heroCategory === cat.slug ? 600 : 400, fontSize: 13,
+              }}
+              onMouseEnter={e => { if (heroCategory !== cat.slug) e.currentTarget.style.background = 'var(--surface-2)'; }}
+              onMouseLeave={e => { if (heroCategory !== cat.slug) e.currentTarget.style.background = 'none'; }}
+            >
+              <span style={{ flex: 1 }}>{cat.name}</span>
+              {heroCategory === cat.slug && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+
+      {dateOpen && dropPos.date && createPortal(
+        <div style={{
+          position: 'fixed', top: dropPos.date.top, left: dropPos.date.left, zIndex: 99999,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 16, boxShadow: '0 8px 28px rgba(0,0,0,0.32)',
+          width: 270, padding: '14px 16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <button type="button" onClick={() => setCalView(v => { const d = new Date(v.year, v.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{MONTHS_ES[calView.month]} {calView.year}</span>
+            <button type="button" onClick={() => setCalView(v => { const d = new Date(v.year, v.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 6 }}>
+            {WEEK_DAYS.map(d => <span key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', padding: '2px 0' }}>{d}</span>)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+            {getCalDays(calView.year, calView.month).map((day, i) => {
+              if (!day) return <span key={i} />;
+              const iso = `${calView.year}-${String(calView.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+              const todayISO = new Date().toISOString().split('T')[0];
+              const isPast = iso < todayISO;
+              const isSel  = iso === heroDate;
+              return (
+                <button key={i} type="button" disabled={isPast}
+                  onClick={() => { setHeroDate(iso); setDateOpen(false); }}
+                  style={{
+                    padding: '5px 0', border: 'none', borderRadius: 8,
+                    cursor: isPast ? 'default' : 'pointer',
+                    background: isSel ? 'var(--gold)' : 'none',
+                    color: isSel ? '#0A0808' : isPast ? 'var(--text-subtle)' : 'var(--text)',
+                    fontWeight: isSel ? 700 : 400, fontSize: 12, textAlign: 'center', opacity: isPast ? 0.4 : 1,
+                  }}
+                  onMouseEnter={e => { if (!isPast && !isSel) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'none'; }}
+                >{day}</button>
+              );
+            })}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {timeOpen && dropPos.time && createPortal(
+        <div style={{
+          position: 'fixed', top: dropPos.time.top, left: dropPos.time.left, zIndex: 99999,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 14, boxShadow: '0 8px 28px rgba(0,0,0,0.32)',
+          width: 140, maxHeight: 220, overflowY: 'auto', scrollbarWidth: 'thin',
+        }}>
+          {TIME_OPTIONS.map(t => (
+            <button key={t} type="button"
+              onClick={() => { setHeroTime(t); setTimeOpen(false); }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px', background: heroTime === t ? 'rgba(212,168,83,0.1)' : 'none',
+                border: 'none', cursor: 'pointer', textAlign: 'left',
+                color: heroTime === t ? 'var(--gold)' : 'var(--text)',
+                fontWeight: heroTime === t ? 700 : 400, fontSize: 13,
+              }}
+              onMouseEnter={e => { if (heroTime !== t) e.currentTarget.style.background = 'var(--surface-2)'; }}
+              onMouseLeave={e => { if (heroTime !== t) e.currentTarget.style.background = 'none'; }}
+            >
+              <ClockIcon h={parseInt(t.split(':')[0])} m={parseInt(t.split(':')[1])} size={12} />
+              {t}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
     </>
   );
 }
