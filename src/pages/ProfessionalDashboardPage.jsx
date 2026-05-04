@@ -271,6 +271,7 @@ function BookingRow({ booking }) {
 const DAYS_LABEL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DEFAULT_SCHEDULE = [0,1,2,3,4,5,6].map(d => ({
   dayOfWeek: d, startTime: '09:00', endTime: '18:00', isActive: false, isOverride: false,
+  scheduleType: 'fulltime', secondStartTime: '14:00', secondEndTime: '18:00',
 }));
 
 function getWeekStart(offset = 0) {
@@ -576,7 +577,16 @@ export default function ProfessionalDashboardPage() {
   }
 
   function updateDay(dayOfWeek, field, value) {
-    setSchedule(s => s.map(d => d.dayOfWeek === dayOfWeek ? { ...d, [field]: value } : d));
+    setSchedule(s => s.map(d => {
+      if (d.dayOfWeek !== dayOfWeek) return d;
+      const updated = { ...d, [field]: value };
+      // When switching back to fulltime, clear second block
+      if (field === 'scheduleType' && value === 'fulltime') {
+        updated.secondStartTime = null;
+        updated.secondEndTime = null;
+      }
+      return updated;
+    }));
   }
 
   async function saveProfile(e) {
@@ -1292,16 +1302,53 @@ export default function ProfessionalDashboardPage() {
 
               {/* Time inputs */}
               {day.isActive ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-                  <input type="time" value={day.startTime}
-                    onChange={e => updateDay(day.dayOfWeek, 'startTime', e.target.value)}
-                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
-                  />
-                  <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>a</span>
-                  <input type="time" value={day.endTime}
-                    onChange={e => updateDay(day.dayOfWeek, 'endTime', e.target.value)}
-                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                  {/* Schedule type toggle */}
+                  <div style={{ display: 'flex', gap: 'var(--sp-1)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-full)', padding: 2 }}>
+                    {['fulltime', 'part_time'].map(type => (
+                      <button key={type} type="button"
+                        onClick={() => updateDay(day.dayOfWeek, 'scheduleType', type)}
+                        style={{
+                          padding: '2px 10px', borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer',
+                          fontSize: 11, fontWeight: 600,
+                          background: day.scheduleType === type ? 'var(--violet)' : 'transparent',
+                          color: day.scheduleType === type ? '#fff' : 'var(--text-muted)',
+                          transition: 'all .15s',
+                        }}
+                      >
+                        {type === 'fulltime' ? 'Corrido' : 'Partido'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* First block */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+                    <input type="time" value={day.startTime}
+                      onChange={e => updateDay(day.dayOfWeek, 'startTime', e.target.value)}
+                      style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
+                    />
+                    <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>a</span>
+                    <input type="time" value={day.endTime}
+                      onChange={e => updateDay(day.dayOfWeek, 'endTime', e.target.value)}
+                      style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
+                    />
+                  </div>
+
+                  {/* Second block — only for part_time */}
+                  {day.scheduleType === 'part_time' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10, color: 'var(--text-subtle)', minWidth: 16 }}>+</span>
+                      <input type="time" value={day.secondStartTime || '14:00'}
+                        onChange={e => updateDay(day.dayOfWeek, 'secondStartTime', e.target.value)}
+                        style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
+                      />
+                      <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>a</span>
+                      <input type="time" value={day.secondEndTime || '18:00'}
+                        onChange={e => updateDay(day.dayOfWeek, 'secondEndTime', e.target.value)}
+                        style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 'var(--text-sm)' }}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>No disponible</span>
