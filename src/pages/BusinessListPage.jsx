@@ -330,9 +330,14 @@ export default function BusinessListPage() {
       .finally(() => setLoading(false));
   }, [city, category, searchTime]);
 
+  // Normalize text: remove diacritics + trim (frontend normalization before API call)
+  function normalizeCity(str) {
+    return str.normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  }
+
   function handleSearch(e) {
     e.preventDefault();
-    setCity(cityInput.trim());
+    setCity(normalizeCity(cityInput));
     setCategory(heroCategory);
     // Convert AM/PM to 24h for backend
     let time24 = heroTime;
