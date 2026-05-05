@@ -2052,11 +2052,11 @@ html { scroll-padding-top: 68px; }
    ══════════════════════════════════════════════════════════ */
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-4);
 }
 
-/* Generic gradient for categories without a specific background */
+/* Fallback gradient for categories without a specific background class */
 .biz-card-img-generic {
   background: linear-gradient(135deg, #1a1228 0%, #2a1f40 50%, #1a1228 100%);
 }
@@ -2066,12 +2066,6 @@ html { scroll-padding-top: 68px; }
   background:
     radial-gradient(circle at 35% 40%, rgba(212,168,83,0.18) 0%, transparent 60%),
     radial-gradient(circle at 65% 65%, rgba(124,92,252,0.12) 0%, transparent 60%);
-}
-
-/* Active state — selected category */
-.cat-tile--active {
-  border-color: var(--gold-border) !important;
-  box-shadow: 0 0 0 2px var(--gold-border), 0 6px 24px rgba(0,0,0,0.5) !important;
 }
 
 .cat-tile {

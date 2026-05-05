@@ -615,7 +615,7 @@ export default function BusinessListPage() {
           </div>
           <div className="cat-grid">
             {categories.map(cat => (
-              <div key={cat.slug} className={`cat-tile${category === cat.slug ? ' cat-tile--active' : ''}`}
+              <div key={cat.slug} className="cat-tile"
                 onClick={() => { setCategory(cat.slug === category ? '' : cat.slug); setHeroCategory(cat.slug === category ? '' : cat.slug); scrollToGrid(); }}>
                 <div className={`cat-tile-bg ${getCatImgClass(cat.slug)}`} />
                 <div className="cat-tile-overlay" />
