@@ -75,7 +75,6 @@ function CalendarIcon({ size = 14 }) {
 }
 
 /* ─── category showcase data ────────────────────────────── */
-// Maps known slugs to their CSS background class; falls back to generic gradient
 const CAT_IMG_MAP = {
   BARBERSHOP: 'biz-card-img-barbershop',
   SPA:        'biz-card-img-spa',
@@ -84,6 +83,14 @@ const CAT_IMG_MAP = {
 function getCatImgClass(slug) {
   return CAT_IMG_MAP[slug] || 'biz-card-img-generic';
 }
+
+const CAT_ICON_MAP = {
+  BARBERSHOP: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>,
+  SPA:        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 22C6 22 2 17 2 12S6 2 12 2"/><path d="M12 22c3-4 3-8 3-10S13 6 12 2"/><path d="M12 2c3 4 3 8 3 10s-2 6-3 10"/><path d="M2 12h20"/></svg>,
+  SALON:      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M9.5 2a.5.5 0 0 1 1 0v1a.5.5 0 0 1-1 0V2z"/><path d="M14 2.5a.5.5 0 0 0-1 0v1a.5.5 0 0 0 1 0V2.5z"/><path d="M4 11.5V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v3.5"/><path d="M2 12h20v2a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8v-2z"/></svg>,
+  TATTOO:     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12s1-2 4-2 4 2 4 2"/><path d="M9 9h.01M15 9h.01"/></svg>,
+};
+const DEFAULT_CAT_ICON = <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>;
 
 /* ─── hooks ─────────────────────────────────────────────── */
 function useAnimatedCounter(target, duration = 1600) {
@@ -620,9 +627,7 @@ export default function BusinessListPage() {
                 <div className={`cat-tile-bg ${getCatImgClass(cat.slug)}`} />
                 <div className="cat-tile-overlay" />
                 <div className="cat-tile-body">
-                  {cat.icon && (
-                    <div className="cat-tile-icon" style={{ fontSize: 18 }}>{cat.icon}</div>
-                  )}
+                  <div className="cat-tile-icon">{CAT_ICON_MAP[cat.slug] || DEFAULT_CAT_ICON}</div>
                   <div className="cat-tile-name">{cat.name}</div>
                 </div>
                 <div className="cat-tile-arrow">
