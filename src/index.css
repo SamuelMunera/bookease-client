@@ -2079,7 +2079,13 @@ html { scroll-padding-top: 68px; }
 
 .cat-tile-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(212,168,83,0.55) 0%, rgba(212,168,83,0.15) 50%, transparent 100%);
+  /* Dark mode: cinematic dark vignette — text sits on deep black, top stays atmospheric */
+  background: linear-gradient(
+    to top,
+    rgba(4,4,10,0.92) 0%,
+    rgba(4,4,10,0.45) 45%,
+    rgba(4,4,10,0.05) 100%
+  );
 }
 
 .cat-tile-body {
@@ -2099,10 +2105,11 @@ html { scroll-padding-top: 68px; }
 }
 
 .cat-tile-name {
-  font-family: var(--font-heading);
+  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 700; color: var(--text);
-  letter-spacing: -0.02em;
+  font-weight: 400;          /* Lora 400 — elegant on dark */
+  color: #F0EFFF;            /* always light in dark mode */
+  letter-spacing: -0.01em;
 }
 
 .cat-tile-count {
@@ -4324,12 +4331,38 @@ html { scroll-padding-top: 68px; }
   border-bottom-color: var(--border-strong);
 }
 
-/* ── Category tile overlay: softer gold in light ── */
-[data-theme="light"] .cat-tile-overlay {
-  background: linear-gradient(to top, rgba(212,168,83,0.4) 0%, rgba(212,168,83,0.1) 50%, transparent 100%);
+/* ── Category tiles: light mode — clean card look ── */
+[data-theme="light"] .cat-tile {
+  border-color: rgba(14,13,26,0.08);
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(14,13,26,0.07);
 }
-[data-theme="light"] .cat-tile { border-color: var(--border-strong); }
-[data-theme="light"] .cat-tile:hover { border-color: var(--gold-border); box-shadow: 0 8px 24px rgba(14,13,26,0.12), var(--shadow-gold); }
+[data-theme="light"] .cat-tile:hover {
+  border-color: var(--gold-border);
+  box-shadow: 0 6px 24px rgba(14,13,26,0.12), 0 0 0 1px var(--gold-border);
+  transform: translateY(-2px) scale(1.005);
+}
+/* Light overlay: white base so category gradient shows as accent at top */
+[data-theme="light"] .cat-tile-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(255,255,255,0.97) 0%,
+    rgba(255,255,255,0.75) 45%,
+    rgba(255,255,255,0.1) 100%
+  );
+}
+/* Fade category bg slightly so it's an accent, not the main element */
+[data-theme="light"] .cat-tile-bg { opacity: 0.55; }
+/* Dark text on white background */
+[data-theme="light"] .cat-tile-name {
+  color: #0A0808;
+  font-weight: 500;
+}
+[data-theme="light"] .cat-tile-count { color: rgba(10,8,8,0.5); }
+[data-theme="light"] .cat-tile-icon {
+  background: rgba(212,168,83,0.12);
+  border-color: rgba(212,168,83,0.25);
+}
 
 /* ── Filters bar ── */
 [data-theme="light"] .filters-bar { border-bottom-color: var(--border-strong); }
