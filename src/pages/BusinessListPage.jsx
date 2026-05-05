@@ -75,14 +75,15 @@ function CalendarIcon({ size = 14 }) {
 }
 
 /* ─── category showcase data ────────────────────────────── */
-const CAT_TILES = [
-  { value:'BARBERSHOP', name:'Barberías', count:'120+ locales', imgClass:'biz-card-img-barbershop',
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg> },
-  { value:'SPA',        name:'Spas',      count:'84+ centros',  imgClass:'biz-card-img-spa',
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 22C6 22 2 17 2 12S6 2 12 2"/><path d="M12 22c3-4 3-8 3-10S13 6 12 2"/><path d="M12 2c3 4 3 8 3 10s-2 6-3 10"/><path d="M2 12h20"/></svg> },
-  { value:'SALON',      name:'Salones',   count:'96+ estudios', imgClass:'biz-card-img-salon',
-    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M9.5 2a.5.5 0 0 1 1 0v1a.5.5 0 0 1-1 0V2z"/><path d="M14 2.5a.5.5 0 0 0-1 0v1a.5.5 0 0 0 1 0V2.5z"/><path d="M4 11.5V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v3.5"/><path d="M2 12h20v2a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8v-2z"/></svg> },
-];
+// Maps known slugs to their CSS background class; falls back to generic gradient
+const CAT_IMG_MAP = {
+  BARBERSHOP: 'biz-card-img-barbershop',
+  SPA:        'biz-card-img-spa',
+  SALON:      'biz-card-img-salon',
+};
+function getCatImgClass(slug) {
+  return CAT_IMG_MAP[slug] || 'biz-card-img-generic';
+}
 
 /* ─── hooks ─────────────────────────────────────────────── */
 function useAnimatedCounter(target, duration = 1600) {
@@ -613,14 +614,16 @@ export default function BusinessListPage() {
             </div>
           </div>
           <div className="cat-grid">
-            {CAT_TILES.map(cat => (
-              <div key={cat.value} className="cat-tile" onClick={() => { setCategory(cat.value === category ? '' : cat.value); scrollToGrid(); }}>
-                <div className={`cat-tile-bg ${cat.imgClass}`} />
+            {categories.map(cat => (
+              <div key={cat.slug} className={`cat-tile${category === cat.slug ? ' cat-tile--active' : ''}`}
+                onClick={() => { setCategory(cat.slug === category ? '' : cat.slug); setHeroCategory(cat.slug === category ? '' : cat.slug); scrollToGrid(); }}>
+                <div className={`cat-tile-bg ${getCatImgClass(cat.slug)}`} />
                 <div className="cat-tile-overlay" />
                 <div className="cat-tile-body">
-                  <div className="cat-tile-icon">{cat.icon}</div>
+                  {cat.icon && (
+                    <div className="cat-tile-icon" style={{ fontSize: 18 }}>{cat.icon}</div>
+                  )}
                   <div className="cat-tile-name">{cat.name}</div>
-                  <div className="cat-tile-count">{cat.count}</div>
                 </div>
                 <div className="cat-tile-arrow">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
