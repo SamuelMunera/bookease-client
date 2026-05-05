@@ -368,9 +368,13 @@ export default function BusinessListPage() {
     navigate(`/businesses/${b.id}`);
   }, [navigate]);
 
-  // trending / newest: always use the full (unfiltered-by-category) businesses list
-  const trending = businesses.filter(b => b.isTrending);
-  const newest   = businesses.filter(b => b.isNew);
+  const [newestBusinesses,    setNewestBusinesses]    = useState([]);
+  const [topBookedBusinesses, setTopBookedBusinesses] = useState([]);
+
+  useEffect(() => {
+    api.getNewestBusinesses().then(setNewestBusinesses).catch(() => {});
+    api.getTopBookedBusinesses().then(setTopBookedBusinesses).catch(() => {});
+  }, []);
   // Filtering is now server-side (category + time passed to API)
   const gridBusinesses = businesses;
 
@@ -596,18 +600,19 @@ export default function BusinessListPage() {
         ))}
       </div>
 
-      {/* ══ MÁS POPULARES ═════════════════════════════════════ */}
-      {trending.length > 0 && (
+      {/* ══ MÁS RESERVADOS ════════════════════════════════════ */}
+      {topBookedBusinesses.length > 0 && (
         <HorizontalSection
-          title="Más <em>populares</em> esta semana"
-          eyebrow="Trending ahora"
-          items={trending}
-          badge={(b) => b.isTrending ? (
+          title="Más <em>reservados</em>"
+          eyebrow="Los favoritos de la plataforma"
+          items={topBookedBusinesses}
+          badge={(b) => b.bookingCount > 0 ? (
             <div className="biz-badge biz-badge-trending">
-              {b.bookingsThisWeek} reservas
+              {b.bookingCount} reserva{b.bookingCount !== 1 ? 's' : ''}
             </div>
           ) : null}
           onCardClick={handleCardClick}
+          seeAllLabel="Ver negocios"
         />
       )}
 
@@ -664,16 +669,19 @@ export default function BusinessListPage() {
       </div>
 
       {/* ══ RECIÉN LLEGADOS ═══════════════════════════════════ */}
-      {newest.length > 0 && (
+      {newestBusinesses.length > 0 && (
         <HorizontalSection
           title="Recién <em>llegados</em>"
           eyebrow="Nuevos en Bookease"
-          items={newest}
-          badge={(b) => b.isNew ? (
-            <div className="biz-badge biz-badge-new">Nuevo</div>
-          ) : null}
+          items={newestBusinesses}
+          badge={(b) => {
+            const days = Math.floor((Date.now() - new Date(b.createdAt)) / 86400000);
+            return days <= 30
+              ? <div className="biz-badge biz-badge-new">Nuevo</div>
+              : null;
+          }}
           onCardClick={handleCardClick}
-          seeAllLabel="Ver todos"
+          seeAllLabel="Ver negocios"
         />
       )}
 
