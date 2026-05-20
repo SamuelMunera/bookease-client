@@ -425,7 +425,7 @@ export default function BusinessListPage() {
           </p>
 
           {/* ── Hero search — pill estilo Airbnb ── */}
-          <form className="animate-up animate-up-3" onSubmit={handleSearch} style={{
+          <form className="animate-up animate-up-3 hero-search-form" onSubmit={handleSearch} style={{
             width: '100%', maxWidth: 820, margin: '0 auto',
             display: 'flex', alignItems: 'center',
             background: 'var(--surface)',
@@ -437,7 +437,7 @@ export default function BusinessListPage() {
           }}>
 
             {/* Sección 1: Categoría con dropdown */}
-            <div ref={catRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+            <div ref={catRef} className="hero-search-section" style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
               <button type="button" onClick={() => openAt('cat', catRef, setCatOpen, catOpen)} style={{
                 width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
@@ -456,10 +456,10 @@ export default function BusinessListPage() {
               {/* category dropdown rendered via portal below */}
             </div>
 
-            <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
+            <div className="hero-search-divider" style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
             {/* Sección 2: Ciudad */}
-            <div style={{
+            <div className="hero-search-section" style={{
               flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column',
               alignItems: 'flex-start', gap: 1, padding: '12px 20px',
             }}>
@@ -483,10 +483,10 @@ export default function BusinessListPage() {
               </div>
             </div>
 
-            <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
+            <div className="hero-search-divider" style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
             {/* Sección 3: Fecha — custom calendar */}
-            <div ref={dateRef} style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+            <div ref={dateRef} className="hero-search-section" style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
               <button type="button" onClick={() => openAt('date', dateRef, setDateOpen, dateOpen)} style={{
                 width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
@@ -502,10 +502,10 @@ export default function BusinessListPage() {
               {/* calendar rendered via portal at end of component */}
             </div>
 
-            <div style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
+            <div className="hero-search-divider" style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
             {/* Sección 4: Hora — texto libre con validación HH:MM */}
-            <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
+            <div className="hero-search-section" style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
                 <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
@@ -554,7 +554,7 @@ export default function BusinessListPage() {
             </div>
 
             {/* Botón buscar */}
-            <button type="submit" style={{
+            <button type="submit" className="hero-search-btn" style={{
               flexShrink: 0, margin: 6,
               background: 'var(--text)', color: 'var(--bg)',
               border: 'none', borderRadius: 9999,

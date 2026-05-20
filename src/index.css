@@ -4439,6 +4439,34 @@ html { scroll-padding-top: 68px; }
   .cat-grid { grid-template-columns: 1fr !important; }
 }
 
+/* ══════════════════════════════════════════════════════════
+   HERO SEARCH FORM — responsive
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .hero-search-form {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    border-radius: 20px !important;
+    padding: 6px !important;
+    gap: 0 !important;
+  }
+  .hero-search-divider { display: none !important; }
+  .hero-search-section {
+    flex: none !important;
+    width: 100% !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 10px 16px !important;
+  }
+  .hero-search-section:last-of-type { border-bottom: none !important; }
+  .hero-search-btn {
+    width: calc(100% - 12px) !important;
+    margin: 6px !important;
+    border-radius: 14px !important;
+    justify-content: center !important;
+    padding: 14px !important;
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────
    Legal pages  (Privacy, Terms, Cookies)
    ──────────────────────────────────────────────────────────────── */
@@ -4786,11 +4814,12 @@ html { scroll-padding-top: 68px; }
 }
 
 @media (max-width: 768px) {
-  .hs-filters { flex-direction: column; }
+  .hs-filters { flex-direction: column; padding: var(--sp-4); }
   .hs-filter-group { min-width: 100%; }
   .hs-grid { grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 }
 @media (max-width: 480px) {
+  .hs-filters { padding: var(--sp-3); gap: var(--sp-3); border-radius: var(--r-xl); }
   .hs-grid { grid-template-columns: 1fr; }
 }
 
