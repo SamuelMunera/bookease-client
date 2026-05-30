@@ -205,8 +205,12 @@ const api = {
   deleteHomeService: (id) => request(`/pro/me/home-services/${id}`, { method: 'DELETE' }),
   getMyHomeSchedule: () => request('/pro/me/home-schedule'),
   setMyHomeSchedule: (days) => request('/pro/me/home-schedule', { method: 'PUT', body: JSON.stringify({ days }) }),
+  // Geo
+  detectCountry: () => request('/geo/country'),
+
   // Home service (public)
   getHomeProfessionals: (params = {}) => request(`/professionals?${new URLSearchParams(params)}`),
+  getHomeProsForCountry: (country) => request(`/professionals?${new URLSearchParams({ country })}`),
   getProfessionalHomeServices: (id) => request(`/professionals/${id}/home-services`),
   getHomeSlots: (params) => request(`/slots/home?${new URLSearchParams(params)}`),
   // Home bookings

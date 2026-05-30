@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getPlansForCountry } from '../utils/plans';
 import { useAuth } from '../context/AuthContext';
+import { useCountry } from '../context/CountryContext';
 
 const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 Estados Unidos' };
 
@@ -74,9 +75,16 @@ function PlanCard({ plan }) {
 
 export default function PricingPage() {
   const { user } = useAuth();
-  const [country, setCountry] = useState('CO');
+  const { country: detectedCountry, loading: geoLoading } = useCountry();
+  const [country, setCountry] = useState(null); // null = aún no inicializado
 
-  const allPlans = getPlansForCountry(country);
+  // Sincroniza con el país detectado la primera vez que llega
+  useEffect(() => {
+    if (!geoLoading && country === null) setCountry(detectedCountry);
+  }, [geoLoading, detectedCountry, country]);
+
+  const activeCountry = country ?? detectedCountry ?? 'CO';
+  const allPlans = getPlansForCountry(activeCountry);
   const plans = !user
     ? allPlans
     : user.role === 'PROFESSIONAL'
@@ -96,29 +104,36 @@ export default function PricingPage() {
         <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'var(--text)', marginBottom: 'var(--sp-3)', fontFamily: 'var(--font-heading)' }}>
           Elige el plan que se adapta a tu negocio
         </h1>
-        <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)', maxWidth: 520, margin: '0 auto var(--sp-6)' }}>
-          {country === 'CO'
+        <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)', maxWidth: 520, margin: '0 auto var(--sp-4)' }}>
+          {activeCountry === 'CO'
             ? 'Precios fijos en pesos colombianos. Sin sorpresas, sin conversiones.'
-            : 'Precios fijos en dólares. Sin sorpresas, sin conversiones.'}
+            : 'Fixed prices in US dollars. No surprises, no conversions.'}
         </p>
 
-        {/* Country toggle */}
-        <div style={{ display: 'inline-flex', gap: 'var(--sp-1)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-full)', padding: 4 }}>
-          {['CO', 'US'].map(c => (
-            <button
-              key={c}
-              onClick={() => setCountry(c)}
-              style={{
-                padding: '6px 16px', borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer',
-                fontSize: 'var(--text-sm)', fontWeight: 600,
-                background: country === c ? 'var(--gold)' : 'transparent',
-                color: country === c ? '#0A0808' : 'var(--text-muted)',
-                transition: 'all .15s',
-              }}
-            >
-              {COUNTRY_LABELS[c]}
-            </button>
-          ))}
+        {/* País activo + opción de cambio discreto */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--sp-2)', padding: '6px 16px', background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)', borderRadius: 'var(--r-full)', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--gold)' }}>
+            {COUNTRY_LABELS[activeCountry]}
+            {geoLoading && <span style={{ opacity: .6, fontSize: 11 }}>· detectando…</span>}
+          </div>
+          {/* Toggle discreto: solo si el usuario quiere ver el otro país */}
+          <div style={{ display: 'inline-flex', gap: 2, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-full)', padding: 3 }}>
+            {['CO', 'US'].map(c => (
+              <button
+                key={c}
+                onClick={() => setCountry(c)}
+                style={{
+                  padding: '4px 12px', borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer',
+                  fontSize: 'var(--text-xs)', fontWeight: 600,
+                  background: activeCountry === c ? 'var(--surface-3)' : 'transparent',
+                  color: activeCountry === c ? 'var(--text)' : 'var(--text-dim)',
+                  transition: 'all .15s',
+                }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -136,9 +151,15 @@ export default function PricingPage() {
 
       {/* ── Plan cards ── */}
       <div className="pricing-grid">
-        {plans.map(plan => (
-          <PlanCard key={plan.id} plan={plan} />
-        ))}
+        {(geoLoading && country === null
+          ? Array(4).fill(null).map((_, i) => (
+              <div key={i} className="pricing-card" style={{ minHeight: 380, background: 'var(--surface-2)' }}>
+                <div className="skeleton" style={{ height: 20, width: '60%', borderRadius: 'var(--r-sm)', margin: 'var(--sp-4) 0' }} />
+                <div className="skeleton" style={{ height: 40, width: '50%', borderRadius: 'var(--r-sm)', margin: 'var(--sp-3) 0' }} />
+              </div>
+            ))
+          : plans.map(plan => <PlanCard key={plan.id} plan={plan} />)
+        )}
       </div>
 
       {/* ── Footer note ── */}

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { CountryProvider } from './context/CountryContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -40,6 +41,7 @@ import PricingPage from './pages/PricingPage';
 export default function App() {
   return (
     <ThemeProvider>
+    <CountryProvider>
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
@@ -103,6 +105,7 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </CountryProvider>
     </ThemeProvider>
   );
 }

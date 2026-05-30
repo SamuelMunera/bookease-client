@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCountry } from '../context/CountryContext';
 import api from '../api';
 
 /* ─── constants ─────────────────────────────────────────── */
@@ -222,6 +223,138 @@ function HorizontalSection({ title, eyebrow, items, badge, onCardClick, seeAllLa
   );
 }
 
+/* ─── HomeProsSection ───────────────────────────────────── */
+const PRO_PALETTES_HOME = [
+  { bg: 'linear-gradient(135deg,#D4A853,#A8833F)', color: '#0A0808' },
+  { bg: 'linear-gradient(135deg,#7C5CFC,#5B3FD9)', color: '#fff'    },
+  { bg: 'linear-gradient(135deg,#00D4C8,#008F8B)', color: '#0A0808' },
+  { bg: 'linear-gradient(135deg,#22C55E,#15803D)', color: '#fff'    },
+  { bg: 'linear-gradient(135deg,#EC4899,#9D174D)', color: '#fff'    },
+];
+function homeProPalette(name) {
+  return PRO_PALETTES_HOME[(name?.charCodeAt(0) ?? 0) % PRO_PALETTES_HOME.length];
+}
+
+function HomeProCard({ pro }) {
+  const pal = homeProPalette(pro.name);
+  return (
+    <Link to={`/professionals/${pro.id}`} className="hs-pro-card" style={{ textDecoration: 'none', flexShrink: 0, width: 260 }}>
+      <div className="hs-pro-card-avatar" style={{ background: pro.avatarUrl ? 'transparent' : pal.bg }}>
+        {pro.avatarUrl
+          ? <img src={pro.avatarUrl} alt={pro.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          : <span style={{ color: pal.color, fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 32 }}>{pro.name[0].toUpperCase()}</span>
+        }
+      </div>
+      <div className="hs-pro-card-body">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap', marginBottom: 'var(--sp-2)' }}>
+          <span className="home-service-badge" style={{ fontSize: 10, padding: '2px 8px' }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            A domicilio
+          </span>
+        </div>
+        <p className="hs-pro-card-name">{pro.name}</p>
+        {pro.specialty && <p className="hs-pro-card-spec">{pro.specialty}</p>}
+        {pro.cities?.length > 0 && (
+          <p className="hs-pro-card-cities">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            {pro.cities.slice(0, 3).join(' · ')}
+          </p>
+        )}
+        {pro.homeServices?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-1)', marginTop: 'var(--sp-2)' }}>
+            {pro.homeServices.slice(0, 2).map(s => (
+              <span key={s.id} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 'var(--r-full)', background: 'var(--surface-3)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                {s.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function HomeProsSection({ country }) {
+  const trackRef = useRef(null);
+  const [pros, setPros] = useState(null); // null = cargando
+  const scroll = (dir) => trackRef.current?.scrollBy({ left: dir * 280, behavior: 'smooth' });
+
+  useEffect(() => {
+    if (!country) return;
+    api.getHomeProsForCountry(country)
+      .then(data => setPros(data || []))
+      .catch(() => setPros([]));
+  }, [country]);
+
+  return (
+    <div className="section-block">
+      <div className="section-inner">
+        {/* Header */}
+        <div className="section-head" style={{ marginBottom: 'var(--sp-6)' }}>
+          <div>
+            <p className="section-eyebrow">Servicio a domicilio</p>
+            <h2 className="section-title">Profesionales que <em>van donde tú estás</em></h2>
+          </div>
+          <Link to="/home-service" className="btn btn-secondary" style={{ fontSize: 'var(--text-sm)', flexShrink: 0 }}>
+            Ver todos
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </Link>
+        </div>
+
+        {/* Skeleton */}
+        {pros === null && (
+          <div style={{ display: 'flex', gap: 'var(--sp-4)', overflow: 'hidden' }}>
+            {[1, 2, 3].map(n => (
+              <div key={n} className="hs-pro-card" style={{ flexShrink: 0, width: 260, pointerEvents: 'none' }}>
+                <div className="skeleton" style={{ width: '100%', height: 160, borderRadius: 'var(--r-xl)' }} />
+                <div className="hs-pro-card-body" style={{ gap: 'var(--sp-2)', display: 'flex', flexDirection: 'column' }}>
+                  <div className="skeleton" style={{ height: 12, width: '70%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 18, width: '85%', borderRadius: 'var(--r-sm)' }} />
+                  <div className="skeleton" style={{ height: 11, width: '55%', borderRadius: 'var(--r-sm)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {pros !== null && pros.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 'var(--sp-10) 0', color: 'var(--text-muted)' }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" strokeWidth="1.5" style={{ marginBottom: 'var(--sp-3)' }}>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <p style={{ margin: 0, fontWeight: 600 }}>Próximamente en tu zona</p>
+            <p style={{ margin: 'var(--sp-1) 0 0', fontSize: 'var(--text-sm)' }}>Estamos incorporando profesionales a domicilio en tu ciudad.</p>
+          </div>
+        )}
+
+        {/* Cards */}
+        {pros !== null && pros.length > 0 && (
+          <div style={{ position: 'relative' }}>
+            <div ref={trackRef} style={{ display: 'flex', gap: 'var(--sp-4)', overflowX: 'auto', paddingBottom: 'var(--sp-2)', scrollbarWidth: 'none' }}>
+              {pros.map(p => <HomeProCard key={p.id} pro={p} />)}
+            </div>
+            {pros.length > 3 && (
+              <div className="scroll-nav">
+                <button className="scroll-arrow" onClick={() => scroll(-1)} aria-label="Anterior">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </button>
+                <button className="scroll-arrow" onClick={() => scroll(1)} aria-label="Siguiente">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── particles config ──────────────────────────────────── */
 const PARTICLES = [
   { w:6,  h:6,  top:'20%', left:'8%',  delay:'0s',   dur:'7s',   driftDur:'5s'  },
@@ -281,6 +414,7 @@ const FEATURES = [
    ══════════════════════════════════════════════════════════ */
 export default function BusinessListPage() {
   const { user } = useAuth();
+  const { country } = useCountry();
   const navigate = useNavigate();
   const [businesses, setBusinesses]   = useState([]);
   const [category, setCategory]       = useState('');
@@ -652,28 +786,7 @@ export default function BusinessListPage() {
       </div>
 
       {/* ══ PROFESIONALES A DOMICILIO ═════════════════════════ */}
-      {/* ── CTA Domicilios ── */}
-      <div className="section-block">
-        <div className="section-inner">
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'var(--sp-4)', padding:'var(--sp-6) var(--sp-6)', background:'var(--gold-subtle)', border:'1px solid var(--gold-border)', borderRadius:'var(--r-2xl)' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
-              <div style={{ width:48, height:48, borderRadius:'var(--r-xl)', background:'rgba(212,168,83,.2)', border:'1px solid var(--gold-border)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--gold)', flexShrink:0 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                </svg>
-              </div>
-              <div>
-                <p style={{ margin:0, fontWeight:700, fontSize:'var(--text-base)', color:'var(--text)' }}>¿Prefieres que vengan a ti?</p>
-                <p style={{ margin:'2px 0 0', fontSize:'var(--text-sm)', color:'var(--text-muted)' }}>Explora profesionales que ofrecen servicio a domicilio.</p>
-              </div>
-            </div>
-            <Link to="/home-service" className="btn btn-primary" style={{ background:'var(--gold)', color:'#0A0808', flexShrink:0 }}>
-              Ver servicio a domicilio
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </Link>
-          </div>
-        </div>
-      </div>
+      <HomeProsSection country={country} />
 
       {/* ══ RECIÉN LLEGADOS ═══════════════════════════════════ */}
       {newestBusinesses.length > 0 && (
