@@ -785,9 +785,6 @@ export default function BusinessListPage() {
         </div>
       </div>
 
-      {/* ══ PROFESIONALES A DOMICILIO ═════════════════════════ */}
-      <HomeProsSection country={country} />
-
       {/* ══ RECIÉN LLEGADOS ═══════════════════════════════════ */}
       {newestBusinesses.length > 0 && (
         <HorizontalSection
@@ -805,6 +802,9 @@ export default function BusinessListPage() {
           categories={categories}
         />
       )}
+
+      {/* ══ PROFESIONALES A DOMICILIO ═════════════════════════ */}
+      <HomeProsSection country={country} />
 
       {/* ══ GRID COMPLETO ═════════════════════════════════════ */}
       <div className="section-sep"><div className="section-sep-line"/><span className="section-sep-label">Explorar todos los negocios</span><div className="section-sep-line"/></div>
