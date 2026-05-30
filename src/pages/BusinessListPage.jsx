@@ -152,7 +152,7 @@ function FeaturedCard({ b, badge, onClick, categories = [] }) {
         </div>
       </div>
       <div className="feat-card-body">
-        <h3 className="feat-card-name">{b.name}</h3>
+        <h3 className="feat-card-name" style={b.accentColor ? { color: b.accentColor } : undefined}>{b.name}</h3>
         <p className="feat-card-addr">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{flexShrink:0}}>
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -783,7 +783,7 @@ export default function BusinessListPage() {
                       }
                     </div>
                     <div className="biz-card-body">
-                      <h3 className="biz-card-name">{b.name}</h3>
+                      <h3 className="biz-card-name" style={b.accentColor ? { color: b.accentColor } : undefined}>{b.name}</h3>
                       <p className="biz-card-address">
                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display:'inline',marginRight:4,verticalAlign:'middle'}}>
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>

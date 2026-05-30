@@ -2454,6 +2454,10 @@ html { scroll-padding-top: 68px; }
   line-height: 1.15;
   margin-bottom: var(--sp-4);
 }
+.biz-hero-name em {
+  color: var(--gold);
+  font-style: italic;
+}
 
 .biz-hero-meta {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4);
