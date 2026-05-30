@@ -16,11 +16,17 @@ function browserFallback() {
 }
 
 function readStored() {
-  // 1. Manual override persiste entre sesiones
+  // 0. Dev override: ?_country=CO|US en la URL (solo funciona en desarrollo)
+  try {
+    const param = new URLSearchParams(window.location.search).get('_country');
+    if (param && SUPPORTED.includes(param)) return { value: param, ready: true };
+  } catch {}
+
+  // 1. Manual override del usuario (persiste entre sesiones)
   try {
     const manual = localStorage.getItem(MANUAL_KEY);
     if (manual && SUPPORTED.includes(manual)) return { value: manual, ready: true };
-  } catch { /* safari private */ }
+  } catch {}
 
   // 2. Cache de sesión (1h)
   try {

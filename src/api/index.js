@@ -236,8 +236,8 @@ const api = {
   createManualBookingPro: (body) => request('/pro/me/bookings/manual', { method: 'POST', body: JSON.stringify(body) }),
 
   // Discovery
-  getNewestBusinesses:    () => request('/businesses/newest'),
-  getTopBookedBusinesses: () => request('/businesses/top-booked'),
+  getNewestBusinesses:    (userCountry) => request(`/businesses/newest${userCountry ? `?userCountry=${userCountry}` : ''}`),
+  getTopBookedBusinesses: (userCountry) => request(`/businesses/top-booked${userCountry ? `?userCountry=${userCountry}` : ''}`),
 
   // Plans
   getPlans: (country = 'CO') => request(`/businesses/plans?country=${country}`),

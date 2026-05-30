@@ -472,14 +472,15 @@ export default function BusinessListPage() {
     setLoading(true);
     setApiError(false);
     const params = {};
-    if (city)       params.city     = city;
-    if (category)   params.category = category;
-    if (searchTime) params.time     = searchTime;
+    if (city)        params.city        = city;
+    if (category)    params.category    = category;
+    if (searchTime)  params.time        = searchTime;
+    if (country)     params.userCountry = country;
     api.getBusinesses(params)
       .then((data) => setBusinesses(data || []))
       .catch(() => { setBusinesses([]); setApiError(true); })
       .finally(() => setLoading(false));
-  }, [city, category, searchTime]);
+  }, [city, category, searchTime, country]);
 
   // Normalize text: remove diacritics + trim (frontend normalization before API call)
   function normalizeCity(str) {
@@ -515,9 +516,10 @@ export default function BusinessListPage() {
   const [topBookedBusinesses, setTopBookedBusinesses] = useState([]);
 
   useEffect(() => {
-    api.getNewestBusinesses().then(setNewestBusinesses).catch(() => {});
-    api.getTopBookedBusinesses().then(setTopBookedBusinesses).catch(() => {});
-  }, []);
+    if (!country) return; // esperar a que el país esté disponible
+    api.getNewestBusinesses(country).then(setNewestBusinesses).catch(() => {});
+    api.getTopBookedBusinesses(country).then(setTopBookedBusinesses).catch(() => {});
+  }, [country]);
   // Filtering is now server-side (category + time passed to API)
   const gridBusinesses = businesses;
 
