@@ -162,14 +162,17 @@ function FeaturedCard({ b, badge, onClick, categories = [] }) {
         </p>
         <div className="feat-card-foot">
           <div className="rating-row">
-            {b.reviewCount > 0 ? (
+            {b.bookingCount > 0 ? (
               <>
-                <Stars rating={b.rating} />
-                <span className="rating-num">{b.rating}</span>
-                <span className="rating-count">({b.reviewCount})</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  {b.bookingCount} reserva{b.bookingCount !== 1 ? 's' : ''}
+                </span>
               </>
             ) : (
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Sin reseñas</span>
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Sin reservas aún</span>
             )}
           </div>
           <div className="biz-card-cta">
@@ -744,7 +747,7 @@ export default function BusinessListPage() {
       {topBookedBusinesses.length > 0 && (
         <HorizontalSection
           title="Más <em>reservados</em>"
-          eyebrow="Los favoritos de la plataforma"
+          eyebrow="Los favoritos de los clientes"
           items={topBookedBusinesses}
           badge={(b) => b.bookingCount > 0 ? (
             <div className="biz-badge biz-badge-trending">
