@@ -271,9 +271,15 @@ export default function BusinessesPage() {
                     Nuevo
                   </div>
                 )}
-                <div className={`biz-card-img ${CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop'}`}>
-                  <span className="biz-card-img-letter">{b.name[0]}</span>
-                  <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+                <div className={`biz-card-img ${b.coverUrl ? '' : (CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop')}`}
+                  style={b.coverUrl ? { background: 'transparent', overflow: 'hidden', padding: 0 } : {}}>
+                  {b.coverUrl
+                    ? <img src={b.coverUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    : <>
+                        <span className="biz-card-img-letter">{b.name[0]}</span>
+                        <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+                      </>
+                  }
                 </div>
                 <div className="biz-card-body">
                   <h3 className="biz-card-name">{b.name}</h3>
