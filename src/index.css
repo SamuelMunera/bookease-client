@@ -2433,6 +2433,7 @@ html { scroll-padding-top: 68px; }
   padding: 6px 14px; border-radius: var(--r-full);
   border: 1px solid var(--border); background: var(--glass);
   backdrop-filter: blur(8px); transition: all var(--ease);
+  white-space: nowrap; flex-shrink: 0;
 }
 .biz-hero-back:hover { border-color: var(--gold-border); color: var(--gold); }
 
