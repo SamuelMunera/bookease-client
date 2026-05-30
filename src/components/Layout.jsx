@@ -436,23 +436,25 @@ export default function Layout() {
           <p className="footer-copy">
             © {new Date().getFullYear()} Bookease · Todos los derechos reservados
           </p>
-          <button
-            onClick={() => setFeedbackOpen(true)}
-            style={{
-              background:'rgba(212,168,83,.1)', border:'1px solid rgba(212,168,83,.25)',
-              borderRadius:'var(--r-full)', padding:'4px 14px',
-              color:'var(--gold)', fontSize:'var(--text-xs)', fontWeight:600,
-              cursor:'pointer', letterSpacing:'.04em', textTransform:'uppercase',
-              transition:'background .15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background='rgba(212,168,83,.2)'}
-            onMouseLeave={e => e.currentTarget.style.background='rgba(212,168,83,.1)'}
-          >
-            Ayúdanos a mejorar
-          </button>
-          <div className="footer-bottom-badge">
-            <span className="footer-live-dot" />
-            Sistema activo
+          <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              style={{
+                background:'rgba(212,168,83,.1)', border:'1px solid rgba(212,168,83,.25)',
+                borderRadius:'var(--r-full)', padding:'4px 14px',
+                color:'var(--gold)', fontSize:'var(--text-xs)', fontWeight:600,
+                cursor:'pointer', letterSpacing:'.04em', textTransform:'uppercase',
+                transition:'background .15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background='rgba(212,168,83,.2)'}
+              onMouseLeave={e => e.currentTarget.style.background='rgba(212,168,83,.1)'}
+            >
+              Ayúdanos a mejorar
+            </button>
+            <div className="footer-bottom-badge">
+              <span className="footer-live-dot" />
+              Sistema activo
+            </div>
           </div>
         </div>
       </footer>
