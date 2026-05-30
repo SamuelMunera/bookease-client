@@ -181,23 +181,26 @@ export default function ProfessionalProfilePage() {
     <>
       {/* ══ Hero ═══════════════════════════════════════════════ */}
       <div className="prof-profile-hero">
-        <div className="biz-hero-inner">
+        <div style={{ maxWidth: 1060, margin: '0 auto', padding: 'var(--sp-8) var(--sp-6)', position: 'relative', zIndex: 1 }}>
 
+          {/* Botón volver */}
           <Link to={bizId ? `/businesses/${bizId}` : '/'} className="biz-hero-back">
             <IconArrowLeft />
             {bizName ? `Volver a ${bizName}` : 'Inicio'}
           </Link>
 
-          <div className="prof-profile-header">
-            <div className="prof-profile-avatar" style={{ background: prof.avatarUrl ? 'transparent' : pal.bg, overflow: 'hidden', padding: 0 }}>
+          {/* Avatar + identidad */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-6)', marginTop: 'var(--sp-6)' }}>
+            <div className="prof-profile-avatar" style={{ width: 112, height: 112, flexShrink: 0, background: prof.avatarUrl ? 'transparent' : pal.bg, overflow: 'hidden', padding: 0 }}>
               {prof.avatarUrl
                 ? <img src={prof.avatarUrl} alt={prof.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                : <span style={{ color: pal.color, fontFamily:'var(--font-heading)', fontWeight:700, fontSize:42 }}>{prof.name[0].toUpperCase()}</span>
+                : <span style={{ color: pal.color, fontFamily:'var(--font-heading)', fontWeight:700, fontSize:48 }}>{prof.name[0].toUpperCase()}</span>
               }
             </div>
 
-            <div className="prof-profile-identity">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap', marginBottom: 'var(--sp-2)' }}>
                 <div className="prof-profile-avail">
                   <span className="prof-card2-avail-dot" />
                   Disponible hoy
@@ -209,43 +212,45 @@ export default function ProfessionalProfilePage() {
                   </span>
                 )}
               </div>
-              <h1 className="prof-profile-name">{prof.name}</h1>
-              {bizName ? (
-                <p className="prof-profile-role" style={{ color: 'var(--text-muted)' }}>
-                  {bizName}
-                </p>
-              ) : prof.specialty ? (
-                <p className="prof-profile-role" style={{ color: 'var(--text-muted)' }}>
-                  {prof.specialty}
-                </p>
-              ) : null}
-            </div>
-          </div>
 
-          {/* Stats row */}
-          {stats && (
-            <div className="biz-hero-stats" style={{ marginTop:'var(--sp-5)' }}>
-              {stats.avgRating !== null ? (
-                <div className="biz-hero-stat">
-                  <span className="biz-hero-stat-num">{stats.avgRating.toFixed(1)}</span>
-                  <span className="biz-hero-stat-label">
-                    <span style={{ color:'#D4A853' }}>{'★'.repeat(Math.round(stats.avgRating))}{'☆'.repeat(5-Math.round(stats.avgRating))}</span>
-                    {' '}{stats.reviewCount} reseña{stats.reviewCount !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              ) : (
-                <div className="biz-hero-stat">
-                  <span className="biz-hero-stat-num" style={{ fontSize:'var(--text-base)', color:'var(--text-muted)' }}>Sin reseñas</span>
-                  <span className="biz-hero-stat-label">Calificación</span>
+              {/* Nombre */}
+              <h1 className="prof-profile-name">{prof.name}</h1>
+
+              {/* Rol / especialidad */}
+              {bizName ? (
+                <p className="prof-profile-role" style={{ color: 'var(--text-muted)', marginBottom: 'var(--sp-4)' }}>{bizName}</p>
+              ) : prof.specialty ? (
+                <p className="prof-profile-role" style={{ color: 'var(--text-muted)', marginBottom: 'var(--sp-4)' }}>{prof.specialty}</p>
+              ) : null}
+
+              {/* Stats inline con la identidad */}
+              {stats && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {stats.avgRating !== null ? (
+                      <>
+                        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{stats.avgRating.toFixed(1)}</span>
+                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
+                          <span style={{ color: '#D4A853' }}>{'★'.repeat(Math.round(stats.avgRating))}{'☆'.repeat(5 - Math.round(stats.avgRating))}</span>
+                          {' '}{stats.reviewCount} reseña{stats.reviewCount !== 1 ? 's' : ''}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 600 }}>Sin reseñas</span>
+                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Calificación</span>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ width: 1, height: 28, background: 'var(--border)' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontFamily: 'var(--font-heading)', fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--gold)', lineHeight: 1 }}>{formatBookingCount(stats.bookingCount)}</span>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>Reservas</span>
+                  </div>
                 </div>
               )}
-              <div className="biz-hero-stat-sep" />
-              <div className="biz-hero-stat">
-                <span className="biz-hero-stat-num">{formatBookingCount(stats.bookingCount)}</span>
-                <span className="biz-hero-stat-label">Reservas</span>
-              </div>
             </div>
-          )}
+          </div>
 
           <div className="prof-profile-hero-cta">
             {bizId && (
