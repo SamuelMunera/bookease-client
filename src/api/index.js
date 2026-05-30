@@ -243,12 +243,6 @@ const api = {
   getMySubscription: () => request('/subscriptions/business/me'),
   getProSubscription: () => request('/subscriptions/professional/me'),
 
-  // Stripe
-  createCheckoutSession: (plan, country) =>
-    request('/stripe/checkout-session', { method: 'POST', body: JSON.stringify({ plan, country }) }),
-  createPortalSession: () =>
-    request('/stripe/portal-session', { method: 'POST' }),
-
   // Reviews
   getBusinessReviews:       (id)       => request(`/businesses/${id}/reviews`),
   getBusinessStats:         (id)       => request(`/businesses/${id}/stats`),

@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { getPlansForCountry } from '../utils/plans';
 import { useAuth } from '../context/AuthContext';
-import api from '../api';
 
 const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 Estados Unidos' };
 
@@ -14,13 +12,10 @@ function CheckIcon() {
   );
 }
 
-function PlanCard({ plan, isCurrentPlan, hasStripeSubscription, onSelect, onManage, busy }) {
-  const isBusy = busy === plan.id || (busy === 'portal' && !isCurrentPlan);
-
+function PlanCard({ plan }) {
   return (
-    <div className={`pricing-card${plan.popular ? ' pricing-card--popular' : ''}${isCurrentPlan ? ' pricing-card--current' : ''}`}>
+    <div className={`pricing-card${plan.popular ? ' pricing-card--popular' : ''}`}>
       {plan.popular && <div className="pricing-popular-badge">Más popular</div>}
-      {isCurrentPlan && <div className="pricing-current-badge">Plan actual</div>}
 
       <div className="pricing-card-head">
         <p className="pricing-plan-name">{plan.name}</p>
@@ -63,38 +58,13 @@ function PlanCard({ plan, isCurrentPlan, hasStripeSubscription, onSelect, onMana
           >
             Contactar ventas
           </a>
-        ) : isCurrentPlan ? (
-          hasStripeSubscription ? (
-            <button
-              className="btn btn-secondary"
-              style={{ width: '100%', justifyContent: 'center' }}
-              onClick={onManage}
-              disabled={busy === 'portal'}
-            >
-              {busy === 'portal' ? 'Redirigiendo…' : 'Gestionar suscripción'}
-            </button>
-          ) : (
-            <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }} disabled>
-              Plan activo
-            </button>
-          )
-        ) : hasStripeSubscription ? (
-          <button
-            className={`btn${plan.popular ? ' btn-primary' : ' btn-secondary'}`}
-            style={{ width: '100%', justifyContent: 'center' }}
-            onClick={() => onSelect(plan.id)}
-            disabled={!!busy}
-          >
-            {busy === plan.id ? 'Actualizando…' : 'Cambiar a este plan'}
-          </button>
         ) : (
           <button
             className={`btn${plan.popular ? ' btn-primary' : ' btn-secondary'}`}
             style={{ width: '100%', justifyContent: 'center' }}
-            onClick={() => onSelect(plan.id)}
-            disabled={!!busy}
+            disabled
           >
-            {isBusy ? 'Redirigiendo…' : 'Suscribirme'}
+            Próximamente
           </button>
         )}
       </div>
@@ -102,32 +72,9 @@ function PlanCard({ plan, isCurrentPlan, hasStripeSubscription, onSelect, onMana
   );
 }
 
-export default function PricingPage({ currentPlan: propCurrentPlan, businessCountry }) {
+export default function PricingPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-
-  const [country, setCountry] = useState(businessCountry || 'CO');
-  const [busy, setBusy] = useState(null);
-  const [msg, setMsg] = useState('');
-  const [subscription, setSubscription] = useState(null);
-
-  // Show stripe result messages
-  useEffect(() => {
-    if (searchParams.get('stripe') === 'success') setMsg('✓ ¡Suscripción activada! Bienvenido a Bookease.');
-    if (searchParams.get('stripe') === 'cancel') setMsg('Pago cancelado. Puedes intentarlo de nuevo cuando quieras.');
-  }, [searchParams]);
-
-  // Fetch subscription for authenticated business owners / professionals
-  useEffect(() => {
-    if (!user) return;
-    const fetch = user.role === 'BUSINESS_OWNER'
-      ? api.getMySubscription()
-      : user.role === 'PROFESSIONAL'
-        ? api.getProSubscription()
-        : null;
-    fetch?.then(setSubscription).catch(() => {});
-  }, [user]);
+  const [country, setCountry] = useState('CO');
 
   const allPlans = getPlansForCountry(country);
   const plans = !user
@@ -137,52 +84,6 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
       : user.role === 'BUSINESS_OWNER'
         ? allPlans.filter(p => p.forType === 'business')
         : allPlans;
-  // Has a real Stripe subscription (not cancelled/expired)
-  const hasStripeSubscription = !!(
-    subscription?.stripeSubscriptionId &&
-    !['CANCELLED', 'EXPIRED'].includes(subscription?.status)
-  );
-  // Only show a plan as "current" if they actually subscribed via Stripe
-  const currentPlan = hasStripeSubscription ? (propCurrentPlan || subscription?.plan) : null;
-
-  function flash(text) {
-    setMsg(text);
-    setTimeout(() => setMsg(''), 4000);
-  }
-
-  async function handleSelect(planId) {
-    if (!user) { navigate('/login'); return; }
-    setBusy(planId);
-    try {
-      const result = await api.createCheckoutSession(planId, country);
-      if (result.url) {
-        // New subscription — redirect to Stripe Checkout
-        window.location.href = result.url;
-      } else if (result.updated) {
-        // Plan changed on existing subscription
-        flash('✓ Plan actualizado correctamente.');
-        setBusy(null);
-        // Refresh subscription state
-        const fetch = user.role === 'BUSINESS_OWNER' ? api.getMySubscription() : api.getProSubscription();
-        fetch.then(setSubscription).catch(() => {});
-      }
-    } catch (err) {
-      flash(err.message);
-      setBusy(null);
-    }
-  }
-
-  async function handleManage() {
-    if (!user) { navigate('/login'); return; }
-    setBusy('portal');
-    try {
-      const { url } = await api.createPortalSession();
-      window.location.href = url;
-    } catch (err) {
-      flash(err.message);
-      setBusy(null);
-    }
-  }
 
   return (
     <div className="page" style={{ paddingTop: 'var(--sp-10)', paddingBottom: 'var(--sp-16)' }}>
@@ -233,68 +134,16 @@ export default function PricingPage({ currentPlan: propCurrentPlan, businessCoun
         </p>
       )}
 
-      {/* ── Subscription status banner — only for active Stripe subscriptions ── */}
-      {hasStripeSubscription && subscription && (
-        <div style={{
-          maxWidth: 640, margin: '0 auto var(--sp-8)',
-          padding: 'var(--sp-3) var(--sp-4)',
-          background: 'var(--surface-2)', border: '1px solid var(--border)',
-          borderRadius: 'var(--r-lg)', textAlign: 'center',
-          fontSize: 'var(--text-sm)', color: 'var(--text-muted)',
-        }}>
-          {subscription.status === 'TRIALING' && (
-            <>Estás en periodo de prueba gratuita hasta el{' '}
-              <strong>{new Date(subscription.trialEndsAt).toLocaleDateString('es-CO')}</strong>.</>
-          )}
-          {subscription.status === 'ACTIVE' && (
-            <>Suscripción activa — Plan <strong>{subscription.plan}</strong>. Próxima renovación el{' '}
-              <strong>{new Date(subscription.currentPeriodEnd).toLocaleDateString('es-CO')}</strong>.</>
-          )}
-        </div>
-      )}
-      {subscription && !hasStripeSubscription && ['PAST_DUE','CANCELLED','EXPIRED'].includes(subscription.status) && (
-        <div style={{
-          maxWidth: 640, margin: '0 auto var(--sp-8)',
-          padding: 'var(--sp-3) var(--sp-4)',
-          background: 'var(--surface-2)', border: '1px solid var(--border)',
-          borderRadius: 'var(--r-lg)', textAlign: 'center',
-          fontSize: 'var(--text-sm)', color: 'var(--error)',
-        }}>
-          {subscription.status === 'PAST_DUE' && 'Pago pendiente — actualiza tu método de pago.'}
-          {subscription.status === 'CANCELLED' && 'Tu suscripción está cancelada. Elige un plan para reactivar.'}
-          {subscription.status === 'EXPIRED' && 'Tu acceso expiró. Elige un plan para continuar.'}
-        </div>
-      )}
-
       {/* ── Plan cards ── */}
       <div className="pricing-grid">
         {plans.map(plan => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            isCurrentPlan={currentPlan === plan.id}
-            hasStripeSubscription={hasStripeSubscription}
-            onSelect={handleSelect}
-            onManage={handleManage}
-            busy={busy}
-          />
+          <PlanCard key={plan.id} plan={plan} />
         ))}
       </div>
 
-      {msg && (
-        <p style={{
-          textAlign: 'center', marginTop: 'var(--sp-5)',
-          fontSize: 'var(--text-sm)',
-          color: msg.startsWith('✓') ? 'var(--success)' : 'var(--error)',
-          fontWeight: 600,
-        }}>
-          {msg}
-        </p>
-      )}
-
       {/* ── Footer note ── */}
       <p style={{ textAlign: 'center', marginTop: 'var(--sp-8)', fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', lineHeight: 1.6 }}>
-        Todos los planes incluyen 14 días de prueba gratuita · Cancela cuando quieras · Pagos seguros con Stripe
+        Todos los planes incluyen 14 días de prueba gratuita · Cancela cuando quieras
       </p>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig';
@@ -48,7 +48,6 @@ const DEFAULT_HOURS = DAY_NAMES.map((_, i) => ({ dayOfWeek: i, openTime: '09:00'
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState('panel');
   const [business, setBusiness] = useState(null);
   // Profile tab state
@@ -109,21 +108,6 @@ export default function BusinessDashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user.id]);
-
-  // Poll until webhook activates the business after Stripe payment
-  useEffect(() => {
-    if (searchParams.get('stripe') !== 'success') return;
-    if (business?.status === 'ACTIVE') return;
-    let tries = 0;
-    const interval = setInterval(() => {
-      tries++;
-      api.getMyBusiness().then(b => {
-        if (b?.status === 'ACTIVE') { setBusiness(b); clearInterval(interval); }
-      }).catch(() => {});
-      if (tries >= 10) clearInterval(interval);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [searchParams, business?.status]);
 
   useEffect(() => {
     if (!business) return;
@@ -356,7 +340,6 @@ export default function BusinessDashboardPage() {
     );
   }
 
-  const isStripeSuccess = searchParams.get('stripe') === 'success';
   const isPending = business.status !== 'ACTIVE';
 
   const catColor       = CAT_COLOR[business.category] || 'var(--gold)';
@@ -393,26 +376,15 @@ export default function BusinessDashboardPage() {
       {isPending && (
         <div style={{
           marginBottom: 'var(--sp-6)', padding: 'var(--sp-4) var(--sp-5)',
-          background: isStripeSuccess ? 'rgba(0,212,170,0.08)' : 'rgba(234,179,8,0.08)',
-          border: `1px solid ${isStripeSuccess ? 'rgba(0,212,170,0.3)' : 'rgba(234,179,8,0.3)'}`,
+          background: 'rgba(234,179,8,0.08)',
+          border: '1px solid rgba(234,179,8,0.3)',
           borderRadius: 'var(--r-xl)', display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
         }}>
-          {isStripeSuccess ? (
-            <>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" strokeWidth="2" style={{ flexShrink: 0, animation: 'spin 1.2s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
-                <strong>Activando tu negocio…</strong> El pago fue recibido, en unos segundos tu negocio estará listo.
-              </span>
-            </>
-          ) : (
-            <>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
-                <strong>Tu negocio está inactivo.</strong> Elige un plan para activarlo y aparecer en el listado público.{' '}
-                <a href="/pricing" style={{ color: 'var(--gold)', fontWeight: 600 }}>Elegir plan →</a>
-              </span>
-            </>
-          )}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
+            <strong>Tu negocio está inactivo.</strong> Próximamente podrás activarlo desde la página de planes.{' '}
+            <a href="/pricing" style={{ color: 'var(--gold)', fontWeight: 600 }}>Ver planes →</a>
+          </span>
         </div>
       )}
 
