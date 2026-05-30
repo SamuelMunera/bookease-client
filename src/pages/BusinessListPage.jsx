@@ -161,9 +161,15 @@ function FeaturedCard({ b, badge, onClick, categories = [] }) {
         </p>
         <div className="feat-card-foot">
           <div className="rating-row">
-            <Stars rating={b.rating} />
-            <span className="rating-num">{b.rating}</span>
-            <span className="rating-count">({b.reviewCount})</span>
+            {b.reviewCount > 0 ? (
+              <>
+                <Stars rating={b.rating} />
+                <span className="rating-num">{b.rating}</span>
+                <span className="rating-count">({b.reviewCount})</span>
+              </>
+            ) : (
+              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-dim)' }}>Sin reseñas</span>
+            )}
           </div>
           <div className="biz-card-cta">
             Reservar
@@ -794,7 +800,7 @@ export default function BusinessListPage() {
                         <div className="rating-row" style={{marginBottom:'var(--sp-2)'}}>
                           <Stars rating={b.rating}/>
                           <span className="rating-num">{b.rating}</span>
-                          <span className="rating-count">({b.reviewCount})</span>
+                          {b.reviewCount > 0 && <span className="rating-count">({b.reviewCount})</span>}
                         </div>
                       )}
                       <div className="biz-card-footer">
