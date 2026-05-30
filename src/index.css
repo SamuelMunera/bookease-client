@@ -1776,7 +1776,6 @@ html { scroll-padding-top: 68px; }
   z-index: 2;
   pointer-events: none;
 }
-.scroll-outer::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
 .scroll-outer::after  { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
 
 .scroll-track {
