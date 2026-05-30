@@ -123,7 +123,7 @@ function Stars({ rating }) {
   );
 }
 
-function FeaturedCard({ b, badge, onClick }) {
+function FeaturedCard({ b, badge, onClick, categories = [] }) {
   return (
     <div className="feat-card" onClick={onClick} role="button" tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}>
@@ -177,7 +177,7 @@ function FeaturedCard({ b, badge, onClick }) {
   );
 }
 
-function HorizontalSection({ title, eyebrow, items, badge, onCardClick, seeAllLabel = 'Ver todos' }) {
+function HorizontalSection({ title, eyebrow, items, badge, onCardClick, seeAllLabel = 'Ver todos', categories = [] }) {
   const trackRef = useRef(null);
   const scroll = (dir) => trackRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
 
@@ -200,7 +200,7 @@ function HorizontalSection({ title, eyebrow, items, badge, onCardClick, seeAllLa
       <div className="scroll-outer">
         <div className="scroll-track" ref={trackRef}>
           {items.map((b) => (
-            <FeaturedCard key={b.id} b={b} badge={badge(b)} onClick={() => onCardClick(b)} />
+            <FeaturedCard key={b.id} b={b} badge={badge(b)} onClick={() => onCardClick(b)} categories={categories} />
           ))}
         </div>
       </div>
@@ -613,6 +613,7 @@ export default function BusinessListPage() {
           ) : null}
           onCardClick={handleCardClick}
           seeAllLabel="Ver negocios"
+          categories={categories}
         />
       )}
 
@@ -682,6 +683,7 @@ export default function BusinessListPage() {
           }}
           onCardClick={handleCardClick}
           seeAllLabel="Ver negocios"
+          categories={categories}
         />
       )}
 
