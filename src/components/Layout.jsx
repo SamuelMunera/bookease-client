@@ -115,6 +115,11 @@ export default function Layout() {
 
   const isActive = (to) => location.pathname === to;
 
+  // Hide the "create account" footer CTA on auth pages — it's redundant
+  // (the page itself is already that call to action).
+  const AUTH_PATHS = ['/login', '/register', '/pro/login', '/pro/register', '/register-business'];
+  const hideRegisterCta = AUTH_PATHS.includes(location.pathname);
+
   return (
     <div className="app-shell">
 
@@ -350,12 +355,6 @@ export default function Layout() {
                 </svg>
                 Explorar negocios
               </Link>
-              <Link to="/register" className="footer-cta-btn-secondary">
-                Registrarme gratis
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </Link>
             </div>
           </div>
         </div>
@@ -405,11 +404,13 @@ export default function Layout() {
             <div key={col.title} className="footer-link-col">
               <h4 className="footer-col-title">{col.title}</h4>
               <ul className="footer-link-list">
-                {col.links.map(l => (
-                  <li key={l.label}>
-                    <Link to={l.to} className="footer-link">{l.label}</Link>
-                  </li>
-                ))}
+                {col.links
+                  .filter(l => !(hideRegisterCta && l.to === '/register'))
+                  .map(l => (
+                    <li key={l.label}>
+                      <Link to={l.to} className="footer-link">{l.label}</Link>
+                    </li>
+                  ))}
               </ul>
             </div>
           ))}
