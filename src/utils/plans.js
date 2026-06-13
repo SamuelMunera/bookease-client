@@ -37,7 +37,7 @@ function excluded(planId) {
 }
 
 // Rows shown in the compact "key differences" matrix.
-export const COMPARE_FEATURE_KEYS = ['linkCode', 'advancedAnalytics', 'prioritySupport', 'onboarding'];
+export const COMPARE_FEATURE_KEYS = ['linkCode', 'advancedAnalytics', 'prioritySupport'];
 
 // Shared marketing copy — identical across CO/US, only price changes.
 const PLAN_META = {

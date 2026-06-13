@@ -295,10 +295,10 @@ export default function PricingPage() {
       )}
 
       {/* ── Compare matrix ── */}
-      {!geoLoading && plans.length > 1 && (
+      {!geoLoading && plans.filter(p => !p.enterprise).length > 1 && (
         <div className="pricing2-section">
           <h2 className="pricing2-section-title">Las diferencias clave entre planes</h2>
-          <CompareMatrix plans={plans} />
+          <CompareMatrix plans={plans.filter(p => !p.enterprise)} />
         </div>
       )}
 
