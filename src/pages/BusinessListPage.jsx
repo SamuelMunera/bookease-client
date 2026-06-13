@@ -9,13 +9,8 @@ import api from '../api';
 /* ─── constants ─────────────────────────────────────────── */
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 
-// Build list of 30-min time slots 7:00 → 21:30
-const TIME_OPTIONS = [];
-for (let h = 7; h <= 21; h++) {
-  for (let m = 0; m < 60; m += 30) {
-    TIME_OPTIONS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-  }
-}
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
+const MINUTES_5 = Array.from({ length: 12 }, (_, i) => i * 5); // 0,5,...,55
 
 const WEEK_DAYS = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -45,6 +40,21 @@ function formatTimeLabel(t) {
   const period = hh >= 12 ? 'PM' : 'AM';
   const h12 = hh % 12 === 0 ? 12 : hh % 12;
   return `${h12}:${String(mm).padStart(2, '0')} ${period}`;
+}
+
+// "14:30" -> { hour12: 2, minute: 30, period: 'PM' }
+function splitTimeLabel(t) {
+  const parts = parseTimeParts(t);
+  if (!parts) return { hour12: null, minute: null, period: null };
+  const { h, m } = parts;
+  return { hour12: h % 12 === 0 ? 12 : h % 12, minute: m, period: h >= 12 ? 'PM' : 'AM' };
+}
+
+// (3, 30, 'PM') -> "15:30"
+function buildTime24(hour12, minute, period) {
+  let h = hour12 % 12;
+  if (period === 'PM') h += 12;
+  return `${String(h).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
 function ClockIcon({ h = 10, m = 10, size = 15 }) {
@@ -1036,28 +1046,72 @@ export default function BusinessListPage() {
           position: 'fixed', top: dropPos.time.top, left: dropPos.time.left, zIndex: 99999,
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 16, boxShadow: '0 8px 28px rgba(0,0,0,0.32)',
-          width: 232, padding: '14px 16px', maxHeight: 280, overflowY: 'auto', scrollbarWidth: 'thin',
+          width: 248, padding: '14px 16px', maxHeight: 360, overflowY: 'auto', scrollbarWidth: 'thin',
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-            {TIME_OPTIONS.map(t => {
-              const isSel = heroTime === t;
-              return (
-                <button key={t} type="button"
-                  onClick={() => { setHeroTime(t); setTimeOpen(false); }}
-                  aria-pressed={isSel}
-                  style={{
-                    padding: '7px 4px', border: 'none', borderRadius: 8,
-                    cursor: 'pointer', minHeight: 32,
-                    background: isSel ? 'var(--gold)' : 'none',
-                    color: isSel ? '#0A0808' : 'var(--text)',
-                    fontWeight: isSel ? 700 : 400, fontSize: 12, textAlign: 'center',
-                  }}
-                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-2)'; }}
-                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'none'; }}
-                >{formatTimeLabel(t)}</button>
-              );
-            })}
-          </div>
+          {(() => {
+            const { hour12, minute, period } = splitTimeLabel(heroTime);
+            const curHour = hour12 ?? 12;
+            const curMinute = minute ?? 0;
+            const curPeriod = period ?? 'AM';
+            const pillStyle = (isSel) => ({
+              padding: '7px 0', border: 'none', borderRadius: 8,
+              cursor: 'pointer', minHeight: 32,
+              background: isSel ? 'var(--gold)' : 'none',
+              color: isSel ? '#0A0808' : 'var(--text)',
+              fontWeight: isSel ? 700 : 400, fontSize: 13, textAlign: 'center',
+            });
+            const hoverHandlers = (isSel) => ({
+              onMouseEnter: e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-2)'; },
+              onMouseLeave: e => { if (!isSel) e.currentTarget.style.background = 'none'; },
+            });
+            return (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Hora</span>
+                  <div style={{ display: 'flex', borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                    {['AM', 'PM'].map(p => (
+                      <button key={p} type="button"
+                        onClick={() => setHeroTime(buildTime24(curHour, curMinute, p))}
+                        aria-pressed={curPeriod === p}
+                        style={{
+                          padding: '4px 10px', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                          background: curPeriod === p ? 'var(--gold)' : 'none',
+                          color: curPeriod === p ? '#0A0808' : 'var(--text-muted)',
+                        }}
+                      >{p}</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 14 }}>
+                  {HOURS_12.map(h => {
+                    const isSel = hour12 === h;
+                    return (
+                      <button key={h} type="button"
+                        onClick={() => setHeroTime(buildTime24(h, curMinute, curPeriod))}
+                        aria-pressed={isSel}
+                        style={pillStyle(isSel)}
+                        {...hoverHandlers(isSel)}
+                      >{h}</button>
+                    );
+                  })}
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 8 }}>Minutos</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                  {MINUTES_5.map(m => {
+                    const isSel = minute === m;
+                    return (
+                      <button key={m} type="button"
+                        onClick={() => setHeroTime(buildTime24(curHour, m, curPeriod))}
+                        aria-pressed={isSel}
+                        style={pillStyle(isSel)}
+                        {...hoverHandlers(isSel)}
+                      >{String(m).padStart(2, '0')}</button>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>,
         document.body
       )}
