@@ -135,7 +135,7 @@ export default function HowItWorksPage() {
         <p className="section-label" style={{ justifyContent: 'center' }}>Guía rápida</p>
         <h1 className="page-title" style={{ marginBottom: 'var(--sp-3)' }}>¿Cómo funciona?</h1>
         <p className="page-subtitle" style={{ maxWidth: 520, margin: '0 auto' }}>
-          Bookease conecta clientes con los mejores profesionales en segundos.
+          Slotly conecta clientes con los mejores profesionales en segundos.
           Reserva sin llamadas, sin esperas.
         </p>
       </div>

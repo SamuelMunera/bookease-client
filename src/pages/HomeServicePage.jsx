@@ -126,7 +126,7 @@ export default function HomeServicePage() {
             </svg>
           </div>
           <div>
-            <p className="section-label">Bookease</p>
+            <p className="section-label">Slotly</p>
             <h1 className="page-title" style={{ margin:0 }}>Servicio <em>a domicilio</em></h1>
           </div>
         </div>

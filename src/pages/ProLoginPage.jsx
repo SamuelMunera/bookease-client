@@ -37,7 +37,7 @@ export default function ProLoginPage() {
       {/* Brand panel */}
       <div className="auth-panel-brand">
         <div className="auth-panel-brand-inner">
-          <div className="auth-brand-logo">Book<span>ease</span></div>
+          <div className="auth-brand-logo">Slot<span>ly</span></div>
           <p className="auth-brand-tagline" style={{ marginTop: 'var(--sp-4)' }}>
             Panel <em>profesional</em>
           </p>

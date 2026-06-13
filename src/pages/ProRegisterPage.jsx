@@ -155,7 +155,7 @@ export default function ProRegisterPage() {
       {/* Brand panel */}
       <div className="auth-panel-brand">
         <div className="auth-panel-brand-inner">
-          <div className="auth-brand-logo">Book<span>ease</span></div>
+          <div className="auth-brand-logo">Slot<span>ly</span></div>
           <p className="auth-brand-tagline" style={{ marginTop: 'var(--sp-4)' }}>
             Únete como <em>profesional</em>
           </p>

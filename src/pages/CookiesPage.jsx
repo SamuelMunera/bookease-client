@@ -15,13 +15,13 @@ export default function CookiesPage() {
 
         <section className="legal-section">
           <p className="legal-intro">
-            Esta página explica qué tecnologías de almacenamiento local utiliza Bookease, para qué sirven y cómo puedes gestionarlas.
+            Esta página explica qué tecnologías de almacenamiento local utiliza Slotly, para qué sirven y cómo puedes gestionarlas.
           </p>
         </section>
 
         <section className="legal-section">
           <h2>1. Cookies y almacenamiento local</h2>
-          <p>Bookease utiliza principalmente <strong>localStorage</strong> del navegador —una tecnología similar a las cookies— para guardar preferencias de sesión y configuración de usuario directamente en tu dispositivo. No enviamos esos datos a terceros salvo lo estrictamente necesario para el funcionamiento del servicio.</p>
+          <p>Slotly utiliza principalmente <strong>localStorage</strong> del navegador —una tecnología similar a las cookies— para guardar preferencias de sesión y configuración de usuario directamente en tu dispositivo. No enviamos esos datos a terceros salvo lo estrictamente necesario para el funcionamiento del servicio.</p>
         </section>
 
         <section className="legal-section">
@@ -64,7 +64,7 @@ export default function CookiesPage() {
 
         <section className="legal-section">
           <h2>3. Sin cookies de rastreo ni publicidad</h2>
-          <p>Bookease no utiliza cookies de rastreo publicitario, perfilado de usuarios ni redes de retargeting. No compartimos datos de navegación con plataformas publicitarias.</p>
+          <p>Slotly no utiliza cookies de rastreo publicitario, perfilado de usuarios ni redes de retargeting. No compartimos datos de navegación con plataformas publicitarias.</p>
           <p>Actualmente no usamos herramientas de analítica de terceros (como Google Analytics). Si en el futuro lo hacemos, actualizaremos esta página y te informaremos.</p>
         </section>
 
@@ -97,7 +97,7 @@ export default function CookiesPage() {
 
         <section className="legal-section">
           <h2>6. Contacto</h2>
-          <p>Para dudas sobre el uso de cookies o almacenamiento local escríbenos a <strong>privacidad@bookease.app</strong>.</p>
+          <p>Para dudas sobre el uso de cookies o almacenamiento local escríbenos a <strong>privacidad@slotly.app</strong>.</p>
         </section>
 
         <div className="legal-footer-nav">

@@ -534,7 +534,7 @@ export default function BusinessListPage() {
       {/* ── Promo bar ── */}
       <div className="promo-bar">
         <span className="promo-bar-dot" />
-        Nuevo en Bookease: confirmación instantánea disponible en negocios selectos
+        Nuevo en Slotly: confirmación instantánea disponible en negocios selectos
         <span className="promo-bar-dot" />
       </div>
 
@@ -800,7 +800,7 @@ export default function BusinessListPage() {
       {newestBusinesses.length > 0 && (
         <HorizontalSection
           title="Recién <em>llegados</em>"
-          eyebrow="Nuevos en Bookease"
+          eyebrow="Nuevos en Slotly"
           items={newestBusinesses}
           badge={(b) => {
             const days = Math.floor((Date.now() - new Date(b.createdAt)) / 86400000);

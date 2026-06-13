@@ -52,7 +52,7 @@ function PlanCard({ plan }) {
       <div className="pricing-cta">
         {plan.enterprise ? (
           <a
-            href="mailto:hola@bookease.app?subject=Plan Empresarial"
+            href="mailto:hola@slotly.app?subject=Plan Empresarial"
             className="btn btn-secondary"
             style={{ width: '100%', justifyContent: 'center' }}
           >

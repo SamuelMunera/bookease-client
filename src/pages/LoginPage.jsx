@@ -42,7 +42,7 @@ export default function LoginPage() {
       <div className="auth-panel-brand">
         <div className="auth-panel-brand-inner">
           <div className="auth-brand-logo">
-            Book<span>ease</span>
+            Slot<span>ly</span>
           </div>
 
           <p className="auth-brand-tagline">

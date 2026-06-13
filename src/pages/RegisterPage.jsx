@@ -51,7 +51,7 @@ export default function RegisterPage() {
       <div className="auth-panel-brand">
         <div className="auth-panel-brand-inner">
           <div className="auth-brand-logo">
-            Book<span>ease</span>
+            Slot<span>ly</span>
           </div>
 
           <p className="auth-brand-tagline">
@@ -91,7 +91,7 @@ export default function RegisterPage() {
       <div className="auth-panel-form">
         <div className="auth-form-inner">
           <h1 className="auth-form-title">Crear cuenta</h1>
-          <p className="auth-form-sub">Únete a Bookease en segundos</p>
+          <p className="auth-form-sub">Únete a Slotly en segundos</p>
 
           <form className="auth-form-fields" onSubmit={handleSubmit}>
             <div className="form-group">

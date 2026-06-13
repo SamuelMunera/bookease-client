@@ -55,7 +55,7 @@ export default function BusinessesPage() {
     if (!q) { setUserLocation(null); setLocationError(''); const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p); return; }
     setLocationLoading(true); setLocationError('');
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers: { 'User-Agent': 'Bookease/1.0' } });
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers: { 'User-Agent': 'Slotly/1.0'} });
       const data = await res.json();
       if (data.length > 0) {
         setUserLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name?.split(',')[0] || q });
@@ -78,7 +78,7 @@ export default function BusinessesPage() {
         const { latitude: lat, longitude: lng } = pos.coords;
         let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers: { 'User-Agent': 'Bookease/1.0' } });
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers: { 'User-Agent': 'Slotly/1.0'} });
           const d = await res.json();
           label = d.address?.city || d.address?.town || d.address?.village || d.address?.suburb || d.display_name?.split(',')[0] || label;
         } catch {}

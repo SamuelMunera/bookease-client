@@ -89,7 +89,7 @@ export default function RegisterBusinessPage() {
       {/* ── Brand panel ── */}
       <div className="auth-panel-brand" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div className="auth-panel-brand-inner">
-          <div className="auth-brand-logo">Book<span>ease</span></div>
+          <div className="auth-brand-logo">Slot<span>ly</span></div>
           <p className="auth-brand-tagline" style={{ marginTop: 'var(--sp-4)' }}>Tu negocio, <em>digitalizado</em></p>
           <p className="auth-brand-sub">
             Configura tu negocio en menos de 2 minutos y empieza a recibir reservas hoy mismo.

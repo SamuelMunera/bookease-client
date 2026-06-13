@@ -117,7 +117,7 @@ export default function Layout() {
               <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
             </svg>
           </span>
-          Book<span className="nav-brand-accent">ease</span>
+          Slot<span className="nav-brand-accent">ly</span>
         </Link>
 
         {/* Center links */}
@@ -358,7 +358,7 @@ export default function Layout() {
                   <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
                 </svg>
               </span>
-              Book<span>ease</span>
+              Slot<span>ly</span>
             </Link>
             <p className="footer-brand-desc">
               La plataforma de reservas para barberías, spas y salones de belleza. Conectamos clientes con los mejores profesionales.
@@ -448,7 +448,7 @@ export default function Layout() {
         {/* ── Bottom bar ── */}
         <div className="footer-bottom">
           <p className="footer-copy">
-            © {new Date().getFullYear()} Bookease · Todos los derechos reservados
+            © {new Date().getFullYear()} Slotly · Todos los derechos reservados
           </p>
           <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-4)' }}>
             <button

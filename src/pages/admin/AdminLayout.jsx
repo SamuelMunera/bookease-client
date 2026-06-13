@@ -107,7 +107,7 @@ export default function AdminLayout() {
             </svg>
           </button>
           <div style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--text)' }}>
-            <span style={{ color: 'var(--gold)' }}>Book</span>ease Admin
+            <span style={{ color: 'var(--gold)' }}>Slot</span>ly Admin
           </div>
         </div>
 

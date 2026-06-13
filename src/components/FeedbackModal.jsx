@@ -59,7 +59,7 @@ export default function FeedbackModal({ onClose }) {
               ¡Gracias por tu feedback!
             </h3>
             <p style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)', marginBottom:'var(--sp-6)' }}>
-              Lo revisaremos pronto para mejorar Bookease.
+              Lo revisaremos pronto para mejorar Slotly.
             </p>
             <button className="btn btn-primary" onClick={onClose} style={{ height:44 }}>
               Cerrar
@@ -73,7 +73,7 @@ export default function FeedbackModal({ onClose }) {
                   Ayúdanos a mejorar
                 </h3>
                 <p style={{ color:'var(--text-muted)', fontSize:'var(--text-sm)', margin:'var(--sp-1) 0 0' }}>
-                  Tu opinión hace a Bookease mejor
+                  Tu opinión hace a Slotly mejor
                 </p>
               </div>
               <button

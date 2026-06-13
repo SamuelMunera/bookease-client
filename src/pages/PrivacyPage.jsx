@@ -15,13 +15,13 @@ export default function PrivacyPage() {
 
         <section className="legal-section">
           <p className="legal-intro">
-            En Bookease nos tomamos en serio la privacidad de las personas que usan nuestra plataforma. Esta política explica qué datos recopilamos, para qué los usamos y cómo los protegemos.
+            En Slotly nos tomamos en serio la privacidad de las personas que usan nuestra plataforma. Esta política explica qué datos recopilamos, para qué los usamos y cómo los protegemos.
           </p>
         </section>
 
         <section className="legal-section">
           <h2>1. Responsable del tratamiento</h2>
-          <p>El responsable del tratamiento de los datos es <strong>Bookease</strong>. Para cualquier consulta relacionada con privacidad puedes contactarnos en <strong>privacidad@bookease.app</strong>.</p>
+          <p>El responsable del tratamiento de los datos es <strong>Slotly</strong>. Para cualquier consulta relacionada con privacidad puedes contactarnos en <strong>privacidad@slotly.app</strong>.</p>
         </section>
 
         <section className="legal-section">
@@ -136,7 +136,7 @@ export default function PrivacyPage() {
 
         <section className="legal-section">
           <h2>7. Tus derechos</h2>
-          <p>Puedes ejercer en cualquier momento los siguientes derechos escribiendo a <strong>privacidad@bookease.app</strong>:</p>
+          <p>Puedes ejercer en cualquier momento los siguientes derechos escribiendo a <strong>privacidad@slotly.app</strong>:</p>
           <div className="legal-rights-grid">
             {[
               { title: 'Acceso', desc: 'Conocer qué datos tuyos tenemos.' },
