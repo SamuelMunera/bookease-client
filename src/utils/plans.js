@@ -5,15 +5,39 @@ export const PLAN_LIMITS = {
   enterprise: Infinity,
 };
 
-const BASE_FEATURES = [
-  'Reservas online ilimitadas',
-  'Agenda digital',
-  'Notificaciones por email',
-  'Panel de negocio',
-  'Código de vinculación',
-  'Analytics avanzados',
-  'Servicios a domicilio',
-];
+// Single source of truth for every feature that can appear in a plan.
+export const FEATURES = {
+  bookings:          'Reservas online ilimitadas',
+  agenda:            'Agenda digital',
+  notifications:     'Notificaciones por email',
+  panel:             'Panel de negocio',
+  homeService:       'Servicios a domicilio',
+  prioritySupport:   'Soporte prioritario',
+  linkCode:          'Código de vinculación',
+  advancedAnalytics: 'Analíticas avanzadas',
+  onboarding:        'Onboarding personalizado',
+};
+
+// Which features each plan unlocks. Soporte prioritario is included in
+// every plan on purpose — it's a baseline, not a tier differentiator.
+const PLAN_FEATURE_KEYS = {
+  solo:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport'],
+  team:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode'],
+  studio:     ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode', 'advancedAnalytics'],
+  enterprise: Object.keys(FEATURES),
+};
+
+function included(planId) {
+  return PLAN_FEATURE_KEYS[planId].map(k => FEATURES[k]);
+}
+
+function excluded(planId) {
+  const keys = PLAN_FEATURE_KEYS[planId];
+  return Object.keys(FEATURES).filter(k => !keys.includes(k)).map(k => FEATURES[k]);
+}
+
+// Rows shown in the compact "key differences" matrix.
+export const COMPARE_FEATURE_KEYS = ['linkCode', 'advancedAnalytics', 'prioritySupport', 'onboarding'];
 
 // Shared marketing copy — identical across CO/US, only price changes.
 const PLAN_META = {
@@ -26,88 +50,71 @@ const PLAN_META = {
   },
   team: {
     audience: 'Negocios con equipo pequeño',
-    mainBenefit: 'Organiza hasta 3 profesionales en una sola agenda',
+    mainBenefit: 'Vincula y organiza hasta 3 profesionales en una sola agenda',
     idealFor: 'Tienes un local con un par de colegas y quieres centralizar la agenda.',
     ctaLabel: 'Crear cuenta de negocio',
     ctaTo: '/register',
   },
   studio: {
     audience: 'Negocios en crecimiento',
-    mainBenefit: 'El plan más completo para escalar tu negocio',
-    idealFor: 'Tu equipo crece y necesitas más capacidad y analítica para decidir mejor.',
+    mainBenefit: 'Hasta 5 profesionales + analíticas para tomar mejores decisiones',
+    idealFor: 'Tu equipo crece y necesitas datos para decidir qué funciona.',
     ctaLabel: 'Crear cuenta de negocio',
     ctaTo: '/register',
   },
   enterprise: {
     audience: 'Cadenas y franquicias',
-    mainBenefit: 'Soporte dedicado y onboarding a tu medida',
+    mainBenefit: 'Todo lo del plan Estudio + onboarding a tu medida',
     idealFor: 'Operas 6+ profesionales o varias sedes y necesitas un plan a medida.',
     ctaLabel: 'Hablar con ventas',
     ctaTo: null,
   },
 };
 
+function buildPlans(priceMap, currency) {
+  return [
+    {
+      id: 'solo', name: 'Independiente', tagline: 'Para profesionales que trabajan solos',
+      professionals: 1, price: priceMap.solo, currency, priceLabel: priceMap.soloLabel, interval: 'mes',
+      enterprise: false, forType: 'professional', popular: false,
+      features: included('solo'), excludedFeatures: excluded('solo'),
+      ...PLAN_META.solo,
+    },
+    {
+      id: 'team', name: 'Equipo', tagline: 'Para negocios con pequeño equipo',
+      professionals: 3, price: priceMap.team, currency, priceLabel: priceMap.teamLabel, interval: 'mes',
+      enterprise: false, forType: 'business', popular: false,
+      features: included('team'), excludedFeatures: excluded('team'),
+      ...PLAN_META.team,
+    },
+    {
+      id: 'studio', name: 'Estudio', tagline: 'Para negocios en crecimiento',
+      professionals: 5, price: priceMap.studio, currency, priceLabel: priceMap.studioLabel, interval: 'mes',
+      enterprise: false, forType: 'business', popular: true,
+      features: included('studio'), excludedFeatures: excluded('studio'),
+      ...PLAN_META.studio,
+    },
+    {
+      id: 'enterprise', name: 'Empresarial', tagline: 'Para cadenas y equipos grandes',
+      professionals: null, price: null, currency, priceLabel: 'A convenir', interval: null,
+      enterprise: true, forType: 'business', popular: false,
+      features: included('enterprise'), excludedFeatures: excluded('enterprise'),
+      ...PLAN_META.enterprise,
+    },
+  ];
+}
+
 export const PLANS_BY_COUNTRY = {
-  CO: [
-    {
-      id: 'solo', name: 'Independiente', tagline: 'Para profesionales que trabajan solos',
-      professionals: 1, price: 49000, currency: 'COP', priceLabel: '$49.000', interval: 'mes',
-      enterprise: false, forType: 'professional', popular: false,
-      features: ['1 profesional', ...BASE_FEATURES],
-      ...PLAN_META.solo,
-    },
-    {
-      id: 'team', name: 'Equipo', tagline: 'Para negocios con pequeño equipo',
-      professionals: 3, price: 89000, currency: 'COP', priceLabel: '$89.000', interval: 'mes',
-      enterprise: false, forType: 'business', popular: false,
-      features: ['Hasta 3 profesionales', ...BASE_FEATURES],
-      ...PLAN_META.team,
-    },
-    {
-      id: 'studio', name: 'Estudio', tagline: 'Para negocios en crecimiento',
-      professionals: 5, price: 149000, currency: 'COP', priceLabel: '$149.000', interval: 'mes',
-      enterprise: false, forType: 'business', popular: true,
-      features: ['Hasta 5 profesionales', ...BASE_FEATURES],
-      ...PLAN_META.studio,
-    },
-    {
-      id: 'enterprise', name: 'Empresarial', tagline: 'Para cadenas y equipos grandes',
-      professionals: null, price: null, currency: 'COP', priceLabel: 'A convenir', interval: null,
-      enterprise: true, forType: 'business', popular: false,
-      features: ['6 o más profesionales', ...BASE_FEATURES, 'Soporte prioritario', 'Onboarding personalizado'],
-      ...PLAN_META.enterprise,
-    },
-  ],
-  US: [
-    {
-      id: 'solo', name: 'Independiente', tagline: 'Para profesionales que trabajan solos',
-      professionals: 1, price: 14, currency: 'USD', priceLabel: '$14', interval: 'mes',
-      enterprise: false, forType: 'professional', popular: false,
-      features: ['1 profesional', ...BASE_FEATURES],
-      ...PLAN_META.solo,
-    },
-    {
-      id: 'team', name: 'Equipo', tagline: 'Para negocios con pequeño equipo',
-      professionals: 3, price: 29, currency: 'USD', priceLabel: '$29', interval: 'mes',
-      enterprise: false, forType: 'business', popular: false,
-      features: ['Hasta 3 profesionales', ...BASE_FEATURES],
-      ...PLAN_META.team,
-    },
-    {
-      id: 'studio', name: 'Estudio', tagline: 'Para negocios en crecimiento',
-      professionals: 5, price: 49, currency: 'USD', priceLabel: '$49', interval: 'mes',
-      enterprise: false, forType: 'business', popular: true,
-      features: ['Hasta 5 profesionales', ...BASE_FEATURES],
-      ...PLAN_META.studio,
-    },
-    {
-      id: 'enterprise', name: 'Empresarial', tagline: 'Para cadenas y equipos grandes',
-      professionals: null, price: null, currency: 'USD', priceLabel: 'A convenir', interval: null,
-      enterprise: true, forType: 'business', popular: false,
-      features: ['6 o más profesionales', ...BASE_FEATURES, 'Soporte prioritario', 'Onboarding personalizado'],
-      ...PLAN_META.enterprise,
-    },
-  ],
+  CO: buildPlans({
+    solo: 30000,  soloLabel: '$30.000',
+    team: 45000,  teamLabel: '$45.000',
+    studio: 60000, studioLabel: '$60.000',
+  }, 'COP'),
+  US: buildPlans({
+    solo: 10, soloLabel: '$10',
+    team: 15, teamLabel: '$15',
+    studio: 20, studioLabel: '$20',
+  }, 'USD'),
 };
 
 export function getPlansForCountry(country) {
