@@ -560,7 +560,7 @@ function BookingBar({ service, error, onBook, ready }) {
         </div>
         <div className="booking-bar-right">
           {service && <p className="booking-bar-price">${Number(service.price).toLocaleString('es-CO')}</p>}
-          <button className="btn btn-primary booking-bar-btn" onClick={onBook}>
+          <button className="btn btn-primary booking-bar-btn" onClick={onBook} style={{ '--gold': '#D4A853', '--gold-dark': '#A8833F', '--gold-glow': 'rgba(212,168,83,0.30)' }}>
             Ver horarios
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
@@ -812,7 +812,7 @@ export default function BusinessDetailPage() {
               )}
             </div>
             {error && <p className="error-msg" style={{ marginBottom:0, flex:'100%', order:-1 }}>{error}</p>}
-            <button className="btn btn-primary" onClick={handleBook} style={{ flexShrink:0, minWidth:180 }}>
+            <button className="btn btn-primary" onClick={handleBook} style={{ flexShrink:0, minWidth:180, '--gold': '#D4A853', '--gold-dark': '#A8833F', '--gold-glow': 'rgba(212,168,83,0.30)' }}>
               Ver disponibilidad
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
