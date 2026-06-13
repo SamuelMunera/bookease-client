@@ -39,6 +39,14 @@ function parseTimeParts(value) {
   return { h, m };
 }
 
+// "14:30" -> "2:30 PM"
+function formatTimeLabel(t) {
+  const [hh, mm] = t.split(':').map(Number);
+  const period = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${String(mm).padStart(2, '0')} ${period}`;
+}
+
 function ClockIcon({ h = 10, m = 10, size = 15 }) {
   // Defensive guard: never let NaN/undefined reach SVG coordinate math.
   const safeH = Number.isFinite(h) ? h : 10;
@@ -442,7 +450,6 @@ export default function BusinessListPage() {
   const [category, setCategory]       = useState('');
   const [heroCategory, setHeroCategory] = useState('');
   const [heroTime, setHeroTime]       = useState('');
-  const [ampm, setAmpm]               = useState('AM');
   const [heroDate, setHeroDate]       = useState('');
   const [searchTime, setSearchTime]   = useState('');
   const [catOpen, setCatOpen]         = useState(false);
@@ -455,7 +462,7 @@ export default function BusinessListPage() {
   const dateRef                       = useRef(null);
   const timeRef                       = useRef(null);
 
-  function closeAll() { setCatOpen(false); setDateOpen(false); }
+  function closeAll() { setCatOpen(false); setDateOpen(false); setTimeOpen(false); }
 
   function openAt(key, ref, setter, closeSelf) {
     closeAll();
@@ -516,16 +523,7 @@ export default function BusinessListPage() {
     e.preventDefault();
     setCity(normalizeCity(cityInput));
     setCategory(heroCategory);
-    // Convert AM/PM to 24h for backend
-    let time24 = heroTime;
-    if (heroTime) {
-      const [h, m] = heroTime.split(':').map(Number);
-      let h24 = h;
-      if (ampm === 'PM' && h !== 12) h24 = h + 12;
-      if (ampm === 'AM' && h === 12) h24 = 0;
-      time24 = `${String(h24).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    }
-    setSearchTime(time24);
+    setSearchTime(heroTime);
     scrollToGrid();
   }
 
@@ -674,53 +672,24 @@ export default function BusinessListPage() {
 
             <div className="hero-search-divider" style={{ width: 1, height: 36, background: 'var(--border)', flexShrink: 0 }} />
 
-            {/* Sección 4: Hora — texto libre con validación HH:MM */}
-            <div className="hero-search-section" style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-                <ClockIcon h={parseTimeParts(heroTime)?.h ?? 10} m={parseTimeParts(heroTime)?.m ?? 10} />
-                <input
-                  type="text"
-                  placeholder="ej. 10:30"
-                  value={heroTime}
-                  maxLength={5}
-                  onChange={e => {
-                    let v = e.target.value.replace(/[^0-9:]/g, '');
-                    if (v.length === 2 && !v.includes(':')) v += ':';
-                    setHeroTime(v);
-                  }}
-                  onBlur={e => {
-                    const v = e.target.value.trim();
-                    if (!v) return;
-                    const match = v.match(/^(\d{1,2}):(\d{2})$/);
-                    if (!match) { setHeroTime(''); return; }
-                    const h = parseInt(match[1]), m = parseInt(match[2]);
-                    if (h > 23 || m > 59) { setHeroTime(''); return; }
-                    setHeroTime(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-                  }}
-                  style={{
-                    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
-                    fontSize: 'var(--text-sm)', fontWeight: 500,
-                    color: heroTime ? 'var(--text)' : 'var(--text-muted)',
-                    fontFamily: 'var(--font-body)',
-                  }}
-                />
-                {heroTime && (
-                  <button type="button" onClick={() => setHeroTime('')}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 14 }}>×</button>
-                )}
-                {/* AM / PM toggle */}
-                <div style={{ display: 'flex', borderRadius: 6, border: '1px solid var(--border)', overflow: 'hidden', flexShrink: 0 }}>
-                  {['AM','PM'].map(p => (
-                    <button key={p} type="button" onClick={() => setAmpm(p)} style={{
-                      padding: '2px 7px', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700,
-                      background: ampm === p ? 'var(--gold)' : 'transparent',
-                      color: ampm === p ? '#0A0808' : 'var(--text-muted)',
-                      transition: 'all .15s',
-                    }}>{p}</button>
-                  ))}
-                </div>
-              </div>
+            {/* Sección 4: Hora — dropdown con la misma estética que Categoría/Fecha */}
+            <div ref={timeRef} className="hero-search-section" style={{ flex: '1 1 0', minWidth: 0, position: 'relative' }}>
+              <button type="button" onClick={() => openAt('time', timeRef, setTimeOpen, timeOpen)} style={{
+                width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1,
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+              }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: heroTime ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                  <ClockIcon h={parseTimeParts(heroTime)?.h ?? 10} m={parseTimeParts(heroTime)?.m ?? 10} />
+                  <span style={{ flex: 1 }}>{heroTime ? formatTimeLabel(heroTime) : 'Cualquier hora'}</span>
+                  {heroTime
+                    ? <button type="button" onClick={e => { e.stopPropagation(); setHeroTime(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)', padding: 0, lineHeight: 1, fontSize: 15, flexShrink: 0 }}>×</button>
+                    : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity: .5, transform: timeOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}><path d="M6 9l6 6 6-6"/></svg>
+                  }
+                </span>
+              </button>
+
+              {/* time dropdown rendered via portal below */}
             </div>
 
             {/* Botón buscar */}
@@ -742,7 +711,7 @@ export default function BusinessListPage() {
 
           {/* Search hint */}
           <p style={{ textAlign: 'center', marginTop: 'var(--sp-3)', fontSize: 11, color: 'var(--text-subtle)', letterSpacing: '.02em' }}>
-            {[heroCategory && categories.find(c => c.slug === heroCategory)?.name, cityInput, heroTime].filter(Boolean).join(' · ') || 'Barberías · Spas · Salones en tu ciudad'}
+            {[heroCategory && categories.find(c => c.slug === heroCategory)?.name, cityInput, heroTime && formatTimeLabel(heroTime)].filter(Boolean).join(' · ') || 'Barberías · Spas · Salones en tu ciudad'}
           </p>
 
           {/* Animated stats */}
@@ -968,7 +937,7 @@ export default function BusinessListPage() {
       </div>
 
       {/* ── Overlay: closes any open dropdown on outside click ── */}
-      {(catOpen || dateOpen) && createPortal(
+      {(catOpen || dateOpen || timeOpen) && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 99997 }} onClick={closeAll} />,
         document.body
       )}
@@ -1056,26 +1025,29 @@ export default function BusinessListPage() {
         <div style={{
           position: 'fixed', top: dropPos.time.top, left: dropPos.time.left, zIndex: 99999,
           background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 14, boxShadow: '0 8px 28px rgba(0,0,0,0.32)',
-          width: 140, maxHeight: 220, overflowY: 'auto', scrollbarWidth: 'thin',
+          borderRadius: 16, boxShadow: '0 8px 28px rgba(0,0,0,0.32)',
+          width: 232, padding: '14px 16px', maxHeight: 280, overflowY: 'auto', scrollbarWidth: 'thin',
         }}>
-          {TIME_OPTIONS.map(t => (
-            <button key={t} type="button"
-              onClick={() => { setHeroTime(t); setTimeOpen(false); }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 14px', background: heroTime === t ? 'rgba(212,168,83,0.1)' : 'none',
-                border: 'none', cursor: 'pointer', textAlign: 'left',
-                color: heroTime === t ? 'var(--gold)' : 'var(--text)',
-                fontWeight: heroTime === t ? 700 : 400, fontSize: 13,
-              }}
-              onMouseEnter={e => { if (heroTime !== t) e.currentTarget.style.background = 'var(--surface-2)'; }}
-              onMouseLeave={e => { if (heroTime !== t) e.currentTarget.style.background = 'none'; }}
-            >
-              <ClockIcon h={parseInt(t.split(':')[0])} m={parseInt(t.split(':')[1])} size={12} />
-              {t}
-            </button>
-          ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            {TIME_OPTIONS.map(t => {
+              const isSel = heroTime === t;
+              return (
+                <button key={t} type="button"
+                  onClick={() => { setHeroTime(t); setTimeOpen(false); }}
+                  aria-pressed={isSel}
+                  style={{
+                    padding: '7px 4px', border: 'none', borderRadius: 8,
+                    cursor: 'pointer', minHeight: 32,
+                    background: isSel ? 'var(--gold)' : 'none',
+                    color: isSel ? '#0A0808' : 'var(--text)',
+                    fontWeight: isSel ? 700 : 400, fontSize: 12, textAlign: 'center',
+                  }}
+                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--surface-2)'; }}
+                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'none'; }}
+                >{formatTimeLabel(t)}</button>
+              );
+            })}
+          </div>
         </div>,
         document.body
       )}
