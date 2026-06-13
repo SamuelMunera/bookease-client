@@ -193,6 +193,14 @@ const api = {
   adminCreateCategory: (body) => request('/admin/categories', { method: 'POST', body: JSON.stringify(body) }),
   adminDeleteCategory: (id)   => request(`/admin/categories/${id}`, { method: 'DELETE' }),
 
+  // Admin: referral codes
+  adminPromoters:        () => request('/admin/promoters'),
+  adminCreatePromoter:   (body) => request('/admin/promoters', { method: 'POST', body: JSON.stringify(body) }),
+  adminSetPromoterStatus: (id, status) => request(`/admin/promoters/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  adminCourtesyCodes:       () => request('/admin/courtesy-codes'),
+  adminCreateCourtesyCode:  () => request('/admin/courtesy-codes', { method: 'POST' }),
+  adminSetCourtesyCodeStatus: (id, status) => request(`/admin/courtesy-codes/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
   // Categories
   getCategories: () => request('/categories'),
 

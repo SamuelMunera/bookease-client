@@ -4130,6 +4130,13 @@ html { scroll-padding-top: 68px; }
   }
 }
 
+/* Admin referral codes: stack register form + list on small/medium screens */
+@media (max-width: 960px) {
+  .admin-referrals-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════
    DARK MODE — Premium refinements (default theme)
    ══════════════════════════════════════════════════════════ */

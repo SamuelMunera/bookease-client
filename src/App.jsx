@@ -35,6 +35,7 @@ import AdminFinancesPage from './pages/admin/AdminFinancesPage';
 import AdminBusinessesPage from './pages/admin/AdminBusinessesPage';
 import AdminProfessionalsPage from './pages/admin/AdminProfessionalsPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminReferralCodesPage from './pages/admin/AdminReferralCodesPage';
 import VerifyBusinessEmailPage from './pages/VerifyBusinessEmailPage';
 import PricingPage from './pages/PricingPage';
 
@@ -100,6 +101,7 @@ export default function App() {
             <Route path="businesses" element={<AdminBusinessesPage />} />
             <Route path="professionals" element={<AdminProfessionalsPage />} />
             <Route path="categories" element={<AdminCategoriesPage />} />
+            <Route path="referral-codes" element={<AdminReferralCodesPage />} />
             <Route path="finances" element={<AdminFinancesPage />} />
           </Route>
         </Routes>

@@ -7,6 +7,7 @@ const NAV = [
   { to: 'businesses',   label: 'Negocios',       icon: '🏢' },
   { to: 'professionals',label: 'Profesionales',  icon: '👤' },
   { to: 'categories',   label: 'Categorías',     icon: '🏷️' },
+  { to: 'referral-codes', label: 'Códigos de referidos', icon: '🎁' },
   { to: 'finances',     label: 'Finanzas',       icon: '💰' },
 ];
 
