@@ -24,6 +24,9 @@ async function request(path, options = {}) {
   if (!res.ok) {
     const err = new Error(data.error || 'Request failed');
     if (data.code) err.code = data.code;
+    else if (res.status === 401) err.code = 'AUTH_REQUIRED';
+    else if (res.status === 403) err.code = 'AUTH_FORBIDDEN';
+    err.status = res.status;
     throw err;
   }
   return data;

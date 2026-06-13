@@ -19,10 +19,16 @@ export default function RegisterBusinessPage() {
   const cfg = COUNTRY_CONFIG[form.country] || COUNTRY_CONFIG.CO;
 
   useEffect(() => {
-    // If user already has a business, send them to dashboard directly
+    // If user already has a business, send them to dashboard directly.
+    // A 404 here is the expected/normal state for a brand-new owner
+    // (no business created yet) — only surface unexpected auth errors.
     api.getMyBusiness().then(b => {
       if (b) navigate('/dashboard', { replace: true });
-    }).catch(() => {});
+    }).catch(err => {
+      if (err.code === 'AUTH_REQUIRED' || err.code === 'AUTH_FORBIDDEN') {
+        console.warn('[register-business] sesión inválida al consultar /businesses/me:', err.code);
+      }
+    });
     api.getCategories().then(cats => {
       setCategories(cats);
       if (cats.length && !form.category) setForm(p => ({ ...p, category: cats[0].slug }));
@@ -78,7 +84,13 @@ export default function RegisterBusinessPage() {
       });
       navigate('/pricing');
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'AUTH_FORBIDDEN') {
+        setError('Tu sesión no tiene permisos para crear un negocio. Cierra sesión y vuelve a iniciar sesión como propietario de negocio.');
+      } else if (err.code === 'AUTH_REQUIRED') {
+        setError('Tu sesión expiró. Inicia sesión de nuevo para continuar.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
