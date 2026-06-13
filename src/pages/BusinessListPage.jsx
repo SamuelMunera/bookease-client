@@ -464,6 +464,16 @@ export default function BusinessListPage() {
 
   function closeAll() { setCatOpen(false); setDateOpen(false); setTimeOpen(false); }
 
+  // Dropdowns are positioned via getBoundingClientRect() at open-time and rendered
+  // with position: fixed — they don't track the trigger while the page scrolls,
+  // so close them on scroll instead of letting them drift away from their anchor.
+  useEffect(() => {
+    if (!catOpen && !dateOpen && !timeOpen) return;
+    const onScroll = () => closeAll();
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    return () => window.removeEventListener('scroll', onScroll, { capture: true });
+  }, [catOpen, dateOpen, timeOpen]);
+
   function openAt(key, ref, setter, closeSelf) {
     closeAll();
     if (closeSelf) return; // toggle off
