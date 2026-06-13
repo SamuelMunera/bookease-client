@@ -41,50 +41,6 @@ const CAT_META = {
   },
 };
 
-/* ── Mock data (fallback) ─────────────────────────────────── */
-const MOCK = [
-  {
-    id: 'mock-1',
-    name: 'Scissor & Co.',
-    category: 'BARBERSHOP',
-    city: 'Bogotá',
-    area: 'Chapinero',
-    rating: 4.9,
-    reviewCount: 214,
-    tags: ['Altamente valorado', 'Expertos en fades'],
-  },
-  {
-    id: 'mock-2',
-    name: 'Serene Spa Collective',
-    category: 'SPA',
-    city: 'Bogotá',
-    area: 'Zona Rosa',
-    rating: 4.8,
-    reviewCount: 97,
-    tags: ['Ambiente premium', 'Masajes express'],
-  },
-  {
-    id: 'mock-3',
-    name: 'Studio Maison',
-    category: 'SALON',
-    city: 'Medellín',
-    area: 'El Poblado',
-    rating: 4.7,
-    reviewCount: 183,
-    tags: ['Coloración experta', 'Cita rápida'],
-  },
-  {
-    id: 'mock-4',
-    name: 'The Craft Barber',
-    category: 'BARBERSHOP',
-    city: 'Cali',
-    area: 'Granada',
-    rating: 4.8,
-    reviewCount: 156,
-    tags: ['Sin espera', 'Barbas y fades'],
-  },
-];
-
 /* ── Inline SVG icons ─────────────────────────────────────── */
 function IconPin() {
   return (
@@ -203,16 +159,10 @@ export default function RecommendedBusinesses({ currentBusinessId, category, cit
         const filtered = (data || [])
           .filter((b) => b.id !== currentBusinessId)
           .slice(0, 4);
-
-        if (filtered.length >= 2) {
-          setRecs(filtered);
-        } else {
-          // Enrich mock data with real-looking IDs only if no live data
-          setRecs(MOCK.map((m) => ({ ...m, isMock: true })));
-        }
+        setRecs(filtered);
       })
       .catch(() => {
-        if (!cancelled) setRecs(MOCK.map((m) => ({ ...m, isMock: true })));
+        if (!cancelled) setRecs([]);
       });
     return () => { cancelled = true; };
   }, [currentBusinessId, category]);
