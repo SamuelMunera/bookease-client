@@ -257,6 +257,11 @@ const api = {
   getMySubscription: () => request('/subscriptions/business/me'),
   getProSubscription: () => request('/subscriptions/professional/me'),
 
+  // Payments (Wompi sandbox)
+  getWompiConfig: () => request('/payments/wompi/config'),
+  createWompiCheckout: (plan) => request('/payments/wompi/checkout', { method: 'POST', body: JSON.stringify({ plan }) }),
+  getWompiTransaction: (reference) => request(`/payments/wompi/transactions/${reference}`),
+
   // Reviews
   getBusinessReviews:       (id)       => request(`/businesses/${id}/reviews`),
   getBusinessStats:         (id)       => request(`/businesses/${id}/stats`),

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPlansForCountry, FEATURES, COMPARE_FEATURE_KEYS } from '../utils/plans';
 import { useAuth } from '../context/AuthContext';
 import { useCountry } from '../context/CountryContext';
 import useSEO from '../hooks/useSEO';
+import api from '../api';
 
 const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 United States' };
 
@@ -90,6 +92,67 @@ function planCta(plan, user) {
   );
 }
 
+// Redirects the browser to Wompi's sandbox Web Checkout via a hidden auto-submitted form.
+function redirectToWompiCheckout(checkout, redirectUrl) {
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = checkout.checkoutUrl;
+  form.style.display = 'none';
+
+  const fields = {
+    'public-key': checkout.publicKey,
+    'currency': checkout.currency,
+    'amount-in-cents': String(checkout.amountInCents),
+    'reference': checkout.reference,
+    'signature:integrity': checkout.signature,
+    'redirect-url': redirectUrl,
+  };
+
+  for (const [name, value] of Object.entries(fields)) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function WompiPayButton({ plan, user }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const eligible = !plan.enterprise && plan.price
+    && ((user?.role === 'BUSINESS_OWNER' && plan.forType === 'business')
+      || (user?.role === 'PROFESSIONAL' && plan.forType === 'professional'));
+
+  if (!eligible) return null;
+
+  async function handlePay() {
+    setError('');
+    setLoading(true);
+    try {
+      const checkout = await api.createWompiCheckout(plan.id);
+      const redirectPath = user.role === 'BUSINESS_OWNER' ? '/dashboard' : '/pro/dashboard';
+      redirectToWompiCheckout(checkout, `${window.location.origin}${redirectPath}`);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 'var(--sp-2)' }}>
+      <button type="button" className="btn btn-secondary btn-full" onClick={handlePay} disabled={loading}>
+        {loading ? 'Redirigiendo a Wompi…' : 'Pagar con Wompi (sandbox)'}
+      </button>
+      {error && <p className="error-msg" style={{ marginTop: 'var(--sp-2)' }}>{error}</p>}
+    </div>
+  );
+}
+
 function PlanCard({ plan, user }) {
   return (
     <div className={`pricing2-card${plan.popular ? ' pricing2-card--featured' : ''}`}>
@@ -134,6 +197,7 @@ function PlanCard({ plan, user }) {
 
       <div className="pricing2-cta">
         {planCta(plan, user)}
+        <WompiPayButton plan={plan} user={user} />
       </div>
     </div>
   );
