@@ -20,7 +20,7 @@ const FAQ_ITEMS = [
   },
   {
     q: '¿Qué diferencia a Equipo de Estudio?',
-    a: 'Equipo organiza hasta 3 profesionales y ya incluye código de vinculación. Estudio suma hasta 5 profesionales y añade analíticas avanzadas para medir el rendimiento de tu negocio.',
+    a: 'Ambos incluyen código de vinculación y analíticas avanzadas. La diferencia es la capacidad: Equipo organiza hasta 3 profesionales y Estudio hasta 6, ideal para negocios que siguen creciendo.',
   },
   {
     q: '¿Puedo cambiar de plan más adelante?',
@@ -53,7 +53,7 @@ function CrossIcon() {
 }
 
 function planLimitLabel(plan) {
-  if (!plan.professionals) return '6+ profesionales';
+  if (!plan.professionals) return '7+ profesionales';
   if (plan.professionals === 1) return '1 profesional';
   return `Hasta ${plan.professionals} profesionales`;
 }

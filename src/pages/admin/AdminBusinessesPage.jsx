@@ -5,8 +5,8 @@ import { PLAN_NAMES_ES, getPlanLimit } from '../../utils/plans';
 const CAT_EMOJI = { BARBERSHOP: '✂️', SPA: '💆', SALON: '💅' };
 const PLAN_OPTIONS = [
   { id: 'team',       label: 'Equipo (3)' },
-  { id: 'studio',     label: 'Estudio (5)' },
-  { id: 'enterprise', label: 'Empresarial (6+)' },
+  { id: 'studio',     label: 'Estudio (6)' },
+  { id: 'enterprise', label: 'Empresarial (7+)' },
 ];
 
 function PlanSelector({ businessId, currentPlan, professionalCount, onUpdated }) {

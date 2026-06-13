@@ -5,8 +5,8 @@ import { PLAN_NAMES_ES } from '../../utils/plans';
 const SOLO_PLAN_OPTIONS = [
   { id: 'solo',       label: 'Independiente (1)' },
   { id: 'team',       label: 'Equipo (3)' },
-  { id: 'studio',     label: 'Estudio (5)' },
-  { id: 'enterprise', label: 'Empresarial (6+)' },
+  { id: 'studio',     label: 'Estudio (6)' },
+  { id: 'enterprise', label: 'Empresarial (7+)' },
 ];
 
 function Avatar({ name }) {

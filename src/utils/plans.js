@@ -1,7 +1,7 @@
 export const PLAN_LIMITS = {
   solo:       1,
   team:       3,
-  studio:     5,
+  studio:     6,
   enterprise: Infinity,
 };
 
@@ -22,7 +22,7 @@ export const FEATURES = {
 // every plan on purpose — it's a baseline, not a tier differentiator.
 const PLAN_FEATURE_KEYS = {
   solo:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport'],
-  team:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode'],
+  team:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode', 'advancedAnalytics'],
   studio:     ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode', 'advancedAnalytics'],
   enterprise: Object.keys(FEATURES),
 };
@@ -57,7 +57,7 @@ const PLAN_META = {
   },
   studio: {
     audience: 'Negocios en crecimiento',
-    mainBenefit: 'Hasta 5 profesionales + analíticas para tomar mejores decisiones',
+    mainBenefit: 'Hasta 6 profesionales + analíticas para tomar mejores decisiones',
     idealFor: 'Tu equipo crece y necesitas datos para decidir qué funciona.',
     ctaLabel: 'Crear cuenta de negocio',
     ctaTo: '/register',
@@ -65,7 +65,7 @@ const PLAN_META = {
   enterprise: {
     audience: 'Cadenas y franquicias',
     mainBenefit: 'Todo lo del plan Estudio + onboarding a tu medida',
-    idealFor: 'Operas 6+ profesionales o varias sedes y necesitas un plan a medida.',
+    idealFor: 'Operas 7+ profesionales o varias sedes y necesitas un plan a medida.',
     ctaLabel: 'Hablar con ventas',
     ctaTo: null,
   },
@@ -89,7 +89,7 @@ function buildPlans(priceMap, currency) {
     },
     {
       id: 'studio', name: 'Estudio', tagline: 'Para negocios en crecimiento',
-      professionals: 5, price: priceMap.studio, currency, priceLabel: priceMap.studioLabel, interval: 'mes',
+      professionals: 6, price: priceMap.studio, currency, priceLabel: priceMap.studioLabel, interval: 'mes',
       enterprise: false, forType: 'business', popular: true,
       features: included('studio'), excludedFeatures: excluded('studio'),
       ...PLAN_META.studio,
