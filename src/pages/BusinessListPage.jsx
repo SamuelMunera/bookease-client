@@ -451,16 +451,22 @@ export default function BusinessListPage() {
   const [loading, setLoading]         = useState(false);
   const [apiError, setApiError]       = useState(false);
 
-  // animated counters
-  const c1 = useAnimatedCounter(2500);
-  const c2 = useAnimatedCounter(28);
-  const c3 = useAnimatedCounter(100);
-  const c4 = useAnimatedCounter(49);
+  // platform stats
+  const [platformStats, setPlatformStats] = useState({ businesses: 0, cities: 0, bookings: 0 });
+  useEffect(() => {
+    api.getPlatformStats()
+      .then(d => setPlatformStats(d))
+      .catch(() => {});
+  }, []);
+
+  const c1 = useAnimatedCounter(platformStats.businesses);
+  const c2 = useAnimatedCounter(platformStats.cities);
+  const c3 = useAnimatedCounter(platformStats.bookings);
 
   const HERO_STATS = [
-    { num: `${c1.toLocaleString()}+`, label: 'Negocios' },
-    { num: c2,                         label: 'Ciudades' },
-    { num: `${c3}K+`,                  label: 'Reservas' },
+    { num: c1 > 0 ? `${c1.toLocaleString()}+` : '—', label: 'Negocios' },
+    { num: c2 > 0 ? c2 : '—',                         label: 'Ciudades' },
+    { num: c3 > 0 ? `${c3.toLocaleString()}+` : '—',  label: 'Reservas' },
   ];
 
   useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import FeedbackModal from './FeedbackModal';
+import api from '../api';
 
 const NAV_LINKS = [
   { to: '/businesses', label: 'Negocios' },
@@ -87,6 +88,13 @@ export default function Layout() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [footerStats, setFooterStats] = useState(null);
+
+  useEffect(() => {
+    api.getPlatformStats()
+      .then(d => setFooterStats(d))
+      .catch(() => {});
+  }, []);
 
   function handleLogout() {
     logout();
@@ -414,18 +422,24 @@ export default function Layout() {
             </div>
             <div className="footer-stats">
               <div className="footer-stat">
-                <span className="footer-stat-num">2.5K+</span>
+                <span className="footer-stat-num">
+                  {footerStats ? `${footerStats.businesses.toLocaleString()}+` : '—'}
+                </span>
                 <span className="footer-stat-label">Negocios</span>
               </div>
               <div className="footer-stat-sep" />
               <div className="footer-stat">
-                <span className="footer-stat-num">100K+</span>
+                <span className="footer-stat-num">
+                  {footerStats ? `${footerStats.bookings.toLocaleString()}+` : '—'}
+                </span>
                 <span className="footer-stat-label">Reservas</span>
               </div>
               <div className="footer-stat-sep" />
               <div className="footer-stat">
-                <span className="footer-stat-num">4.9★</span>
-                <span className="footer-stat-label">Rating</span>
+                <span className="footer-stat-num">
+                  {footerStats ? `${footerStats.cities}` : '—'}
+                </span>
+                <span className="footer-stat-label">Ciudades</span>
               </div>
             </div>
           </div>
