@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 const UPDATED = '20 de abril de 2026';
 
 export default function PrivacyPage() {
+  useSEO({
+    title: 'Política de privacidad',
+    description: 'Cómo Slotly recopila, usa y protege los datos personales de clientes, profesionales y negocios.',
+    path: '/privacy',
+  });
   return (
     <div className="legal-page">
       <div className="legal-hero">

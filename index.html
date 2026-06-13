@@ -3,12 +3,73 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Slotly</title>
+
+    <!-- ── Primary SEO ── -->
+    <title>Slotly · Reservas online para barberías, spas y salones</title>
+    <meta name="description" content="Slotly es la plataforma de reservas online para barberías, spas y salones de belleza. Encuentra profesionales, reserva en segundos y gestiona tu negocio en Colombia y Estados Unidos." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://slotly.app/" />
+
+    <!-- ── Open Graph / Facebook ── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Slotly" />
+    <meta property="og:url" content="https://slotly.app/" />
+    <meta property="og:title" content="Slotly · Reservas online para barberías, spas y salones" />
+    <meta property="og:description" content="Encuentra profesionales de estética y bienestar, reserva en segundos y gestiona tu negocio. Disponible en Colombia y Estados Unidos." />
+    <meta property="og:image" content="https://slotly.app/og-image.jpg" />
+    <meta property="og:locale" content="es_CO" />
+
+    <!-- ── Twitter / X ── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Slotly · Reservas online para barberías, spas y salones" />
+    <meta name="twitter:description" content="Encuentra profesionales de estética y bienestar, reserva en segundos y gestiona tu negocio. Disponible en Colombia y Estados Unidos." />
+    <meta name="twitter:image" content="https://slotly.app/og-image.jpg" />
+
+    <!-- ── Theme ── -->
+    <meta name="theme-color" content="#0A0808" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://use.typekit.net/bfq2ttk.css" />
     <link rel="stylesheet" href="https://use.typekit.net/ikd3bth.css" />
+
+    <!-- ── Structured data ── -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "name": "Slotly",
+          "url": "https://slotly.app/",
+          "logo": "https://slotly.app/og-image.jpg",
+          "sameAs": []
+        },
+        {
+          "@type": "WebSite",
+          "name": "Slotly",
+          "url": "https://slotly.app/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://slotly.app/businesses?city={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Slotly",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "offers": {
+            "@type": "Offer",
+            "priceCurrency": "USD",
+            "price": "14.00"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

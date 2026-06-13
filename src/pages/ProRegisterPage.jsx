@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
+import useSEO from '../hooks/useSEO';
 import api from '../api';
 import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES, getTimezone } from '../utils/countryConfig';
 
@@ -37,6 +38,7 @@ const IconHome = () => (
 );
 
 export default function ProRegisterPage() {
+  useSEO({ title: 'Registro de profesionales', description: 'Únete a Slotly como profesional independiente y gestiona tu agenda y clientes a domicilio.', path: '/pro/register' });
   const { login } = useAuth();
   const navigate = useNavigate();
 

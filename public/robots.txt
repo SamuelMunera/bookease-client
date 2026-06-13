@@ -1,0 +1,17 @@
+# https://slotly.app robots.txt
+
+User-agent: *
+Allow: /
+
+# App areas that shouldn't be indexed (private/auth-gated)
+Disallow: /dashboard
+Disallow: /agenda
+Disallow: /pro/dashboard
+Disallow: /my-bookings
+Disallow: /book
+Disallow: /register-business
+Disallow: /admin
+Disallow: /reset-password
+Disallow: /verify-business-email
+
+Sitemap: https://slotly.app/sitemap.xml

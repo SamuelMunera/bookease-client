@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 const UPDATED_CO = '28 de abril de 2026';
 const UPDATED_US = '28 de abril de 2026';
@@ -238,6 +239,11 @@ function TermsUS() {
 }
 
 export default function TermsPage() {
+  useSEO({
+    title: 'Términos de uso',
+    description: 'Términos y condiciones de uso de la plataforma Slotly para clientes, profesionales y negocios.',
+    path: '/terms',
+  });
   const [country, setCountry] = useState('CO');
 
   return (

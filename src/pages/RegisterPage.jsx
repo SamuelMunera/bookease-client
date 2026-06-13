@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import useSEO from '../hooks/useSEO';
 import api from '../api';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 import { COUNTRIES, COUNTRY_CONFIG } from '../utils/countryConfig';
@@ -21,6 +22,7 @@ const ACCOUNT_TYPES = [
 ];
 
 export default function RegisterPage() {
+  useSEO({ title: 'Crear cuenta', description: 'Crea tu cuenta gratis en Slotly y empieza a reservar o a gestionar tu negocio.', path: '/register' });
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT', country: 'CO' });

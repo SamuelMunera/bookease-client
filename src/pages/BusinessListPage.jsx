@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCountry } from '../context/CountryContext';
+import useSEO from '../hooks/useSEO';
 import api from '../api';
 
 /* ─── constants ─────────────────────────────────────────── */
@@ -416,6 +417,11 @@ const FEATURES = [
    MAIN COMPONENT
    ══════════════════════════════════════════════════════════ */
 export default function BusinessListPage() {
+  useSEO({
+    title: 'Reservas online para barberías, spas y salones',
+    description: 'Encuentra y reserva citas en los mejores negocios de estética y bienestar cerca de ti. Confirmación al instante, sin llamadas ni esperas.',
+    path: '/',
+  });
   const { user } = useAuth();
   const { country } = useCountry();
   const navigate = useNavigate();

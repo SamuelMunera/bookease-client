@@ -96,6 +96,18 @@ export default function Layout() {
       .catch(() => {});
   }, []);
 
+  // Lock body scroll while the mobile menu is open, so sticky/fixed page
+  // elements (e.g. category filters bar) can't scroll over the drawer.
+  useEffect(() => {
+    document.body.classList.toggle('no-scroll', menuOpen);
+    return () => document.body.classList.remove('no-scroll');
+  }, [menuOpen]);
+
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
   function handleLogout() {
     logout();
     navigate('/login');

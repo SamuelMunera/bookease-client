@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import useSEO from '../hooks/useSEO';
 import api from '../api';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 
@@ -12,6 +13,7 @@ const BRAND_FEATURES = [
 ];
 
 export default function LoginPage() {
+  useSEO({ title: 'Iniciar sesión', description: 'Inicia sesión en Slotly para gestionar tus reservas.', path: '/login' });
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

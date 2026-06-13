@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 import api from '../api';
 
 const SPECIALTIES = [
@@ -85,6 +86,11 @@ function ProCard({ pro }) {
 }
 
 export default function HomeServicePage() {
+  useSEO({
+    title: 'Servicios a domicilio',
+    description: 'Reserva profesionales de estética y bienestar a domicilio con Slotly. Barbería, belleza y spa donde tú quieras.',
+    path: '/home-service',
+  });
   const navigate = useNavigate();
   const [allPros, setAllPros]   = useState([]);
   const [loading, setLoading]   = useState(true);

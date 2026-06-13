@@ -1,8 +1,36 @@
+import { Link } from 'react-router-dom';
 import { getPlansForCountry } from '../utils/plans';
 import { useAuth } from '../context/AuthContext';
 import { useCountry } from '../context/CountryContext';
+import useSEO from '../hooks/useSEO';
 
 const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 United States' };
+
+const TRUST_BADGES = [
+  { icon: '🔒', label: 'Sin tarjeta de crédito' },
+  { icon: '↩️', label: 'Cancela cuando quieras' },
+  { icon: '💬', label: 'Soporte en español' },
+  { icon: '🛡️', label: 'Datos seguros y cifrados' },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: '¿Puedo cambiar de plan más adelante?',
+    a: 'Sí. Puedes actualizar tu plan en cualquier momento desde el panel de tu negocio a medida que tu equipo crece.',
+  },
+  {
+    q: '¿Hay permanencia mínima?',
+    a: 'No. Todos los planes son mensuales y puedes cancelar cuando quieras, sin penalizaciones.',
+  },
+  {
+    q: '¿Qué pasa si supero el número de profesionales de mi plan?',
+    a: 'Te avisaremos a tiempo para que actualices a un plan superior antes de que esto afecte tu agenda.',
+  },
+  {
+    q: '¿Cómo funciona la prueba gratuita?',
+    a: '14 días con acceso completo, sin necesidad de tarjeta de crédito. Si no continúas, no se realiza ningún cobro.',
+  },
+];
 
 function CheckIcon() {
   return (
@@ -12,12 +40,56 @@ function CheckIcon() {
   );
 }
 
-function PlanCard({ plan }) {
+function DashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  );
+}
+
+function planCta(plan, user) {
+  if (plan.enterprise) {
+    return (
+      <a
+        href="mailto:hola@slotly.app?subject=Plan Empresarial"
+        className="btn btn-secondary btn-full"
+      >
+        {plan.ctaLabel}
+      </a>
+    );
+  }
+
+  if (user?.role === 'PROFESSIONAL' && plan.forType === 'professional') {
+    return (
+      <Link to="/pro/dashboard" className={`btn btn-full${plan.popular ? ' btn-primary' : ' btn-secondary'}`}>
+        Ir a mi panel
+      </Link>
+    );
+  }
+
+  if (user?.role === 'BUSINESS_OWNER' && plan.forType === 'business') {
+    return (
+      <Link to="/dashboard" className={`btn btn-full${plan.popular ? ' btn-primary' : ' btn-secondary'}`}>
+        Gestionar en mi panel
+      </Link>
+    );
+  }
+
+  return (
+    <Link to={plan.ctaTo} className={`btn btn-full${plan.popular ? ' btn-primary' : ' btn-secondary'}`}>
+      {plan.ctaLabel}
+    </Link>
+  );
+}
+
+function PlanCard({ plan, user }) {
   return (
     <div className={`pricing-card${plan.popular ? ' pricing-card--popular' : ''}`}>
       {plan.popular && <div className="pricing-popular-badge">Más popular</div>}
 
       <div className="pricing-card-head">
+        <p className="pricing-audience">{plan.audience}</p>
         <p className="pricing-plan-name">{plan.name}</p>
         <p className="pricing-plan-tagline">{plan.tagline}</p>
       </div>
@@ -40,33 +112,24 @@ function PlanCard({ plan }) {
           : '6 o más profesionales'}
       </div>
 
+      <p className="pricing-benefit">{plan.mainBenefit}</p>
+
       <ul className="pricing-features">
-        {plan.features.map(f => (
+        {plan.features.slice(1, 5).map(f => (
           <li key={f} className="pricing-feature-item">
             <CheckIcon />
             <span>{f}</span>
           </li>
         ))}
       </ul>
+      {plan.features.length > 5 && (
+        <p className="pricing-more-features">+ {plan.features.length - 5} funciones más en la tabla comparativa</p>
+      )}
+
+      <p className="pricing-ideal">{plan.idealFor}</p>
 
       <div className="pricing-cta">
-        {plan.enterprise ? (
-          <a
-            href="mailto:hola@slotly.app?subject=Plan Empresarial"
-            className="btn btn-secondary"
-            style={{ width: '100%', justifyContent: 'center' }}
-          >
-            Contactar ventas
-          </a>
-        ) : (
-          <button
-            className={`btn${plan.popular ? ' btn-primary' : ' btn-secondary'}`}
-            style={{ width: '100%', justifyContent: 'center' }}
-            disabled
-          >
-            Próximamente
-          </button>
-        )}
+        {planCta(plan, user)}
       </div>
     </div>
   );
@@ -76,7 +139,7 @@ function PricingSkeleton() {
   return (
     <div className="pricing-grid">
       {Array(4).fill(null).map((_, i) => (
-        <div key={i} className="pricing-card" style={{ minHeight: 380 }}>
+        <div key={i} className="pricing-card" style={{ minHeight: 420 }}>
           <div className="skeleton" style={{ height: 16, width: '55%', borderRadius: 'var(--r-sm)', marginBottom: 'var(--sp-2)' }} />
           <div className="skeleton" style={{ height: 12, width: '80%', borderRadius: 'var(--r-sm)', marginBottom: 'var(--sp-6)' }} />
           <div className="skeleton" style={{ height: 44, width: '50%', borderRadius: 'var(--r-sm)', marginBottom: 'var(--sp-4)' }} />
@@ -89,7 +152,57 @@ function PricingSkeleton() {
   );
 }
 
+function PricingComparison({ plans }) {
+  const rows = [
+    { label: 'Profesionales', values: plans.map(p => p.professionals ? (p.professionals === 1 ? '1' : `Hasta ${p.professionals}`) : '6 o más') },
+    { label: 'Reservas online ilimitadas', values: plans.map(() => true) },
+    { label: 'Agenda digital', values: plans.map(() => true) },
+    { label: 'Notificaciones por email', values: plans.map(() => true) },
+    { label: 'Panel de negocio', values: plans.map(() => true) },
+    { label: 'Código de vinculación', values: plans.map(() => true) },
+    { label: 'Analytics avanzados', values: plans.map(() => true) },
+    { label: 'Servicios a domicilio', values: plans.map(() => true) },
+    { label: 'Soporte prioritario', values: plans.map(p => !!p.enterprise) },
+    { label: 'Onboarding personalizado', values: plans.map(p => !!p.enterprise) },
+  ];
+
+  return (
+    <div className="pricing-compare-wrap">
+      <table className="pricing-compare">
+        <thead>
+          <tr>
+            <th>Incluye</th>
+            {plans.map(p => (
+              <th key={p.id} className={p.popular ? 'pricing-compare-popular-col' : ''}>{p.name}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.label}>
+              <th scope="row">{row.label}</th>
+              {row.values.map((v, i) => (
+                <td key={plans[i].id} className={plans[i].popular ? 'pricing-compare-popular-col' : ''}>
+                  {typeof v === 'boolean'
+                    ? (v ? <span className="pricing-compare-yes"><CheckIcon /></span> : <span className="pricing-compare-no"><DashIcon /></span>)
+                    : v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function PricingPage() {
+  useSEO({
+    title: 'Planes y precios',
+    description: 'Compara los planes de Slotly para profesionales independientes y negocios de estética y bienestar. Precios claros en pesos colombianos o dólares, sin sorpresas.',
+    path: '/pricing',
+  });
+
   const { user } = useAuth();
   // country es la única fuente de verdad — viene del contexto (geo detectado + cache + override)
   const { country, loading: geoLoading, setCountry } = useCountry();
@@ -112,12 +225,12 @@ export default function PricingPage() {
           Planes y precios
         </p>
         <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 800, color: 'var(--text)', marginBottom: 'var(--sp-3)', fontFamily: 'var(--font-heading)' }}>
-          Elige el plan que se adapta a tu negocio
+          Un plan para cada etapa de tu negocio
         </h1>
-        <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)', maxWidth: 520, margin: '0 auto var(--sp-5)' }}>
+        <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)', maxWidth: 560, margin: '0 auto var(--sp-5)' }}>
           {country === 'CO'
-            ? 'Precios fijos en pesos colombianos. Sin sorpresas, sin conversiones.'
-            : 'Fixed prices in US dollars. No surprises, no conversions.'}
+            ? 'Precios fijos en pesos colombianos, sin comisiones por reserva ni costos ocultos. Empieza gratis y crece a tu ritmo.'
+            : 'Fixed prices in US dollars, no per-booking commissions and no hidden fees. Start free and grow at your pace.'}
         </p>
 
         {/* País detectado — prominente */}
@@ -166,7 +279,7 @@ export default function PricingPage() {
         ? <PricingSkeleton />
         : (
           <div className="pricing-grid">
-            {plans.map(plan => <PlanCard key={plan.id} plan={plan} />)}
+            {plans.map(plan => <PlanCard key={plan.id} plan={plan} user={user} />)}
           </div>
         )
       }
@@ -176,6 +289,53 @@ export default function PricingPage() {
         <p style={{ textAlign: 'center', marginTop: 'var(--sp-8)', fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', lineHeight: 1.6 }}>
           Todos los planes incluyen 14 días de prueba gratuita · Cancela cuando quieras
         </p>
+      )}
+
+      {/* ── Trust badges ── */}
+      {!geoLoading && (
+        <div className="pricing-trust-row">
+          {TRUST_BADGES.map(b => (
+            <div key={b.label} className="pricing-trust-item">
+              <span className="pricing-trust-icon">{b.icon}</span>
+              <span>{b.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Comparison table ── */}
+      {!geoLoading && plans.length > 1 && (
+        <div className="pricing-compare-section">
+          <h2 className="pricing-section-title">Compara los planes en detalle</h2>
+          <PricingComparison plans={plans} />
+        </div>
+      )}
+
+      {/* ── FAQ ── */}
+      {!geoLoading && (
+        <div className="pricing-faq-section">
+          <h2 className="pricing-section-title">Preguntas frecuentes</h2>
+          <div className="pricing-faq">
+            {FAQ_ITEMS.map(item => (
+              <details key={item.q} className="pricing-faq-item">
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Final CTA ── */}
+      {!geoLoading && !user && (
+        <div className="pricing-final-cta">
+          <h2 className="pricing-final-cta-title">¿Listo para empezar?</h2>
+          <p className="pricing-final-cta-sub">Crea tu cuenta gratis, configura tu agenda en minutos y prueba Slotly durante 14 días sin costo.</p>
+          <div className="pricing-final-cta-actions">
+            <Link to="/register" className="btn btn-primary btn-lg">Crear cuenta de negocio</Link>
+            <Link to="/pro/register" className="btn btn-secondary btn-lg">Soy profesional independiente</Link>
+          </div>
+        </div>
       )}
     </div>
   );

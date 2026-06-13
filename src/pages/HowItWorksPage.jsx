@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import useSEO from '../hooks/useSEO';
 
 const CLIENT_STEPS = [
   {
@@ -121,6 +122,11 @@ function StepCard({ step, accent }) {
 }
 
 export default function HowItWorksPage() {
+  useSEO({
+    title: 'Cómo funciona',
+    description: 'Conoce cómo Slotly conecta a clientes con profesionales de estética y bienestar: busca, reserva y gestiona tus citas en minutos.',
+    path: '/how-it-works',
+  });
   const { user } = useAuth();
 
   return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 import api from '../api';
 
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
@@ -13,6 +14,11 @@ function Stars({ rating }) {
 
 
 export default function BusinessesPage() {
+  useSEO({
+    title: 'Explorar negocios',
+    description: 'Descubre barberías, spas y salones de belleza cerca de ti. Filtra por categoría, ciudad y disponibilidad, y reserva tu cita en segundos.',
+    path: '/businesses',
+  });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 

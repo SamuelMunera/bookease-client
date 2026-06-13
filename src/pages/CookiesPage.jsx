@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
+import useSEO from '../hooks/useSEO';
 
 const UPDATED = '20 de abril de 2026';
 
 export default function CookiesPage() {
+  useSEO({
+    title: 'Política de cookies',
+    description: 'Información sobre el uso de almacenamiento local y cookies en la plataforma Slotly.',
+    path: '/cookies',
+  });
   return (
     <div className="legal-page">
       <div className="legal-hero">
