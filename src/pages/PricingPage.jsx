@@ -171,27 +171,31 @@ function CompareMatrix({ plans }) {
   ];
 
   return (
-    <div className="pricing2-matrix">
-      <div className="pricing2-matrix-row pricing2-matrix-row--head">
-        <div className="pricing2-matrix-cell pricing2-matrix-label" />
-        {plans.map(p => (
-          <div key={p.id} className={`pricing2-matrix-cell${p.popular ? ' pricing2-matrix-cell--featured' : ''}`}>
-            {p.name}
-          </div>
-        ))}
-      </div>
-      {rows.map(row => (
-        <div key={row.label} className="pricing2-matrix-row">
-          <div className="pricing2-matrix-cell pricing2-matrix-label">{row.label}</div>
-          {row.values.map((v, i) => (
-            <div key={plans[i].id} className={`pricing2-matrix-cell${plans[i].popular ? ' pricing2-matrix-cell--featured' : ''}`}>
-              {typeof v === 'boolean'
-                ? (v ? <span className="pricing2-matrix-yes"><CheckIcon /></span> : <span className="pricing2-matrix-no"><CrossIcon /></span>)
-                : v}
-            </div>
+    <div className="pricing2-matrix-wrap">
+      <table className="pricing2-matrix">
+        <thead>
+          <tr>
+            <th></th>
+            {plans.map(p => (
+              <th key={p.id} className={p.popular ? 'pricing2-matrix-featured-col' : ''}>{p.name}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(row => (
+            <tr key={row.label}>
+              <th scope="row">{row.label}</th>
+              {row.values.map((v, i) => (
+                <td key={plans[i].id} className={plans[i].popular ? 'pricing2-matrix-featured-col' : ''}>
+                  {typeof v === 'boolean'
+                    ? (v ? <span className="pricing2-matrix-yes"><CheckIcon /></span> : <span className="pricing2-matrix-no"><CrossIcon /></span>)
+                    : v}
+                </td>
+              ))}
+            </tr>
           ))}
-        </div>
-      ))}
+        </tbody>
+      </table>
     </div>
   );
 }

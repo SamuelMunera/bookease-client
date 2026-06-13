@@ -5169,7 +5169,7 @@ html { scroll-padding-top: 68px; }
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-2xl);
-  padding: var(--sp-7) var(--sp-6) var(--sp-6);
+  padding: var(--sp-8) var(--sp-6) var(--sp-6);
   display: flex; flex-direction: column; gap: var(--sp-3);
   transition: transform .2s, box-shadow .2s, border-color .2s;
 }
@@ -5178,17 +5178,15 @@ html { scroll-padding-top: 68px; }
   height: 3px; border-radius: 0 0 var(--r-full) var(--r-full);
   background: var(--border); transition: background .2s;
 }
-.pricing2-card:hover { border-color: var(--gold-border); transform: translateY(-4px); }
+.pricing2-card:hover { border-color: var(--gold-border); }
 .pricing2-card:hover::before { background: var(--gold-border); }
 
 .pricing2-card--featured {
   background: linear-gradient(165deg, var(--gold-subtle), var(--surface-2) 60%);
   border-color: var(--gold);
   box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px var(--gold-border);
-  transform: translateY(-14px);
 }
 .pricing2-card--featured::before { background: linear-gradient(90deg, var(--gold), var(--violet)); }
-.pricing2-card--featured:hover { transform: translateY(-18px); }
 
 .pricing2-card-top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
 .pricing2-audience {
@@ -5207,7 +5205,7 @@ html { scroll-padding-top: 68px; }
 .pricing2-price { display: flex; align-items: baseline; gap: 4px; margin-top: var(--sp-2); }
 .pricing2-currency { font-size: var(--text-xs); color: var(--text-muted); font-weight: 700; align-self: flex-start; margin-top: 6px; }
 .pricing2-amount {
-  font-size: var(--text-4xl); font-weight: 800; line-height: 1;
+  font-size: var(--text-3xl); font-weight: 800; line-height: 1;
   font-family: var(--font-heading);
   background: linear-gradient(135deg, var(--gold-light), var(--gold));
   -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -5274,7 +5272,7 @@ html { scroll-padding-top: 68px; }
 .pricing2-trust-icon { font-size: var(--text-lg); line-height: 1; }
 
 /* ── Sections ── */
-.pricing2-section { margin-top: var(--sp-14); }
+.pricing2-section { margin-top: var(--sp-12); }
 .pricing2-section-title {
   font-size: var(--text-2xl); font-weight: 800; color: var(--text);
   font-family: var(--font-heading); text-align: center;
@@ -5282,28 +5280,35 @@ html { scroll-padding-top: 68px; }
 }
 
 /* ── Compare matrix ── */
-.pricing2-matrix {
+.pricing2-matrix-wrap {
   overflow-x: auto; -webkit-overflow-scrolling: touch;
   border: 1px solid var(--border); border-radius: var(--r-xl);
+}
+.pricing2-matrix {
+  width: 100%; min-width: 480px;
+  border-collapse: collapse;
   background: var(--surface-2);
+  font-size: var(--text-sm);
 }
-.pricing2-matrix-row {
-  display: grid; grid-template-columns: 1.6fr repeat(auto-fit, minmax(80px, 1fr));
-  min-width: 480px;
+.pricing2-matrix th, .pricing2-matrix td {
+  padding: var(--sp-3) var(--sp-4);
   border-bottom: 1px solid var(--border);
+  text-align: center;
+  white-space: nowrap;
 }
-.pricing2-matrix-row:last-child { border-bottom: none; }
-.pricing2-matrix-row--head { font-family: var(--font-heading); font-weight: 800; color: var(--text); border-bottom: 1px solid var(--gold-border); }
-.pricing2-matrix-cell {
-  padding: var(--sp-3) var(--sp-3);
-  display: flex; align-items: center; justify-content: center; text-align: center;
-  font-size: var(--text-sm); color: var(--text-muted);
+.pricing2-matrix thead th {
+  font-family: var(--font-heading); font-weight: 800; color: var(--text);
+  font-size: var(--text-base); border-bottom: 1px solid var(--gold-border);
 }
-.pricing2-matrix-label {
-  justify-content: flex-start; text-align: left; font-weight: 600; color: var(--text-muted);
+.pricing2-matrix tbody th {
+  text-align: left; font-weight: 600; color: var(--text-muted);
+  white-space: normal;
 }
-.pricing2-matrix-row--head .pricing2-matrix-label { color: var(--text); }
-.pricing2-matrix-cell--featured { background: var(--gold-subtle); }
+.pricing2-matrix th:first-child, .pricing2-matrix td:first-child {
+  text-align: left; position: sticky; left: 0; background: var(--surface-2); z-index: 1;
+}
+.pricing2-matrix tr:last-child td, .pricing2-matrix tr:last-child th { border-bottom: none; }
+.pricing2-matrix-featured-col { background: var(--gold-subtle); }
 .pricing2-matrix-yes { color: var(--success); display: inline-flex; }
 .pricing2-matrix-no  { color: var(--text-dim); display: inline-flex; }
 
@@ -5332,7 +5337,7 @@ html { scroll-padding-top: 68px; }
 
 /* ── Final CTA ── */
 .pricing2-final-cta {
-  margin-top: var(--sp-14); text-align: center;
+  margin-top: var(--sp-12); text-align: center;
   padding: var(--sp-10) var(--sp-6);
   background: linear-gradient(135deg, var(--gold-subtle), var(--violet-subtle));
   border: 1px solid var(--gold-border);
@@ -5350,17 +5355,11 @@ html { scroll-padding-top: 68px; }
   display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3);
 }
 
-@media (max-width: 860px) {
-  .pricing2-card--featured { transform: none; }
-  .pricing2-card--featured:hover { transform: translateY(-4px); }
-}
-
 @media (max-width: 600px) {
   .pricing2-title { font-size: var(--text-2xl); }
   .pricing2-grid { grid-template-columns: 1fr; gap: var(--sp-5); }
-  .pricing2-trust-row { gap: var(--sp-4); justify-content: flex-start; overflow-x: auto; }
-  .pricing2-matrix-row { grid-template-columns: 1.2fr repeat(auto-fit, minmax(56px, 1fr)); }
-  .pricing2-matrix-cell { font-size: var(--text-xs); padding: var(--sp-2); }
+  .pricing2-trust-row { gap: var(--sp-4) var(--sp-6); justify-content: center; }
+  .pricing2-matrix th, .pricing2-matrix td { font-size: var(--text-xs); padding: var(--sp-2) var(--sp-3); }
   .pricing2-final-cta-actions { flex-direction: column; }
   .pricing2-final-cta-actions .btn { width: 100%; justify-content: center; }
 }
