@@ -47,7 +47,7 @@ export default function ProRegisterPage() {
   const [form, setForm] = useState({
     name: '', email: '', password: '', phone: '',
     specialty: '', bio: '', experience: '',
-    joinCode: '', cities: '',
+    joinCode: '', cities: '', referralCode: '',
     country: 'CO', timezone: '', state: '', zipCode: '',
   });
   const [errors, setErrors] = useState({});
@@ -115,7 +115,7 @@ export default function ProRegisterPage() {
     setApiError('');
     setLoading(true);
     try {
-      const { name, email, password, phone, specialty, bio, experience, joinCode, cities, country, timezone, state, zipCode } = form;
+      const { name, email, password, phone, specialty, bio, experience, joinCode, cities, country, timezone, state, zipCode, referralCode } = form;
       const citiesArr = cities.split(',').map(c => c.trim()).filter(Boolean);
       const resolvedTz = getTimezone(country, timezone);
       const isIndependent = mode === 'independent';
@@ -135,6 +135,7 @@ export default function ProRegisterPage() {
         if (isIndependent) {
           body.offersHomeService = true;
           if (citiesArr.length) body.homeServiceArea = { cities: citiesArr };
+          if (referralCode.trim()) body.referralCode = referralCode.trim();
         }
         const data = await api.registerProfessional(body);
         login(data);
@@ -443,6 +444,20 @@ export default function ProRegisterPage() {
                     <div style={{ marginTop: 'var(--sp-3)', padding: 'var(--sp-3) var(--sp-4)', borderRadius: 'var(--r-md)', background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                       Podrás configurar tus servicios, tarifas y disponibilidad desde tu dashboard después del registro.
                     </div>
+                  </div>
+                )}
+
+                {/* Independent: optional referral / courtesy code */}
+                {mode === 'independent' && !googleToken && (
+                  <div className="form-group" style={{ marginTop: 'var(--sp-4)' }}>
+                    <label className="form-label" htmlFor="pro-referral">
+                      Código de referido o cortesía <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opcional)</span>
+                    </label>
+                    <input id="pro-referral" className="input" type="text"
+                      placeholder="Ej: PROMO-XXXXXXXX o CORTESIA-XXXXXXXX"
+                      value={form.referralCode}
+                      onChange={e => set('referralCode', e.target.value.toUpperCase())}
+                      style={{ textTransform: 'uppercase' }} />
                   </div>
                 )}
 

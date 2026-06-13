@@ -9,7 +9,7 @@ export default function RegisterBusinessPage() {
   const [form, setForm] = useState({
     name: '', category: '', description: '',
     city: '', address: '', phone: '',
-    country: 'CO', timezone: '', state: '', zipCode: '',
+    country: 'CO', timezone: '', state: '', zipCode: '', referralCode: '',
   });
   const [error,         setError]        = useState('');
   const [loading,       setLoading]      = useState(false);
@@ -74,6 +74,7 @@ export default function RegisterBusinessPage() {
         timezone:    getTimezone(form.country, form.timezone),
         state:       form.state.trim() || undefined,
         zipCode:     form.zipCode.trim() || undefined,
+        referralCode: form.referralCode.trim() || undefined,
       });
       navigate('/pricing');
     } catch (err) {
@@ -242,6 +243,18 @@ export default function RegisterBusinessPage() {
                 onChange={set('description')}
                 rows={3}
                 style={{ resize: 'vertical', lineHeight: 1.6 }}
+              />
+            </div>
+
+            {/* Referral / courtesy code */}
+            <div className="form-group">
+              <label className="form-label">Código de referido o cortesía (opcional)</label>
+              <input
+                className="input"
+                placeholder="Ej: PROMO-XXXXXXXX o CORTESIA-XXXXXXXX"
+                value={form.referralCode}
+                onChange={e => setForm(p => ({ ...p, referralCode: e.target.value.toUpperCase() }))}
+                style={{ textTransform: 'uppercase' }}
               />
             </div>
 

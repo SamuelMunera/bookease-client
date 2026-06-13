@@ -54,6 +54,21 @@ function formatDate(value) {
   return new Date(value).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+const PLAN_LABELS = { solo: 'Independiente', team: 'Equipo', studio: 'Estudio', enterprise: 'Empresarial' };
+
+function KpiPill({ label, value }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
+      background: 'var(--surface-2)', border: '1px solid var(--border)', minWidth: 84,
+    }}>
+      <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--text)' }}>{value}</span>
+      <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+    </div>
+  );
+}
+
 function PromotersTab() {
   const [promoters, setPromoters] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -177,39 +192,64 @@ function PromotersTab() {
         ) : promoters.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>No hay promotores registrados todavía.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-            {promoters.map(p => (
-              <div key={p.id} style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap',
-                padding: 'var(--sp-4) var(--sp-5)',
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 'var(--r-xl)',
-              }}>
-                <div style={{ flex: '1 1 180px', minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 2 }}>{p.firstName} {p.lastName}</p>
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {p.email}{p.phone ? ` · ${p.phone}` : ''}
-                  </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+            {promoters.map(p => {
+              const planEntries = Object.entries(p.planBreakdown || {}).filter(([, v]) => v > 0);
+              return (
+                <div key={p.id} style={{
+                  padding: 'var(--sp-4) var(--sp-5)',
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-xl)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 2 }}>{p.firstName} {p.lastName}</p>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.email}{p.phone ? ` · ${p.phone}` : ''}
+                      </p>
+                    </div>
+                    <CodeChip code={p.code} />
+                    <StatusBadge active={p.status === 'ACTIVE'} activeLabel="Activo" inactiveLabel="Inactivo" />
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', minWidth: 110 }}>{formatDate(p.createdAt)}</p>
+                    <button
+                      onClick={() => handleToggleStatus(p)}
+                      disabled={togglingId === p.id}
+                      style={{
+                        padding: '6px 14px', borderRadius: 'var(--r-md)',
+                        background: p.status === 'ACTIVE' ? 'var(--error-bg)' : 'var(--success-bg)',
+                        border: `1px solid ${p.status === 'ACTIVE' ? 'var(--error-border)' : 'var(--success-border)'}`,
+                        color: p.status === 'ACTIVE' ? 'var(--error)' : 'var(--success)',
+                        fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
+                        opacity: togglingId === p.id ? 0.5 : 1,
+                      }}
+                    >
+                      {togglingId === p.id ? '…' : (p.status === 'ACTIVE' ? 'Desactivar' : 'Activar')}
+                    </button>
+                  </div>
+
+                  {/* Métricas del promotor */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap', marginTop: 'var(--sp-4)', paddingTop: 'var(--sp-4)', borderTop: '1px solid var(--border)' }}>
+                    <KpiPill label="Negocios" value={p.businessesLinked} />
+                    <KpiPill label="Independientes" value={p.independentsLinked} />
+                    <KpiPill label="Activos" value={p.activeCount} />
+                    {planEntries.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap', marginLeft: 'var(--sp-2)' }}>
+                        <span style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Por plan:</span>
+                        {planEntries.map(([plan, count]) => (
+                          <span key={plan} style={{
+                            fontSize: 'var(--text-xs)', fontWeight: 600, padding: '2px 10px',
+                            borderRadius: 'var(--r-full)', background: 'var(--gold-subtle)',
+                            border: '1px solid var(--gold-border)', color: 'var(--gold)',
+                          }}>
+                            {PLAN_LABELS[plan] || plan}: {count}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <CodeChip code={p.code} />
-                <StatusBadge active={p.status === 'ACTIVE'} activeLabel="Activo" inactiveLabel="Inactivo" />
-                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', minWidth: 110 }}>{formatDate(p.createdAt)}</p>
-                <button
-                  onClick={() => handleToggleStatus(p)}
-                  disabled={togglingId === p.id}
-                  style={{
-                    padding: '6px 14px', borderRadius: 'var(--r-md)',
-                    background: p.status === 'ACTIVE' ? 'var(--error-bg)' : 'var(--success-bg)',
-                    border: `1px solid ${p.status === 'ACTIVE' ? 'var(--error-border)' : 'var(--success-border)'}`,
-                    color: p.status === 'ACTIVE' ? 'var(--error)' : 'var(--success)',
-                    fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
-                    opacity: togglingId === p.id ? 0.5 : 1,
-                  }}
-                >
-                  {togglingId === p.id ? '…' : (p.status === 'ACTIVE' ? 'Desactivar' : 'Activar')}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -222,7 +262,6 @@ function CourtesyTab() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError]     = useState('');
-  const [togglingId, setTogglingId] = useState(null);
 
   useEffect(() => {
     api.adminCourtesyCodes().then(setCodes).catch(() => {}).finally(() => setLoading(false));
@@ -237,19 +276,6 @@ function CourtesyTab() {
       setError(err.message);
     } finally {
       setGenerating(false);
-    }
-  }
-
-  async function handleToggleStatus(code) {
-    const nextStatus = code.status === 'UNUSED' ? 'USED' : 'UNUSED';
-    setTogglingId(code.id);
-    try {
-      const updated = await api.adminSetCourtesyCodeStatus(code.id, nextStatus);
-      setCodes(prev => prev.map(c => c.id === updated.id ? updated : c));
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setTogglingId(null);
     }
   }
 
@@ -298,20 +324,20 @@ function CourtesyTab() {
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', minWidth: 110 }}>
                 Usado: {formatDate(c.usedAt)}
               </p>
-              <button
-                onClick={() => handleToggleStatus(c)}
-                disabled={togglingId === c.id}
-                style={{
-                  padding: '6px 14px', borderRadius: 'var(--r-md)',
-                  background: c.status === 'UNUSED' ? 'var(--error-bg)' : 'var(--success-bg)',
-                  border: `1px solid ${c.status === 'UNUSED' ? 'var(--error-border)' : 'var(--success-border)'}`,
-                  color: c.status === 'UNUSED' ? 'var(--error)' : 'var(--success)',
-                  fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
-                  opacity: togglingId === c.id ? 0.5 : 1, marginLeft: 'auto',
-                }}
-              >
-                {togglingId === c.id ? '…' : (c.status === 'UNUSED' ? 'Marcar usado' : 'Marcar sin usar')}
-              </button>
+              {c.status === 'USED' && (
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text)', marginLeft: 'auto' }}>
+                  Redimido por{' '}
+                  <strong>{c.redeemedByName || '—'}</strong>
+                  {' '}
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase',
+                    padding: '2px 8px', borderRadius: 'var(--r-full)',
+                    background: 'var(--surface-2)', color: 'var(--text-muted)', border: '1px solid var(--border)',
+                  }}>
+                    {c.redeemedByType === 'BUSINESS' ? 'Negocio' : c.redeemedByType === 'PROFESSIONAL' ? 'Independiente' : '—'}
+                  </span>
+                </p>
+              )}
             </div>
           ))}
         </div>

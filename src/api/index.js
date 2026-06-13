@@ -199,7 +199,6 @@ const api = {
   adminSetPromoterStatus: (id, status) => request(`/admin/promoters/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   adminCourtesyCodes:       () => request('/admin/courtesy-codes'),
   adminCreateCourtesyCode:  () => request('/admin/courtesy-codes', { method: 'POST' }),
-  adminSetCourtesyCodeStatus: (id, status) => request(`/admin/courtesy-codes/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 
   // Categories
   getCategories: () => request('/categories'),
