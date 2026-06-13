@@ -30,7 +30,20 @@ function getCalDays(year, month) {
   return cells;
 }
 
+// Returns { h, m } only for a complete, valid "HH:MM" string — null otherwise.
+function parseTimeParts(value) {
+  const match = value?.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const h = Number(match[1]), m = Number(match[2]);
+  if (h > 23 || m > 59) return null;
+  return { h, m };
+}
+
 function ClockIcon({ h = 10, m = 10, size = 15 }) {
+  // Defensive guard: never let NaN/undefined reach SVG coordinate math.
+  const safeH = Number.isFinite(h) ? h : 10;
+  const safeM = Number.isFinite(m) ? m : 10;
+  h = safeH; m = safeM;
   const cx = size / 2, cy = size / 2, r = size / 2 - 1;
   const toRad = deg => (deg - 90) * Math.PI / 180;
   const hrDeg = ((h % 12) / 12) * 360 + (m / 60) * 30;
@@ -665,7 +678,7 @@ export default function BusinessListPage() {
             <div className="hero-search-section" style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '12px 20px' }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Horario</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
-                <ClockIcon h={heroTime ? parseInt(heroTime.split(':')[0]) : 10} m={heroTime ? parseInt(heroTime.split(':')[1]) : 10} />
+                <ClockIcon h={parseTimeParts(heroTime)?.h ?? 10} m={parseTimeParts(heroTime)?.m ?? 10} />
                 <input
                   type="text"
                   placeholder="ej. 10:30"
