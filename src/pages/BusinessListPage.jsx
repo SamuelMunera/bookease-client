@@ -544,6 +544,7 @@ export default function BusinessListPage() {
     setCity(normalizeCity(cityInput));
     setCategory(heroCategory);
     setSearchTime(heroTime);
+    setHeroTime('');
     scrollToGrid();
   }
 
