@@ -86,7 +86,7 @@ const BIZ_STEPS = [
   },
 ];
 
-function StepCard({ step, accent }) {
+function StepCard({ step, accent, accentBg }) {
   return (
     <div style={{
       background: 'var(--surface-2)',
@@ -99,7 +99,7 @@ function StepCard({ step, accent }) {
     }}>
       <div style={{
         width: 44, height: 44, borderRadius: 'var(--r-lg)', flexShrink: 0,
-        background: `${accent}18`, color: accent,
+        background: accentBg, color: accent,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {step.icon}
@@ -172,7 +172,7 @@ export default function HowItWorksPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
             {CLIENT_STEPS.map(s => (
-              <StepCard key={s.n} step={s} accent="var(--gold)" />
+              <StepCard key={s.n} step={s} accent="var(--gold)" accentBg="rgba(212,168,83,0.12)" />
             ))}
           </div>
 
@@ -218,7 +218,7 @@ export default function HowItWorksPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
             {BIZ_STEPS.map(s => (
-              <StepCard key={s.n} step={s} accent="var(--violet)" />
+              <StepCard key={s.n} step={s} accent="var(--violet)" accentBg="rgba(124,92,252,0.12)" />
             ))}
           </div>
 
