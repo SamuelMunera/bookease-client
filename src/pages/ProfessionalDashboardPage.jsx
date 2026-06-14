@@ -1802,14 +1802,13 @@ export default function ProfessionalDashboardPage() {
                   />
                 </div>
               ))}
-              {/* Country / Timezone */}
-              <div style={{ gridColumn:'1 / -1', display:'flex', gap:'var(--sp-2)', flexWrap:'wrap' }}>
-                {COUNTRIES.map(c => (
-                  <button key={c.code} type="button" onClick={() => setProfileForm(f => ({ ...f, country: c.code, timezone: c.code==='CO'?'America/Bogota':(f.timezone||'America/New_York'), state:'', zipCode:'' }))}
-                    style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: profileForm.country===c.code?700:500, border:`1.5px solid ${profileForm.country===c.code?'var(--violet)':'var(--border)'}`, background:profileForm.country===c.code?'var(--violet-subtle)':'var(--surface-2)', color:profileForm.country===c.code?'var(--violet)':'var(--text-muted)', transition:'all .12s' }}>
-                    {c.label}
-                  </button>
-                ))}
+              {/* Country (fijo desde el registro, no editable) */}
+              <div style={{ gridColumn:'1 / -1' }}>
+                <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>País</label>
+                <div style={{ padding:'6px 14px', borderRadius:'var(--r-md)', fontSize:'var(--text-sm)', fontWeight: 700, border:'1.5px solid var(--border)', background:'var(--surface-2)', color:'var(--text-muted)', display:'inline-block' }}>
+                  {COUNTRIES.find(c => c.code === profileForm.country)?.label || profileForm.country}
+                </div>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>El país se asigna al registrarte y no se puede cambiar.</p>
               </div>
               {profileForm.country === 'US' && (
                 <>
