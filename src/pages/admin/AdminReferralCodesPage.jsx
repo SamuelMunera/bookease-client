@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import api from '../../api';
 
 const TABS = [
-  { id: 'promoters', label: 'Promotor', icon: '🤝' },
-  { id: 'courtesy',  label: 'Cortesías', icon: '🎁' },
+  { id: 'promoters',   label: 'Promotor',     icon: '🤝' },
+  { id: 'conversions', label: 'Conversiones', icon: '📈' },
+  { id: 'courtesy',    label: 'Cortesías',    icon: '🎁' },
 ];
 
 function StatusBadge({ active, activeLabel, inactiveLabel }) {
@@ -257,6 +258,72 @@ function PromotersTab() {
   );
 }
 
+function ConversionsTab() {
+  const [conversions, setConversions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.adminPromoterConversions().then(setConversions).catch(() => {}).finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-2)' }}>
+        Conversiones de promotores ({conversions.length})
+      </h2>
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-4)' }}>
+        Cada vez que un código de promotor se usa en un registro, aparece aquí automáticamente con su descuento del primer mes.
+      </p>
+
+      {loading ? (
+        <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : conversions.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)' }}>Aún no hay conversiones registradas.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+          {conversions.map(c => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap',
+              padding: 'var(--sp-4) var(--sp-5)',
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 'var(--r-xl)',
+            }}>
+              <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 2 }}>{c.promoterName}</p>
+                <CodeChip code={c.promoterCode} />
+              </div>
+              <div style={{ flex: '1 1 160px', minWidth: 0 }}>
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 2 }}>Usado por</p>
+                <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                  {c.usedByName}{' '}
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase',
+                    padding: '2px 8px', borderRadius: 'var(--r-full)',
+                    background: 'var(--surface-2)', color: 'var(--text-muted)', border: '1px solid var(--border)',
+                  }}>
+                    {c.usedByType === 'BUSINESS' ? 'Negocio' : 'Independiente'}
+                  </span>
+                </p>
+              </div>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', minWidth: 110 }}>
+                {formatDate(c.usedAt)}
+              </p>
+              <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--gold)', minWidth: 100 }}>
+                -{c.discountValue}% · 1er mes
+              </p>
+              <StatusBadge
+                active={c.status === 'DISCOUNT_APPLIED'}
+                activeLabel="Descuento aplicado"
+                inactiveLabel="Pendiente de pago"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CourtesyTab() {
   const [codes, setCodes]     = useState([]);
   const [loading, setLoading] = useState(true);
@@ -376,7 +443,7 @@ export default function AdminReferralCodesPage() {
         ))}
       </div>
 
-      {tab === 'promoters' ? <PromotersTab /> : <CourtesyTab />}
+      {tab === 'promoters' ? <PromotersTab /> : tab === 'conversions' ? <ConversionsTab /> : <CourtesyTab />}
     </div>
   );
 }
