@@ -106,6 +106,9 @@ function redirectToWompiCheckout(checkout, redirectUrl) {
     'reference': checkout.reference,
     'signature:integrity': checkout.signature,
     'redirect-url': redirectUrl,
+    // Precargar el email permite a Wompi ofrecer "guardar tarjeta para
+    // próximos pagos" — eso es lo que habilita la renovación automática.
+    ...(checkout.customerEmail ? { 'customer-data:email': checkout.customerEmail } : {}),
   };
 
   for (const [name, value] of Object.entries(fields)) {
@@ -162,6 +165,10 @@ function WompiPayButton({ plan, user }) {
       <button type="button" className="btn btn-secondary btn-full" onClick={handlePay} disabled={loading}>
         {loading ? 'Redirigiendo a Wompi…' : 'Pagar con Wompi'}
       </button>
+      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 'var(--sp-2)', lineHeight: 1.4 }}>
+        Suscripción mensual de {plan.priceLabel} {plan.currency}. Si guardas tu método de pago, se renueva
+        automáticamente cada mes hasta que canceles desde tu panel — sin pagos manuales.
+      </p>
       {error && <p className="error-msg" style={{ marginTop: 'var(--sp-2)' }}>{error}</p>}
     </div>
   );
