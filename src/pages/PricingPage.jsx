@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getPlansForCountry, FEATURES, COMPARE_FEATURE_KEYS } from '../utils/plans';
 import { useAuth } from '../context/AuthContext';
@@ -92,7 +92,7 @@ function planCta(plan, user) {
   );
 }
 
-// Redirects the browser to Wompi's sandbox Web Checkout via a hidden auto-submitted form.
+// Redirects the browser to Wompi's Web Checkout via a hidden auto-submitted form.
 function redirectToWompiCheckout(checkout, redirectUrl) {
   const form = document.createElement('form');
   form.method = 'GET';
@@ -128,6 +128,20 @@ function WompiPayButton({ plan, user }) {
     && ((user?.role === 'BUSINESS_OWNER' && plan.forType === 'business')
       || (user?.role === 'PROFESSIONAL' && plan.forType === 'professional'));
 
+  // Si el usuario regresa con el botón "atrás" del navegador (la página se
+  // restaura desde el bfcache), el estado "loading" debe limpiarse para no
+  // dejar el botón pegado en "Redirigiendo a Wompi…".
+  useEffect(() => {
+    function handlePageShow(e) {
+      if (e.persisted) {
+        setLoading(false);
+        setError('');
+      }
+    }
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   if (!eligible) return null;
 
   async function handlePay() {
@@ -146,7 +160,7 @@ function WompiPayButton({ plan, user }) {
   return (
     <div style={{ marginTop: 'var(--sp-2)' }}>
       <button type="button" className="btn btn-secondary btn-full" onClick={handlePay} disabled={loading}>
-        {loading ? 'Redirigiendo a Wompi…' : 'Pagar con Wompi (sandbox)'}
+        {loading ? 'Redirigiendo a Wompi…' : 'Pagar con Wompi'}
       </button>
       {error && <p className="error-msg" style={{ marginTop: 'var(--sp-2)' }}>{error}</p>}
     </div>
