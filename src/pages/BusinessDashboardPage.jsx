@@ -99,13 +99,15 @@ export default function BusinessDashboardPage() {
   useEffect(() => {
     api.getMyBusiness()
       .then(mine => {
-        if (!mine) { setLoading(false); return; }
         setBusiness(mine);
         setProfileForm({ name: mine.name, description: mine.description || '', address: mine.address, city: mine.city, phone: mine.phone || '', category: mine.category, country: mine.country || 'CO', timezone: mine.timezone || 'America/Bogota', state: mine.state || '', zipCode: mine.zipCode || '' });
         return api.getBusinessBookings(mine.id, { date: todayISO() });
       })
       .then(bks => { if (bks) setBookings(bks); })
-      .catch(() => {})
+      .catch(err => {
+        // 404 = BUSINESS_OWNER sin negocio creado aún (cuenta nueva)
+        if (err.status === 404) navigate('/register-business', { replace: true });
+      })
       .finally(() => setLoading(false));
   }, [user.id]);
 
