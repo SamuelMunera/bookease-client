@@ -196,11 +196,12 @@ const api = {
 
   // Admin: referral codes
   adminPromoters:        () => request('/admin/promoters'),
+  adminPromoterDetail:   (id) => request(`/admin/promoters/${id}`),
+  adminReferralStats:   () => request('/admin/referrals/stats'),
   adminCreatePromoter:   (body) => request('/admin/promoters', { method: 'POST', body: JSON.stringify(body) }),
   adminSetPromoterStatus: (id, status) => request(`/admin/promoters/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   adminCourtesyCodes:       () => request('/admin/courtesy-codes'),
-  adminCreateCourtesyCode:  () => request('/admin/courtesy-codes', { method: 'POST' }),
-  adminPromoterConversions: () => request('/admin/promoter-conversions'),
+  adminCreateCourtesyCode:  (body) => request('/admin/courtesy-codes', { method: 'POST', body: JSON.stringify(body) }),
 
   // Categories
   getCategories: () => request('/categories'),
