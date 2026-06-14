@@ -111,9 +111,9 @@ export const PLANS_BY_COUNTRY = {
     studio: 60000, studioLabel: '$60.000',
   }, 'COP'),
   US: buildPlans({
-    solo: 10, soloLabel: '$10',
-    team: 15, teamLabel: '$15',
-    studio: 20, studioLabel: '$20',
+    solo: 15, soloLabel: '$15',
+    team: 20, teamLabel: '$20',
+    studio: 25, studioLabel: '$25',
   }, 'USD'),
 };
 

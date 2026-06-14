@@ -552,6 +552,18 @@ export default function BusinessListPage() {
     document.getElementById('businesses')?.scrollIntoView({ behavior: 'smooth' });
   }
 
+  const hasActiveFilters = Boolean(category || city || searchTime || heroDate);
+
+  function clearFilters() {
+    setCategory('');
+    setHeroCategory('');
+    setCity('');
+    setCityInput('');
+    setSearchTime('');
+    setHeroTime('');
+    setHeroDate('');
+  }
+
   const handleCardClick = useCallback((b) => {
     navigate(`/businesses/${b.id}`);
   }, [navigate]);
@@ -844,6 +856,12 @@ export default function BusinessListPage() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         )}
+        {hasActiveFilters && (
+          <button className="chip" style={{ marginLeft: 'auto', display:'flex', alignItems:'center', gap:6, flexShrink: 0 }} onClick={clearFilters}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Borrar filtros
+          </button>
+        )}
       </div>
 
       <div className="page">
@@ -881,9 +899,9 @@ export default function BusinessListPage() {
               Sin resultados
             </p>
             <p>Prueba con otra categoría o ciudad.</p>
-            {(city || category) && (
-              <button className="btn btn-secondary" style={{marginTop:'var(--sp-4)'}} onClick={() => { setCity(''); setCityInput(''); setCategory(''); }}>
-                Limpiar filtros
+            {hasActiveFilters && (
+              <button className="btn btn-secondary" style={{marginTop:'var(--sp-4)'}} onClick={clearFilters}>
+                Borrar filtros
               </button>
             )}
           </div>
