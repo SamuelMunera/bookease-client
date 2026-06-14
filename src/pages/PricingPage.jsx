@@ -9,9 +9,9 @@ import api from '../api';
 const COUNTRY_LABELS = { CO: '🇨🇴 Colombia', US: '🇺🇸 United States' };
 
 const TRUST_BADGES = [
-  { icon: '🔒', label: 'Sin tarjeta de crédito' },
+  { icon: '🔒', label: 'Sin tarjeta al inicio' },
+  { icon: '⏳', label: '15 días gratis' },
   { icon: '↩️', label: 'Cancela cuando quieras' },
-  { icon: '⚡', label: 'Soporte prioritario incluido' },
   { icon: '🛡️', label: 'Datos seguros y cifrados' },
 ];
 
@@ -34,7 +34,7 @@ const FAQ_ITEMS = [
   },
   {
     q: '¿Cómo funciona la prueba gratuita?',
-    a: '14 días con acceso completo, sin necesidad de tarjeta de crédito. Si no continúas, no se realiza ningún cobro.',
+    a: '15 días con acceso completo, sin pedirte datos bancarios al registrarte. Al finalizar el periodo de prueba te pediremos un método de pago para continuar con tu plan — no se realiza ningún cobro antes de eso.',
   },
 ];
 
@@ -342,7 +342,7 @@ export default function PricingPage() {
 
       {!geoLoading && (
         <p className="pricing2-trial-note">
-          Todos los planes incluyen 14 días de prueba gratuita · Cancela cuando quieras
+          15 días gratis, sin tarjeta al inicio · Te pediremos tus datos bancarios al finalizar la prueba · Cancela cuando quieras
         </p>
       )}
 
@@ -385,7 +385,7 @@ export default function PricingPage() {
       {!geoLoading && !user && (
         <div className="pricing2-final-cta">
           <h2 className="pricing2-final-cta-title">¿Listo para empezar?</h2>
-          <p className="pricing2-final-cta-sub">Crea tu cuenta gratis, configura tu agenda en minutos y prueba Slotly durante 14 días sin costo.</p>
+          <p className="pricing2-final-cta-sub">Crea tu cuenta gratis, sin tarjeta, y prueba Slotly durante 15 días sin costo. Al terminar la prueba te pediremos tus datos bancarios para continuar.</p>
           <div className="pricing2-final-cta-actions">
             <Link to="/register" className="btn btn-primary btn-lg">Crear cuenta de negocio</Link>
             <Link to="/pro/register" className="btn btn-secondary btn-lg">Soy profesional independiente</Link>

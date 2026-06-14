@@ -5,6 +5,7 @@ import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
 import { COUNTRIES, US_TIMEZONES } from '../utils/countryConfig';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import TrialStatusBanner from '../components/TrialStatusBanner';
 
 /* ── Agenda helpers ─────────────────────────────────────── */
 const AGENDA_DAYS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -295,6 +296,7 @@ export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [profile, setProfile] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [proRevenue, setProRevenue] = useState(null);
   const [joinRequest, setJoinRequest] = useState(undefined); // undefined = loading
@@ -370,6 +372,8 @@ export default function ProfessionalDashboardPage() {
   const [scheduleMsg, setScheduleMsg]   = useState('');
 
   useEffect(() => {
+    api.getProSubscription().then(setSubscription).catch(() => {});
+
     api.getProMe()
       .then(data => {
         setProfile(data);
@@ -681,6 +685,8 @@ export default function ProfessionalDashboardPage() {
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: 'var(--sp-6) var(--sp-4)' }}>
+
+      <TrialStatusBanner subscription={subscription} />
 
       {/* ── Welcome header ── */}
       <div className="pro-welcome-header" style={{

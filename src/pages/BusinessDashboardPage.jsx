@@ -6,6 +6,7 @@ import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig'
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import BusinessWelcomeModal from '../components/BusinessWelcomeModal';
 import BusinessOnboardingChecklist from '../components/BusinessOnboardingChecklist';
+import TrialStatusBanner from '../components/TrialStatusBanner';
 import { PLAN_NAMES_ES, getPlanLimit } from '../utils/plans';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
@@ -50,6 +51,7 @@ export default function BusinessDashboardPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('panel');
   const [business, setBusiness] = useState(null);
+  const [subscription, setSubscription] = useState(null);
   // Profile tab state
   const [profileForm, setProfileForm] = useState(null);
   const [profileSaving, setProfileSaving] = useState(false);
@@ -125,6 +127,7 @@ export default function BusinessDashboardPage() {
     setShowRevenue(business.showRevenueToProf ?? false);
     setCancelMinHours(business.cancelMinHours ?? 0);
     setAccentColor(business.accentColor || '');
+    api.getMySubscription().then(setSubscription).catch(() => {});
     api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
     api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
     api.getBusinessRevenue().then(d => setRevenue(d)).catch(() => {});
@@ -373,6 +376,8 @@ export default function BusinessDashboardPage() {
 
   return (
     <div className="page" style={{ paddingTop: 'var(--sp-8)', paddingBottom: 'var(--sp-16)' }}>
+
+      <TrialStatusBanner subscription={subscription} />
 
       {/* ── Activation banner ── */}
       {isPending && (
