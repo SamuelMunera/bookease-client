@@ -7,10 +7,11 @@ const baseStyle = {
 };
 
 // Shows the trial countdown (no card required) while trialing, and a
-// payment-required notice once the 15-day trial ends without a paid plan.
+// payment-required / inactive notice once the trial ends or the business
+// has no valid trial/payment (businessStatus === 'INACTIVE').
 export default function TrialStatusBanner({ subscription }) {
   if (!subscription) return null;
-  const { billingState, trialDaysRemaining } = subscription;
+  const { billingState, trialDaysRemaining, businessStatus } = subscription;
 
   if (billingState === 'trial_active') {
     return (
@@ -23,11 +24,11 @@ export default function TrialStatusBanner({ subscription }) {
     );
   }
 
-  if (billingState === 'payment_required') {
+  if (billingState === 'payment_required' || businessStatus === 'INACTIVE') {
     return (
       <div style={{ ...baseStyle, background: 'rgba(255,159,28,0.1)', border: '1px solid rgba(255,159,28,0.3)' }}>
         <span>
-          ⏰ Tu prueba gratis de 15 días terminó. Agrega un método de pago para seguir recibiendo reservas nuevas.
+          ⏰ Tu prueba gratis terminó y tu cuenta está inactiva. Agrega un método de pago para volver a recibir reservas nuevas.
         </span>
         <Link to="/pricing" className="btn btn-primary btn-sm">Agregar método de pago</Link>
       </div>
