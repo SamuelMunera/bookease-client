@@ -69,7 +69,7 @@ export default function RegisterBusinessPage() {
     setError('');
     setLoading(true);
     try {
-      await api.createBusiness({
+      const business = await api.createBusiness({
         name:        form.name.trim(),
         category:    form.category,
         description: form.description.trim() || undefined,
@@ -82,7 +82,8 @@ export default function RegisterBusinessPage() {
         zipCode:     form.zipCode.trim() || undefined,
         referralCode: form.referralCode.trim() || undefined,
       });
-      navigate('/pricing');
+      // Negocios cubiertos por código de cortesía no pasan por el flujo de pago
+      navigate(business.coveredByCourtesy ? '/dashboard' : '/pricing');
     } catch (err) {
       if (err.code === 'AUTH_FORBIDDEN') {
         setError('Tu sesión no tiene permisos para crear un negocio. Cierra sesión y vuelve a iniciar sesión como propietario de negocio.');
