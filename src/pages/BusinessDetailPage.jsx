@@ -262,15 +262,36 @@ function HoursSection({ hours }) {
    MAP SECTION
    ══════════════════════════════════════════════════════════ */
 function MapSection({ business }) {
-  const { lat, lng, address, city, country } = business;
-  const hasCoords = lat && lng;
+  const { address, city, country } = business;
+  const [coords, setCoords] = useState(
+    business.lat && business.lng ? { lat: business.lat, lng: business.lng } : null
+  );
+  const [geocoding, setGeocoding] = useState(false);
 
-  const mapSrc = hasCoords
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.008},${lat - 0.005},${lng + 0.008},${lat + 0.005}&layer=mapnik&marker=${lat},${lng}`
+  useEffect(() => {
+    if (coords) return;
+    if (!address && !city) return;
+    setGeocoding(true);
+    const q = encodeURIComponent(`${address}, ${city}`);
+    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+      headers: { 'User-Agent': 'Slotly/1.0 (slotly.app)' },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.length > 0) {
+          setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setGeocoding(false));
+  }, [address, city, coords]);
+
+  const mapSrc = coords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.008},${coords.lat - 0.005},${coords.lng + 0.008},${coords.lat + 0.005}&layer=mapnik&marker=${coords.lat},${coords.lng}`
     : null;
 
-  const mapsLink = hasCoords
-    ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+  const mapsLink = coords
+    ? `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${address}, ${city}`)}`;
 
   return (
@@ -283,7 +304,13 @@ function MapSection({ business }) {
       </div>
       <p className="biz-map-address">{address}, {city}{country !== 'CO' ? `, ${country}` : ''}</p>
 
-      {mapSrc ? (
+      {geocoding && (
+        <div className="biz-map-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>Cargando mapa…</span>
+        </div>
+      )}
+
+      {!geocoding && mapSrc && (
         <div className="biz-map-frame">
           <iframe
             title="Mapa de ubicación"
@@ -292,12 +319,14 @@ function MapSection({ business }) {
             allowFullScreen
           />
         </div>
-      ) : (
+      )}
+
+      {!geocoding && !mapSrc && (
         <div className="biz-map-placeholder">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
           </svg>
-          <p>Sin coordenadas configuradas</p>
+          <p>No se pudo cargar el mapa para esta dirección</p>
         </div>
       )}
 
