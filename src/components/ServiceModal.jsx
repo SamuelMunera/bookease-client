@@ -3,26 +3,18 @@ import api from '../api';
 
 /**
  * Modal de creación de servicio para el panel de negocio.
- * El dueño define nombre, descripción, precio, categoría y qué
- * profesionales lo realizan. La DURACIÓN real la configura cada
- * profesional desde su panel; aquí solo se fija una duración base
- * (referencia / fallback) hasta que el profesional ajuste la suya.
+ * El dueño define el catálogo: nombre, descripción, precio y categoría.
+ * QUÉ profesionales realizan cada servicio lo elige cada profesional
+ * desde su propio panel, y la DURACIÓN real también la configura cada
+ * profesional; aquí solo se fija una duración base (referencia / fallback)
+ * hasta que el profesional ajuste la suya.
  */
-const EMPTY = { name: '', description: '', price: '', categoryId: '', duration: '30', professionalIds: [] };
+const EMPTY = { name: '', description: '', price: '', categoryId: '', duration: '30' };
 
-export default function ServiceModal({ businessId, categories = [], professionals = [], onClose, onCreated }) {
+export default function ServiceModal({ businessId, categories = [], onClose, onCreated }) {
   const [form, setForm]     = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
-
-  function togglePro(id) {
-    setForm(f => ({
-      ...f,
-      professionalIds: f.professionalIds.includes(id)
-        ? f.professionalIds.filter(x => x !== id)
-        : [...f.professionalIds, id],
-    }));
-  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -40,7 +32,6 @@ export default function ServiceModal({ businessId, categories = [], professional
         price,
         duration,
         categoryId: form.categoryId || null,
-        professionalIds: form.professionalIds,
       });
       onCreated?.(created);
       onClose();
@@ -134,39 +125,11 @@ export default function ServiceModal({ businessId, categories = [], professional
               </p>
             </div>
 
-            {/* Profesionales que lo realizan */}
-            <div>
-              <label className="input-label">Profesionales que lo realizan</label>
-              {professionals.length === 0 ? (
-                <p style={{ fontSize:'var(--text-sm)', color:'var(--text-muted)', margin:0 }}>
-                  Aún no tienes profesionales. Puedes asignarlos más tarde.
-                </p>
-              ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-2)', marginTop:'var(--sp-1)' }}>
-                  {professionals.map(p => {
-                    const checked = form.professionalIds.includes(p.id);
-                    return (
-                      <label
-                        key={p.id}
-                        style={{
-                          display:'flex', alignItems:'center', gap:'var(--sp-3)', cursor:'pointer',
-                          padding:'var(--sp-3)', borderRadius:'var(--r-lg)',
-                          background:'var(--surface-3)',
-                          border:`1px solid ${checked ? 'var(--gold)' : 'var(--border)'}`,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => togglePro(p.id)}
-                          style={{ accentColor:'var(--gold)', width:16, height:16 }}
-                        />
-                        <span style={{ fontSize:'var(--text-sm)', fontWeight:600, color:'var(--text)' }}>{p.name}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
+            {/* Nota: la asignación de profesionales no se hace aquí */}
+            <div style={{ padding:'var(--sp-3) var(--sp-4)', borderRadius:'var(--r-lg)', background:'var(--surface-3)', border:'1px solid var(--border)' }}>
+              <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', margin:0, lineHeight:1.5 }}>
+                Cada profesional elige qué servicios realiza y ajusta su propio tiempo desde su panel. Aquí solo defines el catálogo del negocio.
+              </p>
             </div>
 
             {error && <p className="error-msg" style={{ marginBottom:0 }}>{error}</p>}

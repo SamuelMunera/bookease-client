@@ -488,7 +488,6 @@ export default function BusinessDashboardPage() {
         <ServiceModal
           businessId={business.id}
           categories={svcCats}
-          professionals={business.professionals || []}
           onClose={() => setShowSvcModal(false)}
           onCreated={refreshBusiness}
         />
