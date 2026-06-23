@@ -36,12 +36,24 @@ const CATS = ['BARBERSHOP', 'SPA', 'SALON'];
 const CAT_NAME = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
 
 const TABS = [
-  { key: 'panel',      label: 'Panel' },
-  { key: 'analytics',  label: 'Analytics' },
-  { key: 'finanzas',   label: 'Finanzas' },
-  { key: 'apariencia', label: 'Apariencia' },
-  { key: 'perfil',     label: 'Perfil' },
+  { key: 'panel',       label: 'Panel' },
+  { key: 'analytics',   label: 'Analytics' },
+  { key: 'finanzas',    label: 'Finanzas' },
+  { key: 'promociones', label: 'Promociones' },
+  { key: 'apariencia',  label: 'Apariencia' },
+  { key: 'perfil',      label: 'Perfil' },
 ];
+
+const DISCOUNT_TYPES = [
+  { value: 'PERCENTAGE',    label: '% Descuento' },
+  { value: 'FIXED',         label: '$ Descuento fijo' },
+  { value: 'CUSTOM_PRICE',  label: 'Precio especial' },
+];
+
+const EMPTY_PROMO = {
+  title: '', description: '', discountType: 'PERCENTAGE', discountValue: '',
+  customPrice: '', serviceIds: [], startDate: '', endDate: '', isActive: true, message: '',
+};
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DEFAULT_HOURS = DAY_NAMES.map((_, i) => ({ dayOfWeek: i, openTime: '09:00', closeTime: '18:00', isOpen: i >= 1 && i <= 6 }));
@@ -97,6 +109,13 @@ export default function BusinessDashboardPage() {
   const [hours, setHours] = useState(DEFAULT_HOURS);
   const [savingHours, setSavingHours] = useState(false);
   const [hoursMsg, setHoursMsg] = useState('');
+  // Promotions
+  const [promotions, setPromotions] = useState([]);
+  const [promoForm, setPromoForm] = useState(EMPTY_PROMO);
+  const [promoEditing, setPromoEditing] = useState(null);
+  const [promoSaving, setPromoSaving] = useState(false);
+  const [promoMsg, setPromoMsg] = useState('');
+  const [showPromoForm, setShowPromoForm] = useState(false);
 
   useEffect(() => {
     api.getMyBusiness()
@@ -133,6 +152,7 @@ export default function BusinessDashboardPage() {
     api.getBusinessRevenue().then(d => setRevenue(d)).catch(() => {});
     api.getMyBusinessGallery().then(g => setGallery(g || [])).catch(() => {});
     api.getMyServiceCategories().then(c => setSvcCats(c || [])).catch(() => {});
+    api.getMyPromotions().then(p => setPromotions(p || [])).catch(() => {});
     api.getMyBusinessHours().then(h => {
       if (h?.length) {
         setHours(DEFAULT_HOURS.map(d => h.find(x => x.dayOfWeek === d.dayOfWeek) || d));
@@ -314,6 +334,63 @@ export default function BusinessDashboardPage() {
       setHoursMsg('Horarios guardados');
     } catch (err) { setHoursMsg('Error: ' + err.message); }
     finally { setSavingHours(false); setTimeout(() => setHoursMsg(''), 3000); }
+  }
+
+  async function savePromotion(e) {
+    e.preventDefault();
+    setPromoSaving(true); setPromoMsg('');
+    try {
+      const body = {
+        ...promoForm,
+        discountValue: promoForm.discountValue !== '' ? parseFloat(promoForm.discountValue) : null,
+        customPrice:   promoForm.customPrice   !== '' ? parseFloat(promoForm.customPrice)   : null,
+      };
+      if (promoEditing) {
+        const updated = await api.updatePromotion(promoEditing, body);
+        setPromotions(prev => prev.map(p => p.id === promoEditing ? updated : p));
+        setPromoMsg('Promoción actualizada');
+      } else {
+        const created = await api.createPromotion(body);
+        setPromotions(prev => [created, ...prev]);
+        setPromoMsg('Promoción creada');
+      }
+      setPromoForm(EMPTY_PROMO);
+      setPromoEditing(null);
+      setShowPromoForm(false);
+    } catch (err) { setPromoMsg('Error: ' + err.message); }
+    finally { setPromoSaving(false); setTimeout(() => setPromoMsg(''), 4000); }
+  }
+
+  async function togglePromoActive(promo) {
+    try {
+      const updated = await api.updatePromotion(promo.id, { isActive: !promo.isActive });
+      setPromotions(prev => prev.map(p => p.id === promo.id ? updated : p));
+    } catch {}
+  }
+
+  async function deletePromotion(id) {
+    if (!window.confirm('¿Eliminar esta promoción?')) return;
+    try {
+      await api.deletePromotion(id);
+      setPromotions(prev => prev.filter(p => p.id !== id));
+    } catch (err) { setPromoMsg('Error: ' + err.message); setTimeout(() => setPromoMsg(''), 3000); }
+  }
+
+  function startEditPromo(promo) {
+    setPromoForm({
+      title:         promo.title,
+      description:   promo.description || '',
+      discountType:  promo.discountType,
+      discountValue: promo.discountValue != null ? String(promo.discountValue) : '',
+      customPrice:   promo.customPrice   != null ? String(promo.customPrice)   : '',
+      serviceIds:    promo.serviceIds || [],
+      startDate:     promo.startDate ? promo.startDate.slice(0, 10) : '',
+      endDate:       promo.endDate   ? promo.endDate.slice(0, 10)   : '',
+      isActive:      promo.isActive,
+      message:       promo.message || '',
+    });
+    setPromoEditing(promo.id);
+    setShowPromoForm(true);
   }
 
   if (loading) {
@@ -1336,6 +1413,200 @@ export default function BusinessDashboardPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ══════════ PROMOCIONES TAB ══════════ */}
+      {tab === 'promociones' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+
+          {/* Header + CTA */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>
+            <div>
+              <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
+                Herramienta comercial
+              </p>
+              <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--text)', margin: 0 }}>PROMOCIONES</h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginTop: 4 }}>
+                Crea ofertas y descuentos para tus servicios. Las promociones activas son visibles para tus clientes.
+              </p>
+            </div>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => { setPromoForm(EMPTY_PROMO); setPromoEditing(null); setShowPromoForm(v => !v); }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {showPromoForm && !promoEditing ? 'Cancelar' : 'Nueva promoción'}
+            </button>
+          </div>
+
+          {promoMsg && (
+            <p style={{ fontSize: 'var(--text-sm)', color: promoMsg.startsWith('Error') ? 'var(--error)' : 'var(--success)' }}>{promoMsg}</p>
+          )}
+
+          {/* Form */}
+          {showPromoForm && (
+            <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
+              <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-5)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
+                {promoEditing ? 'Editar promoción' : 'Nueva promoción'}
+              </h3>
+              <form onSubmit={savePromotion} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--sp-4)' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Título *</label>
+                    <input className="input" required value={promoForm.title} onChange={e => setPromoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej: 20% en cortes este fin de semana" style={{ width: '100%' }} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Mensaje promocional (opcional)</label>
+                    <input className="input" value={promoForm.message} onChange={e => setPromoForm(f => ({ ...f, message: e.target.value }))} placeholder="Texto corto destacado que verán los clientes" style={{ width: '100%' }} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Descripción (opcional)</label>
+                    <textarea className="input" rows={2} value={promoForm.description} onChange={e => setPromoForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalles adicionales de la promoción" style={{ width: '100%', resize: 'vertical' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Tipo de descuento</label>
+                    <select className="input" value={promoForm.discountType} onChange={e => setPromoForm(f => ({ ...f, discountType: e.target.value }))} style={{ width: '100%' }}>
+                      {DISCOUNT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                  </div>
+
+                  {promoForm.discountType !== 'CUSTOM_PRICE' && (
+                    <div>
+                      <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                        {promoForm.discountType === 'PERCENTAGE' ? 'Porcentaje de descuento (%)' : 'Monto fijo de descuento ($)'}
+                      </label>
+                      <input className="input" type="number" min="0" step={promoForm.discountType === 'PERCENTAGE' ? '1' : '100'} value={promoForm.discountValue} onChange={e => setPromoForm(f => ({ ...f, discountValue: e.target.value }))} placeholder={promoForm.discountType === 'PERCENTAGE' ? 'Ej: 20' : 'Ej: 10000'} style={{ width: '100%' }} />
+                    </div>
+                  )}
+
+                  {promoForm.discountType === 'CUSTOM_PRICE' && (
+                    <div>
+                      <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Precio especial ($)</label>
+                      <input className="input" type="number" min="0" step="100" value={promoForm.customPrice} onChange={e => setPromoForm(f => ({ ...f, customPrice: e.target.value }))} placeholder="Ej: 25000" style={{ width: '100%' }} />
+                    </div>
+                  )}
+
+                  <div>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Fecha de inicio *</label>
+                    <input className="input" type="date" required value={promoForm.startDate} onChange={e => setPromoForm(f => ({ ...f, startDate: e.target.value }))} style={{ width: '100%' }} />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Fecha de fin *</label>
+                    <input className="input" type="date" required value={promoForm.endDate} onChange={e => setPromoForm(f => ({ ...f, endDate: e.target.value }))} style={{ width: '100%' }} />
+                  </div>
+
+                  {business.services?.length > 0 && (
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Servicios aplicables (deja vacío = todos)</label>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' }}>
+                        {business.services.map(s => {
+                          const sel = promoForm.serviceIds.includes(s.id);
+                          return (
+                            <button key={s.id} type="button" onClick={() => setPromoForm(f => ({ ...f, serviceIds: sel ? f.serviceIds.filter(id => id !== s.id) : [...f.serviceIds, s.id] }))}
+                              style={{ padding: '5px 12px', borderRadius: 'var(--r-full)', fontSize: 'var(--text-xs)', fontWeight: sel ? 700 : 500, cursor: 'pointer', border: `1.5px solid ${sel ? 'var(--violet)' : 'var(--border)'}`, background: sel ? 'var(--violet-subtle)' : 'transparent', color: sel ? 'var(--violet)' : 'var(--text-muted)', transition: 'all .12s' }}>
+                              {s.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)' }}>Activa</label>
+                    <button type="button" onClick={() => setPromoForm(f => ({ ...f, isActive: !f.isActive }))}
+                      style={{ width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer', background: promoForm.isActive ? 'var(--violet)' : 'var(--border)', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+                      <span style={{ position: 'absolute', top: 4, left: promoForm.isActive ? 20 : 4, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 'var(--sp-3)', marginTop: 'var(--sp-2)' }}>
+                  <button className="btn btn-primary btn-sm" type="submit" disabled={promoSaving}>
+                    {promoSaving ? 'Guardando…' : promoEditing ? 'Actualizar' : 'Crear promoción'}
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowPromoForm(false); setPromoEditing(null); setPromoForm(EMPTY_PROMO); }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* List */}
+          {promotions.length === 0 && !showPromoForm ? (
+            <div style={{ textAlign: 'center', padding: 'var(--sp-16) var(--sp-4)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)' }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.25" style={{ marginBottom: 'var(--sp-3)' }}>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', marginBottom: 'var(--sp-1)' }}>Sin promociones aún</p>
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', lineHeight: 1.5 }}>
+                Crea tu primera promoción para destacar ofertas y atraer más clientes.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+              {promotions.map(promo => {
+                const now = new Date();
+                const start = new Date(promo.startDate);
+                const end   = new Date(promo.endDate);
+                const isLive = promo.isActive && start <= now && end >= now;
+                const isPast = end < now;
+                const statusColor = isLive ? 'var(--success)' : isPast ? 'var(--text-subtle)' : 'var(--warning)';
+                const statusLabel = isLive ? 'Activa' : isPast ? 'Vencida' : 'Programada';
+
+                const discountLabel = (() => {
+                  if (promo.discountType === 'PERCENTAGE' && promo.discountValue != null) return `${promo.discountValue}% de descuento`;
+                  if (promo.discountType === 'FIXED' && promo.discountValue != null) return `-$${Number(promo.discountValue).toLocaleString('es-CO')}`;
+                  if (promo.discountType === 'CUSTOM_PRICE' && promo.customPrice != null) return `Precio especial: $${Number(promo.customPrice).toLocaleString('es-CO')}`;
+                  return null;
+                })();
+
+                return (
+                  <div key={promo.id} style={{ background: 'var(--surface-2)', border: `1px solid ${isLive ? 'rgba(34,197,94,.25)' : 'var(--border)'}`, borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)', display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginBottom: 'var(--sp-1)', flexWrap: 'wrap' }}>
+                        <p style={{ fontWeight: 800, fontSize: 'var(--text-base)', color: 'var(--text)', margin: 0 }}>{promo.title}</p>
+                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 'var(--r-full)', fontWeight: 700, background: `${statusColor}18`, color: statusColor, border: `1px solid ${statusColor}40` }}>
+                          {statusLabel}
+                        </span>
+                        {!promo.isActive && <span style={{ fontSize: 10, color: 'var(--text-subtle)' }}>· Desactivada</span>}
+                      </div>
+                      {promo.message && <p style={{ fontSize: 'var(--text-sm)', color: 'var(--gold)', fontWeight: 600, marginBottom: 'var(--sp-1)' }}>"{promo.message}"</p>}
+                      {promo.description && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-1)', lineHeight: 1.5 }}>{promo.description}</p>}
+                      {discountLabel && (
+                        <span style={{ display: 'inline-block', fontSize: 'var(--text-xs)', fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--r-full)', background: 'var(--gold-subtle)', color: 'var(--gold)', border: '1px solid var(--gold-border)', marginBottom: 'var(--sp-2)' }}>
+                          {discountLabel}
+                        </span>
+                      )}
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', margin: 0 }}>
+                        {new Date(promo.startDate).toLocaleDateString('es-CO')} → {new Date(promo.endDate).toLocaleDateString('es-CO')}
+                        {promo.serviceIds?.length > 0 && ` · ${promo.serviceIds.length} servicio${promo.serviceIds.length !== 1 ? 's' : ''}`}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'center', flexShrink: 0 }}>
+                      <button type="button" onClick={() => togglePromoActive(promo)}
+                        style={{ width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer', background: promo.isActive ? 'var(--violet)' : 'var(--border)', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+                        <span style={{ position: 'absolute', top: 3, left: promo.isActive ? 18 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                      </button>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => startEditPromo(promo)} style={{ padding: '5px 10px', fontSize: 'var(--text-xs)' }}>
+                        Editar
+                      </button>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => deletePromotion(promo.id)} style={{ padding: '5px 10px', fontSize: 'var(--text-xs)', color: 'var(--error)' }}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

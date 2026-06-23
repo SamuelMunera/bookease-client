@@ -337,8 +337,8 @@ export default function Layout() {
           ══════════════════════════════════════════════ */}
       <footer className="site-footer">
 
-        {/* ── CTA banner ── */}
-        <div className="footer-cta-banner">
+        {/* ── CTA banner — hidden for business owners and professionals ── */}
+        {!['BUSINESS_OWNER', 'PROFESSIONAL'].includes(user?.role) && <div className="footer-cta-banner">
           <div className="footer-cta-inner">
             <div className="footer-cta-text">
               <h3 className="footer-cta-title">
@@ -357,7 +357,7 @@ export default function Layout() {
               </Link>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* ── Main footer body ── */}
         <div className="footer-body">

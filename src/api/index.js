@@ -277,6 +277,13 @@ const api = {
 
   // Feedback
   submitFeedback: (body) => request('/feedback', { method: 'POST', body: JSON.stringify(body) }),
+
+  // Promotions
+  getMyPromotions:    ()         => request('/promotions/me'),
+  createPromotion:    (body)     => request('/promotions/me', { method: 'POST', body: JSON.stringify(body) }),
+  updatePromotion:    (id, body) => request(`/promotions/me/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deletePromotion:    (id)       => request(`/promotions/me/${id}`, { method: 'DELETE' }),
+  getPublicPromotions:(bizId)    => request(`/promotions/${bizId}/active`),
 };
 
 export default api;

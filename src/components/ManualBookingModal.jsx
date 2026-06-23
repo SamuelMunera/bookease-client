@@ -135,7 +135,8 @@ export default function ManualBookingModal({ mode, businessId, professionals = [
   const proOk = !!pid;
   const dateOk = !!date;
   const slotOk = !!startTime;
-  const clientOk = !!(clientEmail.trim() || clientName.trim());
+  const isWalkIn = source === 'PRESENCIAL' || source === 'MANUAL';
+  const clientOk = isWalkIn ? true : !!(clientEmail.trim() || clientName.trim());
   const selectedSvc = proServices.find(s => s.id === serviceId);
 
   return (
@@ -221,8 +222,16 @@ export default function ManualBookingModal({ mode, businessId, professionals = [
           {/* ── Step 3: Client ── */}
           {step === 3 && (
             <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-4)' }}>
+              {isWalkIn && (
+                <div style={{ padding:'var(--sp-3) var(--sp-4)', borderRadius:'var(--r-md)', background:'rgba(124,92,252,.08)', border:'1px solid rgba(124,92,252,.2)', fontSize:'var(--text-xs)', color:'var(--violet)' }}>
+                  Canal <strong>{source === 'PRESENCIAL' ? 'presencial' : 'manual'}</strong> — los datos del cliente son opcionales.
+                </div>
+              )}
               <div>
-                <label className="input-label">Email del cliente (para buscar cuenta existente)</label>
+                <label className="input-label">
+                  Email del cliente
+                  <span style={{ fontWeight:400, color:'var(--text-subtle)', marginLeft:4 }}>(opcional{!isWalkIn ? ', para buscar cuenta existente' : ''})</span>
+                </label>
                 <div style={{ display:'flex', gap:'var(--sp-2)' }}>
                   <input className="input" style={{ flex:1 }} type="email" placeholder="cliente@email.com"
                     value={clientEmail} onChange={e => { setEmail(e.target.value); setFound(null); }} />
@@ -242,7 +251,7 @@ export default function ManualBookingModal({ mode, businessId, professionals = [
                 )}
               </div>
               <div>
-                <label className="input-label">Nombre <span style={{ fontWeight:400, color:'var(--text-subtle)' }}>(requerido si no hay email)</span></label>
+                <label className="input-label">Nombre <span style={{ fontWeight:400, color:'var(--text-subtle)' }}>(opcional)</span></label>
                 <input className="input" type="text" placeholder="Juan Pérez" value={clientName} onChange={e => setName(e.target.value)} />
               </div>
               <div>
