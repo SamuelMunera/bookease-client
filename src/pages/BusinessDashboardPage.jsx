@@ -40,6 +40,7 @@ const TABS = [
   { key: 'panel',       label: 'Panel' },
   { key: 'analytics',   label: 'Analytics' },
   { key: 'finanzas',    label: 'Finanzas' },
+  { key: 'referidos',   label: 'Referidos' },
   { key: 'promociones', label: 'Promociones' },
   { key: 'apariencia',  label: 'Apariencia' },
   { key: 'perfil',      label: 'Perfil' },
@@ -119,6 +120,9 @@ export default function BusinessDashboardPage() {
   const [showPromoForm, setShowPromoForm] = useState(false);
   // Service modal
   const [showSvcModal, setShowSvcModal] = useState(false);
+  // Referrals
+  const [referrals, setReferrals] = useState(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   function refreshBusiness() {
     return api.getMyBusiness().then(setBusiness).catch(() => {});
@@ -160,6 +164,7 @@ export default function BusinessDashboardPage() {
     api.getMyBusinessGallery().then(g => setGallery(g || [])).catch(() => {});
     api.getMyServiceCategories().then(c => setSvcCats(c || [])).catch(() => {});
     api.getMyPromotions().then(p => setPromotions(p || [])).catch(() => {});
+    api.getBusinessReferrals().then(setReferrals).catch(() => {});
     api.getMyBusinessHours().then(h => {
       if (h?.length) {
         setHours(DEFAULT_HOURS.map(d => h.find(x => x.dayOfWeek === d.dayOfWeek) || d));
@@ -1429,6 +1434,124 @@ export default function BusinessDashboardPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ══════════ REFERIDOS TAB ══════════ */}
+      {tab === 'referidos' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+          {!referrals ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+              {[1,2,3].map(n => <div key={n} className="skeleton" style={{ height: 90, borderRadius: 'var(--r-xl)' }} />)}
+            </div>
+          ) : (
+            <>
+              {/* Código de referido */}
+              <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)' }}>
+                <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--sp-1)' }}>Tu código de referido</h3>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', margin: '0 0 var(--sp-4)', lineHeight: 1.5 }}>
+                  Compártelo con otros negocios. Cuando se registren con tu código, ambos ganan.
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
+                  <code style={{
+                    fontSize: 'var(--text-xl)', fontWeight: 800, letterSpacing: '.08em',
+                    color: 'var(--gold)', background: 'var(--surface-3)',
+                    padding: 'var(--sp-3) var(--sp-5)', borderRadius: 'var(--r-lg)',
+                    border: '1px dashed var(--gold)',
+                  }}>
+                    {referrals.referralCode}
+                  </code>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(referrals.referralCode);
+                      setReferralCopied(true);
+                      setTimeout(() => setReferralCopied(false), 2000);
+                    }}
+                  >
+                    {referralCopied ? '¡Copiado!' : 'Copiar código'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Reglas: qué gana cada quién */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--sp-4)' }}>
+                <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)' }}>
+                  <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)', margin: '0 0 var(--sp-2)' }}>El negocio referido gana</p>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+                    <strong style={{ color: 'var(--gold)' }}>{referrals.rules.referredDiscountPct}% de descuento</strong> en su primer mes al registrarse con tu código.
+                  </p>
+                </div>
+                <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)' }}>
+                  <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)', margin: '0 0 var(--sp-2)' }}>Tú ganas</p>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+                    <strong style={{ color: 'var(--gold)' }}>1 mes gratis</strong> por cada negocio referido (máximo {referrals.rules.maxFreeMonths}). Después, <strong style={{ color: 'var(--gold)' }}>{referrals.rules.referrerDiscountPct}% de descuento</strong> (no acumulable) por cada nuevo referido.
+                  </p>
+                </div>
+              </div>
+
+              {/* Métricas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--sp-3)' }}>
+                {[
+                  { label: 'Negocios referidos', value: referrals.totalReferred },
+                  { label: 'Referidos exitosos', value: referrals.successfulReferred },
+                  { label: `Meses gratis (${referrals.freeMonthsEarned}/${referrals.rules.maxFreeMonths})`, value: `${referrals.freeMonthsAvailable} disp.` },
+                  { label: 'Créditos 20%', value: `${referrals.discountCreditsAvailable} disp.` },
+                ].map(m => (
+                  <div key={m.label} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-4)', textAlign: 'center' }}>
+                    <p style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--gold)', margin: '0 0 var(--sp-1)' }}>{m.value}</p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0 }}>{m.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {referrals.reachedFreeMonthsCap && (
+                <div style={{ background: 'rgba(124,92,252,.08)', border: '1px solid rgba(124,92,252,.25)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-3) var(--sp-4)' }}>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--violet)', margin: 0, lineHeight: 1.5 }}>
+                    Alcanzaste el tope de {referrals.rules.maxFreeMonths} meses gratis. A partir de ahora cada nuevo referido exitoso te da {referrals.rules.referrerDiscountPct}% de descuento (no acumulable).
+                  </p>
+                </div>
+              )}
+
+              {/* Historial */}
+              <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)' }}>
+                <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, margin: '0 0 var(--sp-3)' }}>Historial de referidos</h3>
+                {referrals.history.length === 0 ? (
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)', margin: 0 }}>
+                    Aún no has referido ningún negocio. Comparte tu código para empezar.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                    {referrals.history.map(h => (
+                      <div key={h.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)',
+                        padding: 'var(--sp-3)', background: 'var(--surface-3)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
+                      }}>
+                        <div>
+                          <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', margin: 0 }}>{h.businessName}</p>
+                          {h.city && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', margin: 0 }}>{h.city}</p>}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--r-full)',
+                            background: h.status === 'SUCCESSFUL' ? 'rgba(34,197,94,.12)' : 'rgba(234,179,8,.12)',
+                            color: h.status === 'SUCCESSFUL' ? 'var(--success)' : 'var(--warning)',
+                          }}>
+                            {h.status === 'SUCCESSFUL' ? 'Exitoso' : 'Pendiente'}
+                          </span>
+                          {h.rewardType && (
+                            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                              {h.rewardType === 'FREE_MONTH' ? '1 mes gratis' : `${h.rewardValue}% descuento`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {/* ══════════ PROMOCIONES TAB ══════════ */}

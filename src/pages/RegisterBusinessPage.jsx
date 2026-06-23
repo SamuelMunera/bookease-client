@@ -264,11 +264,14 @@ export default function RegisterBusinessPage() {
               <label className="form-label">Código de referido o cortesía (opcional)</label>
               <input
                 className="input"
-                placeholder="Ej: PROMO-XXXXXXXX o CORTESIA-XXXXXXXX"
+                placeholder="Ej: SLOT-XXXXXX, PROMO-XXXXXXXX o CORTESIA-XXXXXXXX"
                 value={form.referralCode}
                 onChange={e => setForm(p => ({ ...p, referralCode: e.target.value.toUpperCase() }))}
                 style={{ textTransform: 'uppercase' }}
               />
+              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', margin: 'var(--sp-2) 0 0', lineHeight: 1.5 }}>
+                ¿Otro negocio te recomendó Slotly? Usa su código <strong>SLOT-…</strong> y obtén 20% de descuento en tu primer mes.
+              </p>
             </div>
 
             {dupWarning && !error && (

@@ -66,6 +66,7 @@ const api = {
 
   // Revenue & settings
   getBusinessRevenue: () => request('/businesses/me/revenue'),
+  getBusinessReferrals: () => request('/businesses/me/referrals'),
   updateBusinessSettings: (body) => request('/businesses/me/settings', { method: 'PATCH', body: JSON.stringify(body) }),
   getProRevenue: () => request('/pro/me/revenue'),
 
