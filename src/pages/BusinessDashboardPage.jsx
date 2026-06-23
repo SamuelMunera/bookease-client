@@ -6,6 +6,7 @@ import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES } from '../utils/countryConfig'
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import BusinessWelcomeModal from '../components/BusinessWelcomeModal';
 import BusinessOnboardingChecklist from '../components/BusinessOnboardingChecklist';
+import ServiceModal from '../components/ServiceModal';
 import TrialStatusBanner from '../components/TrialStatusBanner';
 import { PLAN_NAMES_ES, getPlanLimit } from '../utils/plans';
 
@@ -116,6 +117,12 @@ export default function BusinessDashboardPage() {
   const [promoSaving, setPromoSaving] = useState(false);
   const [promoMsg, setPromoMsg] = useState('');
   const [showPromoForm, setShowPromoForm] = useState(false);
+  // Service modal
+  const [showSvcModal, setShowSvcModal] = useState(false);
+
+  function refreshBusiness() {
+    return api.getMyBusiness().then(setBusiness).catch(() => {});
+  }
 
   useEffect(() => {
     api.getMyBusiness()
@@ -477,6 +484,16 @@ export default function BusinessDashboardPage() {
         <BusinessWelcomeModal business={business} onClose={() => setShowWelcome(false)} />
       )}
 
+      {showSvcModal && (
+        <ServiceModal
+          businessId={business.id}
+          categories={svcCats}
+          professionals={business.professionals || []}
+          onClose={() => setShowSvcModal(false)}
+          onCreated={refreshBusiness}
+        />
+      )}
+
       {/* ── Email verification banner ── */}
       {business && !business.emailVerified && (
         <div style={{
@@ -658,10 +675,10 @@ export default function BusinessDashboardPage() {
             <SectionCard
               title="Servicios"
               action={
-                <Link to="/agenda" style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button onClick={() => setShowSvcModal(true)} style={{ fontSize: 'var(--text-xs)', color: 'var(--gold)', fontWeight: 600, background:'none', border:'none', cursor:'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   Agregar
-                </Link>
+                </button>
               }
             >
               {!business.services?.length ? (
@@ -674,10 +691,10 @@ export default function BusinessDashboardPage() {
                   <p style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)', marginBottom:'var(--sp-4)', lineHeight:1.5 }}>
                     Necesitas al menos uno para que los clientes puedan reservar.
                   </p>
-                  <Link to="/agenda" className="btn btn-primary btn-sm">
+                  <button className="btn btn-primary btn-sm" onClick={() => setShowSvcModal(true)}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Agregar servicio
-                  </Link>
+                  </button>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>

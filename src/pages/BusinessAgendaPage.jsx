@@ -225,8 +225,6 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
 /* ══════════════════════════════════════════════════════════
    MAIN
    ══════════════════════════════════════════════════════════ */
-const EMPTY_SVC = { name: '', description: '', duration: '', price: '' };
-
 export default function BusinessAgendaPage() {
   const { user } = useAuth();
   const [businesses, setBusinesses] = useState([]);
@@ -237,16 +235,12 @@ export default function BusinessAgendaPage() {
 
   const [showManual, setShowManual] = useState(false);
   const [professionals, setProfessionals] = useState([]);
+  // Filtro de agenda por profesional ('all' = todas las reservas juntas)
+  const [profFilter, setProfFilter] = useState('all');
   useEffect(() => {
+    setProfFilter('all');
     if (businessId) api.getBusinessProfessionals(businessId).then(setProfessionals).catch(() => {});
   }, [businessId]);
-
-  // service form
-  const [showSvcForm, setShowSvcForm] = useState(false);
-  const [svcForm,     setSvcForm]     = useState(EMPTY_SVC);
-  const [svcError,    setSvcError]    = useState('');
-  const [svcOk,       setSvcOk]       = useState('');
-  const [svcSaving,   setSvcSaving]   = useState(false);
 
   useEffect(() => {
     api.getBusinesses().then(all => {
@@ -255,33 +249,6 @@ export default function BusinessAgendaPage() {
       if (mine.length === 1) setBusinessId(mine[0].id);
     });
   }, [user.id]);
-
-  async function handleCreateService(e) {
-    e.preventDefault();
-    setSvcError(''); setSvcOk('');
-    const dur = parseInt(svcForm.duration, 10);
-    const pri = parseFloat(svcForm.price);
-    if (!svcForm.name || !svcForm.duration || svcForm.price === '') {
-      return setSvcError('Nombre, duración y precio son obligatorios.');
-    }
-    if (isNaN(dur) || dur <= 0) return setSvcError('Duración debe ser un número positivo.');
-    if (isNaN(pri) || pri < 0)  return setSvcError('Precio debe ser >= 0.');
-    setSvcSaving(true);
-    try {
-      const created = await api.createService(businessId, {
-        name: svcForm.name.trim(),
-        description: svcForm.description.trim() || undefined,
-        duration: dur,
-        price: pri,
-      });
-      setSvcOk(`Servicio "${created.name}" creado.`);
-      setSvcForm(EMPTY_SVC);
-    } catch (err) {
-      setSvcError(err.message);
-    } finally {
-      setSvcSaving(false);
-    }
-  }
 
   function load() {
     if (!businessId) return;
@@ -308,12 +275,17 @@ export default function BusinessAgendaPage() {
     catch (e) { alert(e.message); }
   }
 
-  const pending   = bookings.filter(b => b.status === 'PENDING');
-  const confirmed = bookings.filter(b => b.status === 'CONFIRMED');
-  const cancelled = bookings.filter(b => b.status === 'CANCELLED');
-  const noShows   = bookings.filter(b => b.status === 'NO_SHOW');
+  // Filtro real por profesional: 'all' deja todas; si no, solo las de ese pro.
+  const visibleBookings = profFilter === 'all'
+    ? bookings
+    : bookings.filter(b => b.professional?.id === profFilter);
 
-  const sorted = [...bookings].sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const pending   = visibleBookings.filter(b => b.status === 'PENDING');
+  const confirmed = visibleBookings.filter(b => b.status === 'CONFIRMED');
+  const cancelled = visibleBookings.filter(b => b.status === 'CANCELLED');
+  const noShows   = visibleBookings.filter(b => b.status === 'NO_SHOW');
+
+  const sorted = [...visibleBookings].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   return (
     <div className="page agenda-page">
@@ -363,66 +335,52 @@ export default function BusinessAgendaPage() {
         <DateNav value={date} onChange={setDate} />
       </div>
 
-      {/* ── Service creation ── */}
-      {businessId && (
-        <div style={{ marginBottom: 'var(--sp-6)' }}>
+      {/* ── Filtro por profesional ── */}
+      {businessId && professionals.length > 0 && (
+        <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)', flexWrap:'wrap', marginBottom:'var(--sp-6)' }}>
+          <span style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-subtle)', textTransform:'uppercase', letterSpacing:'.05em', marginRight:'var(--sp-1)' }}>
+            Profesional
+          </span>
           <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => { setShowSvcForm(v => !v); setSvcError(''); setSvcOk(''); }}
+            className="agenda-prof-chip"
+            onClick={() => setProfFilter('all')}
+            style={{
+              padding:'6px 14px', borderRadius:'var(--r-full)', cursor:'pointer',
+              fontSize:'var(--text-sm)', fontWeight:600, transition:'all .15s',
+              border:`1px solid ${profFilter === 'all' ? 'var(--gold)' : 'var(--border)'}`,
+              background: profFilter === 'all' ? 'var(--gold)' : 'var(--surface-3)',
+              color: profFilter === 'all' ? '#0A0808' : 'var(--text-muted)',
+            }}
           >
-            {showSvcForm ? 'Cerrar' : '+ Agregar servicio'}
+            Todos
           </button>
-
-          {showSvcForm && (
-            <form onSubmit={handleCreateService} style={{ marginTop: 'var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)', maxWidth: 480 }}>
-              <input
-                className="input"
-                placeholder="Nombre del servicio *"
-                value={svcForm.name}
-                onChange={e => setSvcForm(f => ({ ...f, name: e.target.value }))}
-              />
-              <input
-                className="input"
-                placeholder="Descripción (opcional)"
-                value={svcForm.description}
-                onChange={e => setSvcForm(f => ({ ...f, description: e.target.value }))}
-              />
-              <div style={{ display: 'flex', gap: 'var(--sp-3)' }}>
-                <input
-                  className="input"
-                  placeholder="Duración (min) *"
-                  type="number"
-                  min="1"
-                  value={svcForm.duration}
-                  onChange={e => setSvcForm(f => ({ ...f, duration: e.target.value }))}
-                  style={{ flex: 1 }}
-                />
-                <input
-                  className="input"
-                  placeholder="Precio *"
-                  type="number"
-                  min="0"
-                  step="100"
-                  value={svcForm.price}
-                  onChange={e => setSvcForm(f => ({ ...f, price: e.target.value }))}
-                  style={{ flex: 1 }}
-                />
-              </div>
-              {svcError && <p className="error-msg" style={{ marginBottom: 0 }}>{svcError}</p>}
-              {svcOk    && <p style={{ color: 'var(--success)', fontSize: 'var(--text-sm)' }}>{svcOk}</p>}
-              <button className="btn btn-primary btn-sm" type="submit" disabled={svcSaving} style={{ alignSelf: 'flex-start' }}>
-                {svcSaving ? 'Guardando…' : 'Crear servicio'}
+          {professionals.map(p => {
+            const active = profFilter === p.id;
+            return (
+              <button
+                key={p.id}
+                className="agenda-prof-chip"
+                onClick={() => setProfFilter(p.id)}
+                style={{
+                  padding:'6px 14px', borderRadius:'var(--r-full)', cursor:'pointer',
+                  fontSize:'var(--text-sm)', fontWeight:600, transition:'all .15s',
+                  border:`1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
+                  background: active ? 'var(--gold)' : 'var(--surface-3)',
+                  color: active ? '#0A0808' : 'var(--text-muted)',
+                }}
+              >
+                {p.name}
               </button>
-            </form>
-          )}
+            );
+          })}
         </div>
       )}
 
       {/* ── Stats ── */}
-      {!loading && bookings.length > 0 && (
+      {!loading && visibleBookings.length > 0 && (
         <div className="agenda-stats-row">
           <StatCard
-            num={bookings.length}
+            num={visibleBookings.length}
             label="Total"
             color="var(--text-muted)"
             icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
@@ -475,10 +433,13 @@ export default function BusinessAgendaPage() {
       )}
 
       {/* ── Empty ── */}
-      {!loading && bookings.length === 0 && (() => {
+      {!loading && visibleBookings.length === 0 && (() => {
         const biz = businesses.find(b => b.id === businessId);
         const noServices = !(biz?.services?.length > 0);
         const noPros     = !(professionals.length > 0);
+        // Hay reservas en el día pero ninguna del profesional filtrado.
+        const filteredOut = bookings.length > 0 && profFilter !== 'all';
+        const filteredName = professionals.find(p => p.id === profFilter)?.name;
         return (
           <div className="empty-state" style={{ marginTop:'var(--sp-6)' }}>
             <div className="empty-state-icon">
@@ -489,11 +450,15 @@ export default function BusinessAgendaPage() {
               </svg>
             </div>
             <p style={{ fontSize:'var(--text-base)', fontWeight:600, color:'var(--text)', marginBottom:'var(--sp-2)' }}>
-              Sin reservas para esta fecha
+              {filteredOut ? `Sin reservas para ${filteredName || 'este profesional'}` : 'Sin reservas para esta fecha'}
             </p>
-            {noServices ? (
+            {filteredOut ? (
               <p style={{ fontSize:'var(--text-sm)', lineHeight:1.5 }}>
-                Agrega al menos un servicio aquí arriba para poder recibir reservas.
+                Este profesional no tiene reservas en esta fecha. Pulsa <strong>Todos</strong> para ver la agenda completa.
+              </p>
+            ) : noServices ? (
+              <p style={{ fontSize:'var(--text-sm)', lineHeight:1.5 }}>
+                Agrega al menos un servicio desde el Panel de negocio para poder recibir reservas.
               </p>
             ) : noPros ? (
               <p style={{ fontSize:'var(--text-sm)', lineHeight:1.5 }}>
