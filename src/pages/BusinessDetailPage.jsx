@@ -35,10 +35,31 @@ function formatBookingCount(n) {
   return `${Math.floor(n / 100) * 100}+`;
 }
 
+/* ── Promociones ─────────────────────────────────────────── */
+// Etiqueta corta del beneficio según el tipo de promoción.
+function promoLabel(p) {
+  if (p.discountType === 'PERCENTAGE' && p.discountValue) return `-${Number(p.discountValue)}%`;
+  if (p.discountType === 'FIXED' && p.discountValue)      return `-$${Number(p.discountValue).toLocaleString('es-CO')}`;
+  if (p.discountType === 'CUSTOM_PRICE' && p.customPrice) return `$${Number(p.customPrice).toLocaleString('es-CO')}`;
+  return 'Oferta';
+}
+function promoVigencia(p) {
+  if (!p.endDate) return '';
+  const end = new Date(p.endDate);
+  return `Válida hasta el ${end.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
+}
+// Regla de prioridad: gana el mayor % de descuento; si ninguna es porcentual,
+// la que vence antes (más urgente). Determinística y sin caos visual.
+function pickFeaturedPromo(promos) {
+  if (!promos?.length) return null;
+  const score = (p) => (p.discountType === 'PERCENTAGE' ? Number(p.discountValue || 0) : 0);
+  return [...promos].sort((a, b) => score(b) - score(a) || new Date(a.endDate) - new Date(b.endDate))[0];
+}
+
 /* ══════════════════════════════════════════════════════════
    HERO — with cover photo support
    ══════════════════════════════════════════════════════════ */
-function BizHero({ business, stats }) {
+function BizHero({ business, stats, promo, onPromoCta }) {
   const avgRating   = stats?.avgRating ?? null;
   const reviewCount = stats?.reviewCount ?? 0;
   const bookingCount = stats?.bookingCount ?? 0;
@@ -116,6 +137,24 @@ function BizHero({ business, stats }) {
               <span className="biz-hero-stat-label">Reservas</span>
             </div>
           </div>
+
+          {/* Promoción destacada — visible al cliente en la vista pública */}
+          {promo && (
+            <div className="hero-promo">
+              <span className="hero-promo-badge">{promoLabel(promo)}</span>
+              <div className="hero-promo-body">
+                <p className="hero-promo-title">{promo.title}</p>
+                {(promo.message || promo.description) && (
+                  <p className="hero-promo-desc">{promo.message || promo.description}</p>
+                )}
+                {promoVigencia(promo) && <p className="hero-promo-meta">{promoVigencia(promo)}</p>}
+              </div>
+              <button className="hero-promo-cta" onClick={onPromoCta}>
+                Aprovechar promoción
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="biz-hero-logo" style={{
@@ -625,6 +664,7 @@ export default function BusinessDetailPage() {
   const [gallery, setGallery]               = useState([]);
   const [categories, setCategories]         = useState([]);
   const [hours, setHours]                   = useState([]);
+  const [promotions, setPromotions]         = useState([]);
   const [selectedProf, setSelectedProf]     = useState('');
   const [selectedService, setSelectedService] = useState('');
   const [error, setError]                   = useState('');
@@ -648,7 +688,8 @@ export default function BusinessDetailPage() {
       api.getBusinessGallery(id).catch(() => []),
       api.getBusinessServiceCategories(id).catch(() => []),
       api.getBusinessHours(id).catch(() => []),
-    ]).then(([biz, profs, svcs, bizStats, bizReviews, gal, cats, hrs]) => {
+      api.getPublicPromotions(id).catch(() => []),
+    ]).then(([biz, profs, svcs, bizStats, bizReviews, gal, cats, hrs, promos]) => {
       if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
       setProfessionals(profs || []);
@@ -659,6 +700,7 @@ export default function BusinessDetailPage() {
       setGallery(gal || []);
       setCategories(cats || []);
       setHours(hrs || []);
+      setPromotions(Array.isArray(promos) ? promos : []);
     }).catch((err) => setLoadError(err.message || 'No se pudo cargar el negocio.'));
   }, [id]);
 
@@ -689,6 +731,8 @@ export default function BusinessDetailPage() {
   }
 
   const selectedServiceData = services.find((s) => s.id === selectedService);
+  const featuredPromo = pickFeaturedPromo(promotions);
+  const scrollToBooking = () => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   if (loadError) {
     return (
@@ -737,9 +781,32 @@ export default function BusinessDetailPage() {
 
   return (
     <div style={accentVars}>
-      <BizHero business={business} stats={stats} />
+      <BizHero business={business} stats={stats} promo={featuredPromo} onPromoCta={scrollToBooking} />
 
       <div className="page detail-page" ref={contentRef}>
+
+        {/* ── Promociones activas (visibles al cliente) ── */}
+        {promotions.length > 0 && (
+          <section className="promo-section">
+            <div className="detail-section-label" style={{ marginBottom: 'var(--sp-5)' }}>
+              <div className="detail-section-label-line" />
+              <span>Promociones</span>
+              <div className="detail-section-label-line" />
+            </div>
+            <div className="promo-grid">
+              {promotions.map((p) => (
+                <div key={p.id} className="promo-card">
+                  <span className="promo-card-badge">{promoLabel(p)}</span>
+                  <p className="promo-card-title">{p.title}</p>
+                  {(p.message || p.description) && (
+                    <p className="promo-card-desc">{p.message || p.description}</p>
+                  )}
+                  {promoVigencia(p) && <p className="promo-card-meta">{promoVigencia(p)}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ── Gallery ── */}
         <GallerySection photos={gallery} />

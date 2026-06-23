@@ -5370,3 +5370,102 @@ html { scroll-padding-top: 68px; }
   .pricing2-final-cta-actions { flex-direction: column; }
   .pricing2-final-cta-actions .btn { width: 100%; justify-content: center; }
 }
+
+/* ════════════════ PROMOCIONES (visible al cliente) ════════════════ */
+/* Color/acento propio de promoción — distinto del gold/violet del resto,
+   alto contraste, con sensación de oferta sin verse barato. */
+:root {
+  --promo:        #FF4D6D;
+  --promo-2:      #FF8A3D;
+  --promo-grad:   linear-gradient(135deg, #FF4D6D 0%, #FF8A3D 100%);
+  --promo-soft:   rgba(255, 77, 109, 0.12);
+  --promo-border: rgba(255, 77, 109, 0.35);
+}
+
+/* Banner destacado dentro del hero */
+.hero-promo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-xl);
+  background: var(--promo-grad);
+  box-shadow: 0 8px 28px rgba(255, 77, 109, 0.35);
+  color: #fff;
+}
+.hero-promo-badge {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+}
+.hero-promo-body { flex: 1; min-width: 180px; }
+.hero-promo-title { margin: 0; font-weight: 800; font-size: var(--text-base); }
+.hero-promo-desc  { margin: 2px 0 0; font-size: var(--text-sm); opacity: 0.95; }
+.hero-promo-meta  { margin: 4px 0 0; font-size: var(--text-xs); opacity: 0.9; }
+.hero-promo-cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-full);
+  background: #fff;
+  color: #B3123E;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.hero-promo-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+
+/* Sección de promociones en la vista pública del negocio */
+.promo-section { margin: var(--sp-8) 0; }
+.promo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--sp-4);
+}
+.promo-card {
+  position: relative;
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-xl);
+  background: var(--promo-soft);
+  border: 1px solid var(--promo-border);
+  overflow: hidden;
+}
+.promo-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--promo-grad);
+}
+.promo-card-badge {
+  display: inline-block;
+  font-weight: 800;
+  font-size: var(--text-xs);
+  letter-spacing: .02em;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  background: var(--promo-grad);
+  color: #fff;
+  margin-bottom: var(--sp-2);
+}
+.promo-card-title { margin: 0; font-weight: 700; font-size: var(--text-base); color: var(--text); }
+.promo-card-desc  { margin: 4px 0 0; font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; }
+.promo-card-meta  { margin: var(--sp-3) 0 0; font-size: var(--text-xs); color: var(--promo); font-weight: 600; }
+
+@media (max-width: 600px) {
+  .hero-promo { gap: var(--sp-3); }
+  .hero-promo-cta { width: 100%; justify-content: center; }
+  .hero-promo-badge { font-size: var(--text-base); }
+}
