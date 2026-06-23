@@ -126,6 +126,7 @@ function redirectToWompiCheckout(checkout, redirectUrl) {
 function WompiPayButton({ plan, user }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [freeMonth, setFreeMonth] = useState(false);
 
   const eligible = !plan.enterprise && plan.price
     && ((user?.role === 'BUSINESS_OWNER' && plan.forType === 'business')
@@ -153,11 +154,29 @@ function WompiPayButton({ plan, user }) {
     try {
       const checkout = await api.createWompiCheckout(plan.id);
       const redirectPath = user.role === 'BUSINESS_OWNER' ? '/dashboard' : '/pro/dashboard';
+      // Recompensa de referidos: mes gratis aplicado sin pasar por Wompi.
+      if (checkout.freeMonthApplied) {
+        setFreeMonth(true);
+        setLoading(false);
+        setTimeout(() => { window.location.href = redirectPath; }, 2200);
+        return;
+      }
       redirectToWompiCheckout(checkout, `${window.location.origin}${redirectPath}`);
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
+  }
+
+  if (freeMonth) {
+    return (
+      <div style={{ marginTop: 'var(--sp-2)', background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-3) var(--sp-4)' }}>
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--success)', margin: '0 0 2px' }}>¡Mes gratis aplicado! 🎉</p>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+          Usaste una recompensa de referidos: este mes va por nuestra cuenta. Redirigiendo a tu panel…
+        </p>
+      </div>
+    );
   }
 
   return (
