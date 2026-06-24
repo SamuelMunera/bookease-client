@@ -127,6 +127,7 @@ function WompiPayButton({ plan, user }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [freeMonth, setFreeMonth] = useState(false);
+  const [referralDiscount, setReferralDiscount] = useState(false);
 
   const eligible = !plan.enterprise && plan.price
     && ((user?.role === 'BUSINESS_OWNER' && plan.forType === 'business')
@@ -159,6 +160,15 @@ function WompiPayButton({ plan, user }) {
         setFreeMonth(true);
         setLoading(false);
         setTimeout(() => { window.location.href = redirectPath; }, 2200);
+        return;
+      }
+      // Descuento de referido aplicado sobre el monto de Wompi: lo avisamos
+      // brevemente antes de redirigir al checkout.
+      if (checkout?.referredDiscountApplied || checkout?.referrerCreditApplied) {
+        setReferralDiscount(true);
+        setTimeout(() => {
+          redirectToWompiCheckout(checkout, `${window.location.origin}${redirectPath}`);
+        }, 2200);
         return;
       }
       redirectToWompiCheckout(checkout, `${window.location.origin}${redirectPath}`);

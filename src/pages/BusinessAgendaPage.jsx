@@ -93,7 +93,7 @@ function StatCard({ num, label, color, icon }) {
 
 /* ── Timeline row ────────────────────────────────────────── */
 function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
-  const [confirm, setConfirm] = useState(null); // 'no-show' | 'complete' | null
+  const [confirm, setConfirm] = useState(null); // 'no-show' | 'complete' | 'cancel' | null
   const statusColor = {
     CONFIRMED: 'var(--success)',
     PENDING:   'var(--warning)',
@@ -188,32 +188,46 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
                 </button>
               </>
             )}
-            {confirm !== null && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
-                padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
-                background: confirm === 'no-show' ? 'rgba(239,68,68,0.08)' : 'var(--gold-subtle)',
-                border: `1px solid ${confirm === 'no-show' ? 'rgba(239,68,68,0.2)' : 'var(--gold-border)'}`,
-              }}>
-                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: confirm === 'no-show' ? '#ef4444' : 'var(--gold)' }}>
-                  {confirm === 'no-show' ? '¿Marcar como no asistió?' : '¿Marcar como completada?'}
-                </span>
-                <button
-                  className="btn btn-sm"
-                  style={{ padding: '3px 12px', fontWeight: 700, background: confirm === 'no-show' ? '#ef4444' : 'var(--gold)', color: '#000', border: 'none' }}
-                  onClick={() => { setConfirm(null); confirm === 'no-show' ? onNoShow(b.id) : onComplete(b.id); }}
-                >
-                  Sí
-                </button>
-                <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setConfirm(null)}>
-                  No
-                </button>
-              </div>
-            )}
+            {confirm !== null && (() => {
+              const danger = confirm === 'no-show' || confirm === 'cancel';
+              const prompt = confirm === 'no-show'
+                ? '¿Marcar como no asistió?'
+                : confirm === 'cancel'
+                  ? '¿Cancelar esta reserva?'
+                  : '¿Marcar como completada?';
+              const onYes = confirm === 'no-show'
+                ? () => onNoShow(b.id)
+                : confirm === 'cancel'
+                  ? () => onCancel(b.id)
+                  : () => onComplete(b.id);
+              return (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
+                  padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
+                  background: danger ? 'rgba(239,68,68,0.08)' : 'var(--gold-subtle)',
+                  border: `1px solid ${danger ? 'rgba(239,68,68,0.2)' : 'var(--gold-border)'}`,
+                }}>
+                  <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: danger ? '#ef4444' : 'var(--gold)' }}>
+                    {prompt}
+                  </span>
+                  <button
+                    className="btn btn-sm"
+                    style={{ padding: '3px 12px', fontWeight: 700, background: danger ? '#ef4444' : 'var(--gold)', color: '#000', border: 'none' }}
+                    onClick={() => { setConfirm(null); onYes(); }}
+                  >
+                    Sí
+                  </button>
+                  <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setConfirm(null)}>
+                    No
+                  </button>
+                </div>
+              );
+            })()}
             {/* C-37: Cancelar solo para citas futuras (cancelar una cita pasada
-                no tiene sentido; para pasadas quedan Completar/No asistió). */}
-            {!isPast(b) && (
-              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
+                no tiene sentido; para pasadas quedan Completar/No asistió).
+                C-31: confirmación inline (sin window.confirm nativo). */}
+            {!isPast(b) && confirm === null && (
+              <button className="btn btn-danger btn-sm" onClick={() => setConfirm('cancel')}>
                 Cancelar
               </button>
             )}
@@ -259,26 +273,36 @@ export default function BusinessAgendaPage() {
   function load() {
     if (!businessId) return;
     setLoading(true);
-    api.getBusinessBookings(businessId, { date }).then(setBookings).finally(() => setLoading(false));
+    setLoadError(null); // C-30: limpiar error al iniciar cada carga
+    api.getBusinessBookings(businessId, { date })
+      .then(setBookings)
+      .catch(() => setLoadError('No se pudieron cargar las reservas. Comprueba tu conexión e inténtalo de nuevo.'))
+      .finally(() => setLoading(false));
   }
   useEffect(load, [businessId, date]);
 
+  // C-31: nota — la confirmación de cancelar se migró a un patrón inline (sin
+  // window.confirm). Los errores de acción se muestran con actionError en vez
+  // de alert() nativo.
   async function handleConfirm(id) {
-    await api.confirmBooking(id);
-    load();
+    setActionError(null);
+    try { await api.confirmBooking(id); load(); }
+    catch (e) { setActionError(e.message || 'No se pudo confirmar la reserva.'); }
   }
   async function handleCancel(id) {
-    if (!window.confirm('¿Cancelar esta reserva?')) return;
-    await api.cancelBookingAsOwner(id);
-    load();
+    setActionError(null);
+    try { await api.cancelBookingAsOwner(id); load(); }
+    catch (e) { setActionError(e.message || 'No se pudo cancelar la reserva.'); }
   }
   async function handleNoShow(id) {
+    setActionError(null);
     try { await api.markNoShow(id); load(); }
-    catch (e) { alert(e.message); }
+    catch (e) { setActionError(e.message || 'No se pudo marcar como no asistió.'); }
   }
   async function handleComplete(id) {
+    setActionError(null);
     try { await api.markComplete(id); load(); }
-    catch (e) { alert(e.message); }
+    catch (e) { setActionError(e.message || 'No se pudo marcar como completada.'); }
   }
 
   // Filtro real por profesional: 'all' deja todas; si no, solo las de ese pro.
@@ -382,8 +406,18 @@ export default function BusinessAgendaPage() {
         </div>
       )}
 
+      {/* ── Action error (C-31): feedback no nativo en lugar de alert() ── */}
+      {actionError && (
+        <div className="error-msg" style={{ marginBottom:'var(--sp-4)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'var(--sp-3)' }}>
+          <span>{actionError}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => setActionError(null)}>
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {/* ── Stats ── */}
-      {!loading && visibleBookings.length > 0 && (
+      {!loading && !loadError && visibleBookings.length > 0 && (
         <div className="agenda-stats-row">
           <StatCard
             num={visibleBookings.length}
@@ -438,8 +472,19 @@ export default function BusinessAgendaPage() {
         </div>
       )}
 
+      {/* ── Load error (C-30): bloque de error con reintento en lugar del
+            empty-state cuando la carga falla. ── */}
+      {!loading && loadError && (
+        <div className="error-msg" style={{ marginTop:'var(--sp-6)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'var(--sp-3)', flexWrap:'wrap' }}>
+          <span>{loadError}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => load()}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* ── Empty ── */}
-      {!loading && visibleBookings.length === 0 && (() => {
+      {!loading && !loadError && visibleBookings.length === 0 && (() => {
         const biz = businesses.find(b => b.id === businessId);
         const noServices = !(biz?.services?.length > 0);
         const noPros     = !(professionals.length > 0);
@@ -480,7 +525,7 @@ export default function BusinessAgendaPage() {
       })()}
 
       {/* ── Timeline ── */}
-      {!loading && sorted.length > 0 && (
+      {!loading && !loadError && sorted.length > 0 && (
         <div className="agenda-timeline">
           {sorted.map((b, idx) => (
             <TimelineRow

@@ -123,6 +123,14 @@ export default function BusinessDashboardPage() {
   // Referrals
   const [referrals, setReferrals] = useState(null);
   const [referralCopied, setReferralCopied] = useState(false);
+  const [referralsError, setReferralsError] = useState(false);
+
+  function loadReferrals() {
+    setReferralsError(false);
+    return api.getBusinessReferrals()
+      .then(setReferrals)
+      .catch(() => setReferralsError(true));
+  }
 
   function refreshBusiness() {
     return api.getMyBusiness().then(setBusiness).catch(() => {});
@@ -164,7 +172,7 @@ export default function BusinessDashboardPage() {
     api.getMyBusinessGallery().then(g => setGallery(g || [])).catch(() => {});
     api.getMyServiceCategories().then(c => setSvcCats(c || [])).catch(() => {});
     api.getMyPromotions().then(p => setPromotions(p || [])).catch(() => {});
-    api.getBusinessReferrals().then(setReferrals).catch(() => {});
+    loadReferrals();
     api.getMyBusinessHours().then(h => {
       if (h?.length) {
         setHours(DEFAULT_HOURS.map(d => h.find(x => x.dayOfWeek === d.dayOfWeek) || d));
@@ -649,6 +657,7 @@ export default function BusinessDashboardPage() {
       <div style={{
         display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)',
         borderBottom: '1px solid var(--border)', paddingBottom: 0,
+        overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch',
       }}>
         {TABS.map(t => (
           <button
@@ -661,6 +670,7 @@ export default function BusinessDashboardPage() {
               color: tab === t.key ? 'var(--text)' : 'var(--text-muted)',
               borderBottom: tab === t.key ? '2px solid var(--gold)' : '2px solid transparent',
               marginBottom: -1, transition: 'color .15s',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}
           >
             {t.label}
@@ -1353,7 +1363,7 @@ export default function BusinessDashboardPage() {
               <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 'var(--sp-3)' }}>
                 Resumen del negocio
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--sp-3)', marginBottom: 'var(--sp-5)' }}>
                 {[
                   { label: 'Hoy',         val: revenue.totals.day,   icon: '☀️' },
                   { label: 'Esta semana', val: revenue.totals.week,  icon: '📅' },
@@ -1439,7 +1449,16 @@ export default function BusinessDashboardPage() {
       {/* ══════════ REFERIDOS TAB ══════════ */}
       {tab === 'referidos' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
-          {!referrals ? (
+          {referralsError ? (
+            <div style={{ textAlign: 'center', padding: 'var(--sp-8) var(--sp-4)' }}>
+              <p className="error-msg" style={{ marginBottom: 'var(--sp-4)' }}>
+                No se pudieron cargar tus referidos.
+              </p>
+              <button className="btn btn-secondary btn-sm" onClick={loadReferrals}>
+                Reintentar
+              </button>
+            </div>
+          ) : !referrals ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
               {[1,2,3].map(n => <div key={n} className="skeleton" style={{ height: 90, borderRadius: 'var(--r-xl)' }} />)}
             </div>

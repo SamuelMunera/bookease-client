@@ -714,10 +714,12 @@ export default function BusinessDetailPage() {
     if (!selectedProf) { setServices(allServices); setSelectedService(''); return; }
     api.getProfessionalServices(selectedProf)
       .then(proServices => {
-        setServices(proServices?.length ? proServices : allServices);
+        // Con profesional seleccionado solo mostramos lo que ese pro ofrece.
+        // Sin fallback al catálogo completo: si no ofrece nada, queda vacío.
+        setServices(proServices || []);
         setSelectedService('');
       })
-      .catch(() => setServices(allServices));
+      .catch(() => { setServices([]); setSelectedService(''); });
   }, [selectedProf]); // eslint-disable-line
 
   function handleBook() {
@@ -884,7 +886,9 @@ export default function BusinessDetailPage() {
 
             {services.length === 0 ? (
               <div className="empty-state" style={{ padding:'var(--sp-8) var(--sp-4)' }}>
-                <p style={{ fontSize:'var(--text-sm)' }}>Sin servicios registrados.</p>
+                <p style={{ fontSize:'var(--text-sm)' }}>
+                  {selectedProf ? 'Este profesional no ofrece servicios.' : 'Sin servicios registrados.'}
+                </p>
               </div>
             ) : (
               <CategorizedServices
