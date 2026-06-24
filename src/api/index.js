@@ -36,6 +36,7 @@ const api = {
   // Auth
   register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  switchContext: (role) => request('/auth/switch-context', { method: 'POST', body: JSON.stringify({ role }) }),
   updateMe: (body) => request('/auth/me', { method: 'PATCH', body: JSON.stringify(body) }),
 
   // Businesses

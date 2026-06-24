@@ -11,6 +11,17 @@ export default function ProLoginPage() {
   const [error,     setError]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [googleRole, setGoogleRole] = useState('PROFESSIONAL');
+  // Cuando la misma identidad tiene varios contextos (negocio + profesional)
+  // el backend pide elegir con cuál entrar antes de emitir la sesión.
+  const [contexts,  setContexts]  = useState(null);
+
+  const DEST = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard' };
+
+  function enter(data) {
+    logout(); // limpia cualquier sesión previa de otro rol antes de entrar
+    login(data);
+    navigate(DEST[data.user.role] || '/');
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -18,12 +29,24 @@ export default function ProLoginPage() {
     setLoading(true);
     try {
       const data = await api.login({ ...form, audience: 'pro' });
-      logout(); // limpia cualquier sesión previa de otro rol antes de entrar
-      login(data);
-      const dest = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard' };
-      navigate(dest[data.user.role] || '/');
+      if (data.needsContext) { setContexts(data.availableRoles); return; }
+      enter(data);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function chooseContext(role) {
+    setError('');
+    setLoading(true);
+    try {
+      const data = await api.login({ ...form, audience: 'pro', context: role });
+      enter(data);
+    } catch (err) {
+      setError(err.message);
+      setContexts(null);
     } finally {
       setLoading(false);
     }
@@ -77,6 +100,32 @@ export default function ProLoginPage() {
           <h1 className="auth-form-title">Acceso profesional</h1>
           <p className="auth-form-sub">Para profesionales y dueños de negocio</p>
 
+          {contexts ? (
+            <div className="auth-form-fields">
+              <p className="auth-form-sub" style={{ marginTop: 0 }}>
+                Esta cuenta tiene varios accesos. ¿Con cuál quieres entrar?
+              </p>
+              {error && (
+                <p className="error-msg">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {error}
+                </p>
+              )}
+              {contexts.map(role => (
+                <button key={role} type="button" className="btn btn-primary btn-lg btn-full" disabled={loading}
+                  style={{ background: 'var(--violet)' }} onClick={() => chooseContext(role)}>
+                  {role === 'BUSINESS_OWNER' ? 'Entrar como negocio' : 'Entrar como profesional'}
+                </button>
+              ))}
+              <button type="button" className="btn btn-ghost btn-full" disabled={loading}
+                onClick={() => { setContexts(null); setError(''); }}>
+                Volver
+              </button>
+            </div>
+          ) : (
+          <>
           <form className="auth-form-fields" onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label" htmlFor="pro-email">Email</label>
@@ -167,6 +216,8 @@ export default function ProLoginPage() {
           </div>
 
           <GoogleAuthButton role={googleRole} onError={setError} />
+          </>
+          )}
 
           <p className="auth-foot">
             ¿Nuevo profesional?{' '}

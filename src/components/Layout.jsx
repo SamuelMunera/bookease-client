@@ -82,9 +82,19 @@ const SOCIAL_LINKS = [
 ];
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+
+  // Cambio de contexto para identidades con varios accesos (negocio + profesional).
+  const CTX_HOME = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard', CLIENT: '/', ADMIN: '/admin/dashboard' };
+  async function switchTo(role) {
+    try {
+      const data = await api.switchContext(role);
+      login(data);
+      navigate(CTX_HOME[role] || '/');
+    } catch { /* el guard del backend rechaza contextos no poseídos */ }
+  }
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -240,6 +250,30 @@ export default function Layout() {
                 Mis citas
               </Link>
             </>
+          )}
+
+          {/* — Context switch (identidades con negocio + profesional) — */}
+          {user?.availableRoles?.length > 1 && (
+            <div className="nav-ctx-switch" style={{ display: 'flex', gap: 4 }}>
+              {user.availableRoles
+                .filter(r => r === 'BUSINESS_OWNER' || r === 'PROFESSIONAL')
+                .map(r => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => r !== user.role && switchTo(r)}
+                    title={r === 'BUSINESS_OWNER' ? 'Ver como negocio' : 'Ver como profesional'}
+                    style={{
+                      padding: '4px 10px', borderRadius: 'var(--r-full)', cursor: 'pointer',
+                      fontSize: 'var(--text-xs)', fontWeight: 600,
+                      border: `1px solid ${user.role === r ? 'var(--violet)' : 'var(--border)'}`,
+                      background: user.role === r ? 'var(--violet-subtle)' : 'transparent',
+                      color: user.role === r ? 'var(--violet)' : 'var(--text-muted)',
+                    }}>
+                    {r === 'BUSINESS_OWNER' ? 'Negocio' : 'Profesional'}
+                  </button>
+                ))}
+            </div>
           )}
 
           {/* — User chip — */}
