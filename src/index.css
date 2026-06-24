@@ -2866,10 +2866,14 @@ html { scroll-padding-top: 68px; }
   padding: var(--sp-4) var(--sp-6);
   max-width: 860px; margin: 0 auto;
   border-bottom: 1px solid var(--border);
+  overflow-x: auto; /* R-008: si las pestañas no caben, scroll en vez de apretarse */
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab {
   padding: 8px 18px;
+  min-height: 40px; /* R-008: tap target táctil */
+  display: inline-flex; align-items: center; white-space: nowrap;
   font-size: var(--text-sm); font-weight: 600;
   border-radius: var(--r-full); cursor: pointer;
   transition: all var(--ease);
@@ -3751,6 +3755,7 @@ html { scroll-padding-top: 68px; }
 .slot-btn2 {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 10px 6px;
+  min-height: 44px; /* R-007: tap target táctil en móvil */
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--r-lg); cursor: pointer;
   transition: all var(--ease);

@@ -195,20 +195,10 @@ export default function BookingPage() {
     setSlotTaken(false);
     setLoading(true);
     api.getSlots({ professionalId, serviceId, date })
-      .then(d  => {
-        let slots = d.slots || [];
-        const now2 = new Date();
-        const localToday = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}-${String(now2.getDate()).padStart(2,'0')}`;
-        if (date === localToday) {
-          const now = new Date();
-          const nowMins = now.getHours() * 60 + now.getMinutes();
-          slots = slots.filter(s => {
-            const [h, m] = s.startTime.split(':').map(Number);
-            return h * 60 + m > nowMins;
-          });
-        }
-        setSlots(slots);
-      })
+      // El backend ya excluye los turnos pasados de hoy usando la timezone del
+      // negocio (C-03). No re-filtramos en cliente con la hora local del
+      // navegador para no reintroducir el bug cross-timezone (N-01).
+      .then(d  => setSlots(d.slots || []))
       .catch(e => setError(e.message))
       .finally(()  => setLoading(false));
   }, [date, professionalId, serviceId, refreshKey]);

@@ -20,7 +20,7 @@ function StatCard({ label, value, sub, accent }) {
   return (
     <div style={{
       padding: 'var(--sp-4) var(--sp-5)', borderRadius: 'var(--r-xl)',
-      background: 'var(--surface-2)', border: `1.5px solid ${accent ? 'var(--gold-border)' : 'var(--border)'}`,
+      border: `1.5px solid ${accent ? 'var(--gold-border)' : 'var(--border)'}`,
       background: accent ? 'var(--gold-subtle)' : 'var(--surface-2)',
     }}>
       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
@@ -110,7 +110,7 @@ export default function AnalyticsPanel({ role = 'business' }) {
             key={p.key}
             onClick={() => setPeriod(p.key)}
             style={{
-              padding: '6px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              padding: '6px 20px', borderRadius: 999, cursor: 'pointer',
               fontWeight: 700, fontSize: 'var(--text-sm)', transition: 'all .15s',
               background: period === p.key ? 'var(--gold)' : 'var(--surface-2)',
               color:      period === p.key ? '#000' : 'var(--text-muted)',

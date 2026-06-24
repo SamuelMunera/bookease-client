@@ -102,9 +102,11 @@ export default function ManualBookingModal({ mode, businessId, professionals = [
     setSearching(true);
     try {
       const c = await api.searchClient(clientEmail.trim());
-      setFound(c);
+      // F-012: distinguir "buscado y no encontrado" (false) de "aún no buscado"
+      // (null) para que el aviso "se creará una cuenta nueva" sí aparezca.
+      setFound(c ?? false);
       if (c) setName(c.name);
-    } catch { setFound(null); }
+    } catch { setFound(false); }
     finally { setSearching(false); }
   }
 
