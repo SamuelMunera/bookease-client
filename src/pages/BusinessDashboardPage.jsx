@@ -60,6 +60,70 @@ const EMPTY_PROMO = {
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const DEFAULT_HOURS = DAY_NAMES.map((_, i) => ({ dayOfWeek: i, openTime: '09:00', closeTime: '18:00', isOpen: i >= 1 && i <= 6 }));
 
+/* ─── Theming por modo ──────────────────────────────────────
+   Set acotado de claves editables. Cada modo (claro/oscuro) se
+   guarda como objeto independiente. Defaults tomados de index.css. */
+const THEME_KEYS = [
+  { key: 'accent',    label: 'Acento' },
+  { key: 'bg',        label: 'Fondo' },
+  { key: 'surface',   label: 'Superficie' },
+  { key: 'text',      label: 'Texto' },
+  { key: 'textMuted', label: 'Texto tenue' },
+  { key: 'border',    label: 'Borde' },
+];
+const DEFAULT_THEME_DARK = {
+  accent: '#7C5CFC', bg: '#07070C', surface: '#0D0C1A',
+  text: '#EAE8FF', textMuted: '#9490AE', border: '#26243A',
+};
+const DEFAULT_THEME_LIGHT = {
+  accent: '#7C5CFC', bg: '#F5F4FF', surface: '#FFFFFF',
+  text: '#12101F', textMuted: '#4A4866', border: '#E2E0F0',
+};
+// Mezcla overrides recibidos del backend sobre los defaults (tolera nulls/parciales).
+function mergeTheme(base, overrides) {
+  if (!overrides || typeof overrides !== 'object') return { ...base };
+  const out = { ...base };
+  for (const { key } of THEME_KEYS) {
+    if (typeof overrides[key] === 'string' && overrides[key]) out[key] = overrides[key];
+  }
+  return out;
+}
+
+/* Maqueta de perfil que aplica un theme via CSS vars scopeadas. */
+function ThemePreview({ theme }) {
+  const vars = {
+    '--accent': theme.accent,
+    background: theme.bg,
+    color: theme.text,
+    border: `1px solid ${theme.border}`,
+  };
+  return (
+    <div style={{ ...vars, borderRadius: 'var(--r-xl)', padding: 'var(--sp-4)', overflow: 'hidden' }}>
+      {/* Encabezado: logo + nombre */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18, flexShrink: 0 }}>S</div>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: theme.text }}>Tu Negocio</p>
+          <p style={{ margin: 0, fontSize: 11, color: theme.textMuted }}>Barbería · Tu ciudad</p>
+        </div>
+      </div>
+      {/* Card de servicio */}
+      <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 12, padding: '12px 14px', marginBottom: 12 }}>
+        <p style={{ margin: '0 0 2px', fontWeight: 600, fontSize: 13, color: theme.text }}>Corte clásico</p>
+        <p style={{ margin: '0 0 8px', fontSize: 11, color: theme.textMuted }}>30 min</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <s style={{ fontSize: 12, color: theme.textMuted }}>$30.000</s>
+          <span style={{ fontSize: 15, fontWeight: 700, color: theme.accent }}>$24.000</span>
+        </div>
+      </div>
+      {/* Botón reservar */}
+      <button type="button" style={{ width: '100%', padding: '10px 0', borderRadius: 10, border: 'none', background: theme.accent, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'default' }}>
+        Reservar
+      </button>
+    </div>
+  );
+}
+
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -102,6 +166,18 @@ export default function BusinessDashboardPage() {
   const [accentColor, setAccentColor] = useState('');
   const [savingAccent, setSavingAccent] = useState(false);
   const [accentMsg, setAccentMsg] = useState('');
+  // Theme por modo (claro/oscuro)
+  const [themeLight, setThemeLight] = useState(DEFAULT_THEME_LIGHT);
+  const [themeDark, setThemeDark]   = useState(DEFAULT_THEME_DARK);
+  const [themeEditMode, setThemeEditMode] = useState('dark'); // pestaña que se edita
+  const [previewMode, setPreviewMode]     = useState('dark'); // modo del preview
+  const [savingTheme, setSavingTheme] = useState(false);
+  const [themeMsg, setThemeMsg] = useState('');
+  // Verificación por email de cita
+  const [apptVerifyEnabled, setApptVerifyEnabled] = useState(false);
+  const [apptVerifyHoursBefore, setApptVerifyHoursBefore] = useState(2);
+  const [savingVerifyCfg, setSavingVerifyCfg] = useState(false);
+  const [verifyCfgMsg, setVerifyCfgMsg] = useState('');
   // Service categories
   const [svcCats, setSvcCats] = useState([]);
   const [newCatName, setNewCatName] = useState('');
@@ -165,6 +241,10 @@ export default function BusinessDashboardPage() {
     setShowRevenue(business.showRevenueToProf ?? false);
     setCancelMinHours(business.cancelMinHours ?? 0);
     setAccentColor(business.accentColor || '');
+    setThemeLight(mergeTheme(DEFAULT_THEME_LIGHT, business.themeLight));
+    setThemeDark(mergeTheme(DEFAULT_THEME_DARK, business.themeDark));
+    setApptVerifyEnabled(business.apptVerifyEnabled ?? false);
+    setApptVerifyHoursBefore(business.apptVerifyHoursBefore ?? 2);
     api.getMySubscription().then(setSubscription).catch(() => {});
     api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
     api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
@@ -326,6 +406,32 @@ export default function BusinessDashboardPage() {
       setAccentMsg('Guardado');
     } catch (err) { setAccentMsg('Error'); }
     finally { setSavingAccent(false); setTimeout(() => setAccentMsg(''), 2500); }
+  }
+
+  async function saveTheme() {
+    setSavingTheme(true); setThemeMsg('');
+    try {
+      const updated = await api.updateBusinessProfile({ themeLight, themeDark });
+      setBusiness(prev => ({ ...prev, ...updated, themeLight, themeDark }));
+      setThemeMsg('✓ Apariencia guardada');
+    } catch (err) { setThemeMsg('Error: ' + err.message); }
+    finally { setSavingTheme(false); setTimeout(() => setThemeMsg(''), 3000); }
+  }
+
+  async function saveVerifyConfig() {
+    const hrs = Number(apptVerifyHoursBefore);
+    if (!Number.isFinite(hrs) || hrs < 1 || hrs > 72) {
+      setVerifyCfgMsg('Las horas deben estar entre 1 y 72');
+      setTimeout(() => setVerifyCfgMsg(''), 3000);
+      return;
+    }
+    setSavingVerifyCfg(true); setVerifyCfgMsg('');
+    try {
+      const updated = await api.updateBusinessProfile({ apptVerifyEnabled, apptVerifyHoursBefore: hrs });
+      setBusiness(prev => ({ ...prev, ...updated, apptVerifyEnabled, apptVerifyHoursBefore: hrs }));
+      setVerifyCfgMsg('✓ Guardado');
+    } catch (err) { setVerifyCfgMsg('Error: ' + err.message); }
+    finally { setSavingVerifyCfg(false); setTimeout(() => setVerifyCfgMsg(''), 3000); }
   }
 
   async function createServiceCategory() {
@@ -1208,6 +1314,56 @@ export default function BusinessDashboardPage() {
               {policyMsg && <span style={{ fontSize:'var(--text-xs)', color: policyMsg === 'Guardado' ? 'var(--success)' : 'var(--error)' }}>{policyMsg}</span>}
             </div>
           </div>
+
+          {/* Verificación por email de la cita */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>Confirmación de cita por email</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)', maxWidth:480 }}>
+              Envía automáticamente un correo de recordatorio/confirmación al cliente antes de su cita.
+            </p>
+
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'var(--sp-3)', marginBottom:'var(--sp-4)', flexWrap:'wrap' }}>
+              <div>
+                <p style={{ fontWeight:600, color:'var(--text)', fontSize:'var(--text-sm)', marginBottom:2 }}>Activar recordatorio por email</p>
+                <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>Cuando está activo, el cliente recibe el correo antes de su cita.</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={apptVerifyEnabled}
+                onClick={() => setApptVerifyEnabled(v => !v)}
+                style={{
+                  width:46, height:26, borderRadius:'var(--r-full)', flexShrink:0,
+                  background: apptVerifyEnabled ? 'var(--violet)' : 'var(--surface-4)',
+                  border:'1px solid var(--border)', cursor:'pointer', position:'relative', transition:'background .15s',
+                }}
+              >
+                <span style={{ position:'absolute', top:2, left: apptVerifyEnabled ? 22 : 2, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .15s' }} />
+              </button>
+            </div>
+
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', flexWrap:'wrap', opacity: apptVerifyEnabled ? 1 : 0.5 }}>
+              <label style={{ fontSize:'var(--text-sm)', color:'var(--text-muted)', fontWeight:600 }}>Enviar</label>
+              <input
+                type="number"
+                min={1}
+                max={72}
+                value={apptVerifyHoursBefore}
+                disabled={!apptVerifyEnabled}
+                onChange={e => setApptVerifyHoursBefore(e.target.value)}
+                className="input"
+                style={{ width:80, fontSize:'var(--text-sm)' }}
+              />
+              <span style={{ fontSize:'var(--text-sm)', color:'var(--text-muted)' }}>horas antes de la cita (1–72)</span>
+            </div>
+
+            <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginTop:'var(--sp-4)' }}>
+              <button className="btn btn-primary btn-sm" onClick={saveVerifyConfig} disabled={savingVerifyCfg}>
+                {savingVerifyCfg ? 'Guardando…' : 'Guardar configuración'}
+              </button>
+              {verifyCfgMsg && <span style={{ fontSize:'var(--text-xs)', color: verifyCfgMsg.startsWith('Error') || verifyCfgMsg.includes('horas') ? 'var(--error)' : 'var(--success)' }}>{verifyCfgMsg}</span>}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1269,6 +1425,87 @@ export default function BusinessDashboardPage() {
                 </button>
               )}
               {accentMsg && <span style={{ fontSize:'var(--text-xs)', color: accentMsg === 'Error' ? 'var(--error, #e53e3e)' : 'var(--success)' }}>{accentMsg}</span>}
+            </div>
+          </div>
+
+          {/* Tema por modo (claro / oscuro) con preview en vivo */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, marginBottom:'var(--sp-2)' }}>Paleta del perfil (claro y oscuro)</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)', maxWidth:520 }}>
+              Personaliza los colores de tu perfil público para cada modo. La vista previa refleja los cambios antes de guardar.
+            </p>
+
+            <div style={{ display:'grid', gridTemplateColumns:'minmax(0,1fr) minmax(0,280px)', gap:'var(--sp-6)', alignItems:'start' }} className="theme-editor-grid">
+              {/* Editor de colores */}
+              <div>
+                {/* Pestañas modo claro / oscuro */}
+                <div style={{ display:'flex', gap:'var(--sp-2)', marginBottom:'var(--sp-4)' }}>
+                  {[{ id:'light', label:'Modo claro' }, { id:'dark', label:'Modo oscuro' }].map(m => (
+                    <button key={m.id} type="button" onClick={() => { setThemeEditMode(m.id); setPreviewMode(m.id); }}
+                      style={{ padding:'7px 16px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: themeEditMode === m.id ? 700 : 500, border:`1.5px solid ${themeEditMode === m.id ? 'var(--violet)' : 'var(--border)'}`, background: themeEditMode === m.id ? 'var(--violet-subtle)' : 'var(--surface)', color: themeEditMode === m.id ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Pickers de cada clave del modo activo */}
+                {(() => {
+                  const current = themeEditMode === 'light' ? themeLight : themeDark;
+                  const setCurrent = themeEditMode === 'light' ? setThemeLight : setThemeDark;
+                  const update = (key, val) => setCurrent(prev => ({ ...prev, [key]: val }));
+                  return (
+                    <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-3)' }}>
+                      {THEME_KEYS.map(({ key, label }) => (
+                        <div key={key} style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)' }}>
+                          <label style={{ flex:1, fontSize:'var(--text-sm)', color:'var(--text-muted)', fontWeight:600 }}>{label}</label>
+                          <input
+                            type="color"
+                            value={current[key]}
+                            onChange={e => update(key, e.target.value)}
+                            aria-label={`${label} (selector)`}
+                            style={{ width:38, height:38, borderRadius:'var(--r-md)', border:'1px solid var(--border)', cursor:'pointer', padding:2, flexShrink:0 }}
+                          />
+                          <input
+                            className="input"
+                            type="text"
+                            value={current[key]}
+                            onChange={e => update(key, e.target.value)}
+                            maxLength={7}
+                            style={{ width:104, fontSize:'var(--text-sm)' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', marginTop:'var(--sp-5)', flexWrap:'wrap' }}>
+                  <button className="btn btn-primary btn-sm" onClick={saveTheme} disabled={savingTheme}>
+                    {savingTheme ? 'Guardando…' : 'Guardar apariencia'}
+                  </button>
+                  <button className="btn btn-ghost btn-sm" type="button"
+                    onClick={() => { setThemeLight(DEFAULT_THEME_LIGHT); setThemeDark(DEFAULT_THEME_DARK); }}>
+                    Restablecer
+                  </button>
+                  {themeMsg && <span style={{ fontSize:'var(--text-xs)', color: themeMsg.startsWith('Error') ? 'var(--error)' : 'var(--success)' }}>{themeMsg}</span>}
+                </div>
+              </div>
+
+              {/* Preview en vivo */}
+              <div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--sp-2)' }}>
+                  <span style={{ fontSize:'var(--text-xs)', fontWeight:700, color:'var(--text-subtle)', textTransform:'uppercase', letterSpacing:'.06em' }}>Vista previa</span>
+                  <div style={{ display:'flex', borderRadius:'var(--r-md)', border:'1px solid var(--border)', overflow:'hidden' }}>
+                    {[{ id:'light', label:'Claro' }, { id:'dark', label:'Oscuro' }].map(m => (
+                      <button key={m.id} type="button" onClick={() => setPreviewMode(m.id)}
+                        style={{ padding:'4px 12px', border:'none', cursor:'pointer', fontSize:11, fontWeight:700, background: previewMode === m.id ? 'var(--violet)' : 'transparent', color: previewMode === m.id ? '#fff' : 'var(--text-muted)' }}>
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <ThemePreview theme={previewMode === 'light' ? themeLight : themeDark} />
+              </div>
             </div>
           </div>
 

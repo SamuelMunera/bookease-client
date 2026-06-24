@@ -291,6 +291,7 @@ const api = {
   updatePromotion:    (id, body) => request(`/promotions/me/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deletePromotion:    (id)       => request(`/promotions/me/${id}`, { method: 'DELETE' }),
   getPublicPromotions:(bizId)    => request(`/promotions/${bizId}/active`),
+  getPromotedBusinesses: ()      => request('/promotions/promoted-businesses'),
 };
 
 export default api;

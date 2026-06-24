@@ -1,8 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../api';
 import RecommendedBusinesses from '../components/RecommendedBusinesses';
+
+// Formato de moneda consistente con el resto de la página.
+function fmtCurrency(n) {
+  return `$${Number(n || 0).toLocaleString('es-CO')}`;
+}
+
+// Construye CSS vars scopeadas a partir del theme del negocio (claro u oscuro).
+// Devuelve undefined si el negocio no definió theme para no alterar el look por defecto.
+function buildThemeVars(themeObj) {
+  if (!themeObj || typeof themeObj !== 'object') return undefined;
+  const v = {};
+  if (themeObj.accent)    { v['--gold'] = themeObj.accent; v['--gold-dark'] = themeObj.accent; v['--gold-light'] = themeObj.accent; v['--accent'] = themeObj.accent; }
+  if (themeObj.bg)        v['--bg'] = themeObj.bg;
+  if (themeObj.surface)   { v['--surface'] = themeObj.surface; v['--surface-2'] = themeObj.surface; }
+  if (themeObj.text)      v['--text'] = themeObj.text;
+  if (themeObj.textMuted) v['--text-muted'] = themeObj.textMuted;
+  if (themeObj.border)    v['--border'] = themeObj.border;
+  return Object.keys(v).length ? v : undefined;
+}
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa', SALON: 'Salón de belleza' };
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -462,7 +482,19 @@ function ServiceCard({ sv, selected, onSelect, category, profSelected }) {
       <p className="svc-card3-name">{sv.name}</p>
       {sv.description && <p className="svc-card3-desc">{sv.description}</p>}
       <div className="svc-card3-footer">
-        <p className="svc-card3-price">${Number(sv.price).toLocaleString('es-CO')}</p>
+        {sv.pricing?.hasPromo ? (
+          <div style={{ display:'flex', alignItems:'baseline', gap:'var(--sp-2)', flexWrap:'wrap' }}>
+            <s style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)' }}>{fmtCurrency(sv.pricing.originalPrice)}</s>
+            <p className="svc-card3-price" style={{ margin:0, color:'var(--gold)' }}>{fmtCurrency(sv.pricing.finalPrice)}</p>
+            <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:'var(--r-full)', background:'var(--gold-subtle)', border:'1px solid var(--gold-border)', color:'var(--gold)', letterSpacing:'.02em' }}>
+              {sv.pricing.discountType === 'PERCENTAGE' && sv.pricing.originalPrice
+                ? `-${Math.round((1 - sv.pricing.finalPrice / sv.pricing.originalPrice) * 100)}%`
+                : 'Promo'}
+            </span>
+          </div>
+        ) : (
+          <p className="svc-card3-price">{fmtCurrency(sv.pricing?.price ?? sv.price)}</p>
+        )}
         <div className={`svc-card3-cta${selected ? ' selected' : ''}`}>
           {selected ? (
             <><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>Seleccionado</>
@@ -638,7 +670,16 @@ function BookingBar({ service, error, onBook, ready, profSelected }) {
           )}
         </div>
         <div className="booking-bar-right">
-          {service && <p className="booking-bar-price">${Number(service.price).toLocaleString('es-CO')}</p>}
+          {service && (
+            service.pricing?.hasPromo ? (
+              <p className="booking-bar-price" style={{ display:'flex', alignItems:'baseline', gap:6 }}>
+                <s style={{ fontSize:'var(--text-xs)', color:'var(--text-subtle)', fontWeight:500 }}>${Number(service.pricing.originalPrice).toLocaleString('es-CO')}</s>
+                ${Number(service.pricing.finalPrice).toLocaleString('es-CO')}
+              </p>
+            ) : (
+              <p className="booking-bar-price">${Number(service.pricing?.price ?? service.price).toLocaleString('es-CO')}</p>
+            )
+          )}
           <button className="btn btn-primary booking-bar-btn" onClick={onBook} style={{ '--gold': '#D4A853', '--gold-dark': '#A8833F', '--gold-glow': 'rgba(212,168,83,0.30)' }}>
             Ver horarios
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -655,6 +696,7 @@ function BookingBar({ service, error, onBook, ready, profSelected }) {
 export default function BusinessDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
 
   const [business, setBusiness]             = useState(null);
@@ -777,9 +819,12 @@ export default function BusinessDetailPage() {
     );
   }
 
-  const accentVars = business.accentColor
-    ? { '--gold': business.accentColor, '--gold-dark': business.accentColor, '--gold-light': business.accentColor }
-    : undefined;
+  // Theme del negocio según el modo actual; si no definió theme, cae al accentColor heredado.
+  const bizThemeVars = buildThemeVars(theme === 'light' ? business.themeLight : business.themeDark);
+  const accentVars = bizThemeVars
+    || (business.accentColor
+      ? { '--gold': business.accentColor, '--gold-dark': business.accentColor, '--gold-light': business.accentColor }
+      : undefined);
 
   return (
     <div style={accentVars}>
@@ -918,7 +963,9 @@ export default function BusinessDetailPage() {
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   {selectedServiceData?.name}{selectedProf ? ` · ${selectedServiceData?.duration} min` : ''}
                   <span style={{ fontWeight:700, color:'var(--gold)' }}>
-                    · ${Number(selectedServiceData?.price || 0).toLocaleString('es-CO')}
+                    {selectedServiceData?.pricing?.hasPromo
+                      ? <> · <s style={{ color:'var(--text-subtle)', fontWeight:500 }}>{fmtCurrency(selectedServiceData.pricing.originalPrice)}</s> {fmtCurrency(selectedServiceData.pricing.finalPrice)}</>
+                      : <> · {fmtCurrency(selectedServiceData?.pricing?.price ?? selectedServiceData?.price)}</>}
                   </span>
                 </div>
               )}

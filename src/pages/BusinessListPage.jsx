@@ -390,6 +390,85 @@ function HomeProsSection({ country }) {
   );
 }
 
+/* ─── Promoted businesses hero ──────────────────────────────
+   Sección comercial: negocios con promoción activa-vigente.
+   Si no hay datos (vacío o error), no renderiza nada (return null). */
+function promoSummaryLabel(p) {
+  if (!p) return 'Promo';
+  if (p.discountType === 'PERCENTAGE' && p.discountValue) return `-${Number(p.discountValue)}%`;
+  if (p.discountType === 'FIXED' && p.discountValue)      return `-$${Number(p.discountValue).toLocaleString('es-CO')}`;
+  if (p.discountType === 'CUSTOM_PRICE' && (p.customPrice != null)) return `$${Number(p.customPrice).toLocaleString('es-CO')}`;
+  return 'Promo';
+}
+
+function PromotedHero() {
+  const [items, setItems] = useState(null); // null = cargando
+  const trackRef = useRef(null);
+  const scroll = (dir) => trackRef.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
+
+  useEffect(() => {
+    let alive = true;
+    api.getPromotedBusinesses()
+      .then(data => { if (alive) setItems(Array.isArray(data) ? data : []); })
+      .catch(() => { if (alive) setItems([]); });
+    return () => { alive = false; };
+  }, []);
+
+  // Vacío o error: no dejar título huérfano ni bloque vacío.
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="promoted-hero-block">
+      <div className="section-inner">
+        <div className="section-head" style={{ marginBottom: 'var(--sp-5)' }}>
+          <div>
+            <p className="section-eyebrow">Ofertas del momento</p>
+            <h2 className="section-title">Negocios con <em>promociones activas</em></h2>
+          </div>
+          {items.length > 3 && (
+            <div className="scroll-nav" style={{ marginTop: 0 }}>
+              <button className="scroll-arrow" onClick={() => scroll(-1)} aria-label="Anterior">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              </button>
+              <button className="scroll-arrow" onClick={() => scroll(1)} aria-label="Siguiente">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="scroll-outer">
+        <div className="scroll-track" ref={trackRef}>
+          {items.map(b => {
+            const promo = b.promo || b.promotion || null;
+            const title = promo?.title || b.promoTitle;
+            return (
+              <Link key={b.id} to={`/businesses/${b.id}`} className="promoted-card" style={b.accentColor ? { '--accent': b.accentColor } : undefined}>
+                <div className="promoted-card-cover" style={b.coverUrl ? { backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.65)), url(${b.coverUrl})` } : undefined}>
+                  <span className="promoted-card-badge">{promoSummaryLabel(promo)}</span>
+                  <div className="promoted-card-logo" style={{ background: b.logoUrl ? 'transparent' : (b.accentColor || 'var(--violet)') }}>
+                    {b.logoUrl ? <img src={b.logoUrl} alt={b.name} /> : (b.name?.[0]?.toUpperCase() ?? 'S')}
+                  </div>
+                </div>
+                <div className="promoted-card-body">
+                  <p className="promoted-card-name">{b.name}</p>
+                  <p className="promoted-card-city">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {b.city}
+                  </p>
+                  {title && <p className="promoted-card-promo">{title}</p>}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── particles config ──────────────────────────────────── */
 const PARTICLES = [
   { w:6,  h:6,  top:'20%', left:'8%',  delay:'0s',   dur:'7s',   driftDur:'5s'  },
@@ -771,6 +850,9 @@ export default function BusinessListPage() {
           </div>
         ))}
       </div>
+
+      {/* ══ NEGOCIOS CON PROMOCIONES ══════════════════════════ */}
+      <PromotedHero />
 
       {/* ══ MÁS RESERVADOS ════════════════════════════════════ */}
       {topBookedBusinesses.length > 0 && (
