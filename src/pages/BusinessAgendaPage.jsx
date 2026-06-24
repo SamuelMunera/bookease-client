@@ -145,20 +145,25 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
         </div>
 
         {/* Client info */}
-        <div className="agenda-client-row">
-          <div className="agenda-client-avatar">
-            {b.client.name[0].toUpperCase()}
-          </div>
-          <div>
-            <p className="agenda-client-name">{b.client.name}</p>
-            <p className="agenda-client-email">{b.client.email}</p>
-            {b.client.phone && <p className="agenda-client-email">{b.client.phone}</p>}
-          </div>
-        </div>
+        {(() => {
+          const clientName = b.client?.name ?? b.guestName ?? 'Cliente';
+          return (
+            <div className="agenda-client-row">
+              <div className="agenda-client-avatar">
+                {clientName[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="agenda-client-name">{clientName}</p>
+                {b.client?.email && <p className="agenda-client-email">{b.client.email}</p>}
+                {b.client?.phone && <p className="agenda-client-email">{b.client.phone}</p>}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Actions */}
         {!['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status) && (
-          <div className="agenda-row-actions">
+          <div className="agenda-row-actions" style={{ flexWrap: 'wrap' }}>
             {b.status === 'PENDING' && (
               <button className="btn btn-success btn-sm" onClick={() => onConfirm(b.id)}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -205,12 +210,9 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
                 </button>
               </div>
             )}
+            {/* C-37: Cancelar solo para citas futuras (cancelar una cita pasada
+                no tiene sentido; para pasadas quedan Completar/No asistió). */}
             {!isPast(b) && (
-              <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
-                Cancelar
-              </button>
-            )}
-            {isPast(b) && confirm === null && (
               <button className="btn btn-danger btn-sm" onClick={() => onCancel(b.id)}>
                 Cancelar
               </button>
@@ -232,6 +234,10 @@ export default function BusinessAgendaPage() {
   const [date,       setDate]       = useState(new Date().toISOString().split('T')[0]);
   const [bookings,   setBookings]   = useState([]);
   const [loading,    setLoading]    = useState(false);
+  // C-30: error de carga de la agenda (en vez de mostrar el empty-state al fallar).
+  const [loadError,  setLoadError]  = useState(null);
+  // C-31: error de acción (confirmar/cancelar/no-show/completar) sin alert nativo.
+  const [actionError, setActionError] = useState(null);
 
   const [showManual, setShowManual] = useState(false);
   const [professionals, setProfessionals] = useState([]);
@@ -321,7 +327,7 @@ export default function BusinessAgendaPage() {
         {businesses.length > 1 && (
           <select
             className="input"
-            style={{ width:240 }}
+            style={{ width:'100%', maxWidth:240 }}
             value={businessId}
             onChange={e => setBusinessId(e.target.value)}
           >
