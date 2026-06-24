@@ -189,6 +189,17 @@ function WompiPayButton({ plan, user }) {
     );
   }
 
+  if (referralDiscount) {
+    return (
+      <div style={{ marginTop: 'var(--sp-2)', background: 'rgba(34,197,94,.08)', border: '1px solid rgba(34,197,94,.25)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-3) var(--sp-4)' }}>
+        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--success)', margin: '0 0 2px' }}>¡Descuento de referido aplicado! 🎉</p>
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+          Aplicamos tu descuento de referidos al precio de este mes. Redirigiendo a Wompi…
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ marginTop: 'var(--sp-2)' }}>
       <button type="button" className="btn btn-secondary btn-full" onClick={handlePay} disabled={loading}>
