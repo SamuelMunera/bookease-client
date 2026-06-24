@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 
 export default function AdminLoginPage() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -15,11 +15,8 @@ export default function AdminLoginPage() {
     setError('');
     setLoading(true);
     try {
-      const data = await api.login(form);
-      if (data.user.role !== 'ADMIN') {
-        setError('No tienes permisos de administrador.');
-        return;
-      }
+      const data = await api.login({ ...form, audience: 'admin' });
+      logout(); // limpia cualquier sesión previa de otro rol antes de entrar
       login(data);
       navigate('/admin/dashboard', { replace: true });
     } catch (err) {

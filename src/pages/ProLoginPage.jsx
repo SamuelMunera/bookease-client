@@ -5,7 +5,7 @@ import api from '../api';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function ProLoginPage() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const [form,      setForm]      = useState({ email: '', password: '' });
   const [error,     setError]     = useState('');
@@ -17,11 +17,8 @@ export default function ProLoginPage() {
     setError('');
     setLoading(true);
     try {
-      const data = await api.login(form);
-      if (data.user.role === 'CLIENT') {
-        setError('Esta área es solo para profesionales y negocios. Usa el acceso de clientes.');
-        return;
-      }
+      const data = await api.login({ ...form, audience: 'pro' });
+      logout(); // limpia cualquier sesión previa de otro rol antes de entrar
       login(data);
       const dest = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard' };
       navigate(dest[data.user.role] || '/');
