@@ -204,6 +204,12 @@ const api = {
   adminCourtesyCodes:       () => request('/admin/courtesy-codes'),
   adminCreateCourtesyCode:  (body) => request('/admin/courtesy-codes', { method: 'POST', body: JSON.stringify(body) }),
 
+  // Admin: finance
+  adminFinanceOverview:      () => request('/admin/finance/overview'),
+  adminFinanceSubscriptions: (params = {}) => request(`/admin/finance/subscriptions?${new URLSearchParams(params)}`),
+  adminFinanceDiscounts:     (params = {}) => request(`/admin/finance/discounts?${new URLSearchParams(params)}`),
+  adminFinanceCommissions:   (params = {}) => request(`/admin/finance/commissions?${new URLSearchParams(params)}`),
+
   // Categories
   getCategories: () => request('/categories'),
 

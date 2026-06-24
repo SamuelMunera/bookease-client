@@ -8,7 +8,7 @@ const NAV = [
   { to: 'professionals',label: 'Profesionales',  icon: '👤' },
   { to: 'categories',   label: 'Categorías',     icon: '🏷️' },
   { to: 'referral-codes', label: 'Códigos de referidos', icon: '🎁' },
-  { to: 'finances',     label: 'Finanzas',       icon: '💰' },
+  { to: 'finance',      label: 'Finanzas',       icon: '💰' },
 ];
 
 export default function AdminLayout() {
