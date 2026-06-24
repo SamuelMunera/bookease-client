@@ -122,7 +122,7 @@ function KpiPill({ label, value }) {
 function PromotersTab() {
   const [promoters, setPromoters] = useState([]);
   const [loading, setLoading]     = useState(true);
-  const [form, setForm]           = useState({ firstName: '', lastName: '', email: '', phone: '' });
+  const [form, setForm]           = useState({ firstName: '', lastName: '', email: '', phone: '', country: 'CO' });
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
   const [togglingId, setTogglingId] = useState(null);
@@ -138,7 +138,7 @@ function PromotersTab() {
     try {
       const promoter = await api.adminCreatePromoter(form);
       setPromoters(prev => [promoter, ...prev]);
-      setForm({ firstName: '', lastName: '', email: '', phone: '' });
+      setForm({ firstName: '', lastName: '', email: '', phone: '', country: 'CO' });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -219,6 +219,19 @@ function PromotersTab() {
               onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
             />
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+            <label style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              País (define la moneda de su comisión)
+            </label>
+            <select
+              className="input"
+              value={form.country}
+              onChange={e => setForm(f => ({ ...f, country: e.target.value }))}
+            >
+              <option value="CO">🇨🇴 Colombia (COP)</option>
+              <option value="US">🇺🇸 Estados Unidos (USD)</option>
+            </select>
+          </div>
 
           {error && (
             <p style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', padding: 'var(--sp-3) var(--sp-4)', background: 'var(--error-bg)', border: '1px solid var(--error-border)', borderRadius: 'var(--r-md)' }}>
@@ -253,7 +266,10 @@ function PromotersTab() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
                     <div style={{ flex: '1 1 180px', minWidth: 0 }}>
-                      <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 2 }}>{p.firstName} {p.lastName}</p>
+                      <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 2 }}>
+                        {p.firstName} {p.lastName}
+                        {p.country && <span style={{ marginLeft: 6, fontSize: 'var(--text-xs)' }}>{p.country === 'US' ? '🇺🇸 USD' : '🇨🇴 COP'}</span>}
+                      </p>
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {p.email}{p.phone ? ` · ${p.phone}` : ''}
                       </p>

@@ -12,10 +12,12 @@ const SUB_STATUS_META = {
   canceled:  { label: 'Cancelado',   color: 'var(--error)',    bg: 'var(--error-bg)',         border: 'var(--error-border)' },
 };
 
-function formatMoney(cents) {
+function formatMoney(cents, currency = 'COP') {
   const value = Math.round((cents || 0)) / 100;
-  return `$${value.toLocaleString('es-CO')}`;
+  return `$${value.toLocaleString('es-CO')} ${currency}`;
 }
+
+const CURRENCY_FOR = { CO: 'COP', US: 'USD' };
 
 function formatDate(value) {
   if (!value) return '—';
@@ -110,35 +112,34 @@ function ErrorState({ message, onRetry }) {
 }
 
 // ── Subscriptions section ──────────────────────────────────────────────
-function SubscriptionsSection() {
+function SubscriptionsSection({ country }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [plan, setPlan] = useState('');
-  const [country, setCountry] = useState('');
+
+  const cur = CURRENCY_FOR[country] || 'COP';
 
   const load = useCallback(() => {
     setLoading(true); setError('');
-    api.adminFinanceSubscriptions()
+    api.adminFinanceSubscriptions({ country }) // el país lo fija el selector global
       .then(d => setRows(Array.isArray(d) ? d : []))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [country]);
 
   useEffect(() => { load(); }, [load]);
 
-  const countries = [...new Set(rows.map(r => r.country).filter(Boolean))].sort();
   const plans = [...new Set(rows.map(r => r.plan).filter(Boolean))].sort();
   const statuses = [...new Set(rows.map(r => r.status).filter(Boolean))].sort();
 
   const filtered = rows.filter(r =>
     (!status || r.status === status) &&
-    (!plan || r.plan === plan) &&
-    (!country || r.country === country)
+    (!plan || r.plan === plan)
   );
 
-  const filtersActive = status || plan || country;
+  const filtersActive = status || plan;
 
   return (
     <SectionCard
@@ -154,13 +155,9 @@ function SubscriptionsSection() {
             <option value="">Todos los planes</option>
             {plans.map(p => <option key={p} value={p}>{PLAN_LABELS[p] || p}</option>)}
           </select>
-          <select className="input" style={{ maxWidth: 130 }} value={country} onChange={e => setCountry(e.target.value)}>
-            <option value="">Todos los países</option>
-            {countries.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
           {filtersActive && (
             <button
-              onClick={() => { setStatus(''); setPlan(''); setCountry(''); }}
+              onClick={() => { setStatus(''); setPlan(''); }}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gold)', fontSize: 'var(--text-sm)' }}
             >
               Limpiar
@@ -197,7 +194,7 @@ function SubscriptionsSection() {
                   <td style={TD}><PlanChip plan={r.plan} /></td>
                   <td style={TD}>{r.billingPlan || '—'}</td>
                   <td style={TD}><MetaBadge meta={SUB_STATUS_META[r.status]} fallback={r.displayState || r.status} /></td>
-                  <td style={{ ...TD, textAlign: 'right', fontWeight: 600 }}>{formatMoney(r.priceCents)}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontWeight: 600 }}>{formatMoney(r.priceCents, cur)}</td>
                   <td style={TD}>{formatDate(r.nextChargeAt)}</td>
                 </tr>
               ))}
@@ -210,21 +207,22 @@ function SubscriptionsSection() {
 }
 
 // ── Discounts section ──────────────────────────────────────────────────
-function DiscountsSection() {
+function DiscountsSection({ country }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = useCallback(() => {
     setLoading(true); setError('');
-    api.adminFinanceDiscounts()
+    api.adminFinanceDiscounts({ country })
       .then(setData)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [country]);
 
   useEffect(() => { load(); }, [load]);
 
+  const cur = data?.currency || CURRENCY_FOR[country] || 'COP';
   const byType = data?.byType || {};
   const cards = [
     { key: 'courtesy', label: 'Cortesía', icon: '🎁', count: byType.courtesy?.count, amount: byType.courtesy?.forgoneCents, amountLabel: 'Ingreso no percibido' },
@@ -235,7 +233,7 @@ function DiscountsSection() {
   return (
     <SectionCard
       title="Descuentos por tipo de código"
-      subtitle={data ? `Total descuentos: ${formatMoney(data.totalDiscountCents)}` : undefined}
+      subtitle={data ? `Total descuentos: ${formatMoney(data.totalDiscountCents, cur)}` : undefined}
     >
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
@@ -253,7 +251,7 @@ function DiscountsSection() {
                 <span style={{ fontWeight: 700, fontSize: 'var(--text-base)' }}>{c.label}</span>
               </div>
               <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--gold)', lineHeight: 1.1 }}>
-                {formatMoney(c.amount)}
+                {formatMoney(c.amount, cur)}
               </div>
               <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', marginTop: 4 }}>{c.amountLabel}</div>
               <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginTop: 'var(--sp-2)' }}>
@@ -270,7 +268,7 @@ function DiscountsSection() {
 // ── Commissions section ────────────────────────────────────────────────
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-function CommissionsSection() {
+function CommissionsSection({ country }) {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -280,14 +278,15 @@ function CommissionsSection() {
 
   const load = useCallback(() => {
     setLoading(true); setError('');
-    api.adminFinanceCommissions({ month, year })
+    api.adminFinanceCommissions({ month, year, country })
       .then(setData)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, [month, year]);
+  }, [month, year, country]);
 
   useEffect(() => { load(); }, [load]);
 
+  const cur = data?.currency || CURRENCY_FOR[country] || 'COP';
   const promoters = data?.promoters || [];
   const years = [];
   for (let y = now.getFullYear(); y >= now.getFullYear() - 3; y--) years.push(y);
@@ -346,9 +345,9 @@ function CommissionsSection() {
                   </td>
                   <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 700, color: 'var(--gold)' }}>{p.code}</td>
                   <td style={{ ...TD, textAlign: 'right' }}>{p.referredPaid ?? 0}</td>
-                  <td style={{ ...TD, textAlign: 'right' }}>{formatMoney(p.monthlyRevenueCents)}</td>
-                  <td style={{ ...TD, textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{formatMoney(p.monthlyCommissionCents)}</td>
-                  <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}>{formatMoney(p.allTimeCommissionCents)}</td>
+                  <td style={{ ...TD, textAlign: 'right' }}>{formatMoney(p.monthlyRevenueCents, cur)}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{formatMoney(p.monthlyCommissionCents, cur)}</td>
+                  <td style={{ ...TD, textAlign: 'right', color: 'var(--text-muted)' }}>{formatMoney(p.allTimeCommissionCents, cur)}</td>
                 </tr>
               ))}
             </tbody>
@@ -356,8 +355,8 @@ function CommissionsSection() {
               <tfoot>
                 <tr>
                   <td style={{ ...TD, fontWeight: 800, borderBottom: 'none' }} colSpan={3}>Totales</td>
-                  <td style={{ ...TD, textAlign: 'right', fontWeight: 800, borderBottom: 'none' }}>{formatMoney(data.totals.monthlyRevenueCents)}</td>
-                  <td style={{ ...TD, textAlign: 'right', fontWeight: 800, color: 'var(--success)', borderBottom: 'none' }}>{formatMoney(data.totals.monthlyCommissionCents)}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontWeight: 800, borderBottom: 'none' }}>{formatMoney(data.totals.monthlyRevenueCents, cur)}</td>
+                  <td style={{ ...TD, textAlign: 'right', fontWeight: 800, color: 'var(--success)', borderBottom: 'none' }}>{formatMoney(data.totals.monthlyCommissionCents, cur)}</td>
                   <td style={{ ...TD, borderBottom: 'none' }} />
                 </tr>
               </tfoot>
@@ -370,27 +369,25 @@ function CommissionsSection() {
 }
 
 // ── Overview KPIs ──────────────────────────────────────────────────────
-function OverviewSection() {
+function OverviewSection({ country }) {
   const [data, setData] = useState(null);
   const [discounts, setDiscounts] = useState(null);
   const [commissions, setCommissions] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const now = new Date();
-
   const load = useCallback(() => {
+    const now = new Date();
     setLoading(true); setError('');
     Promise.all([
-      api.adminFinanceOverview(),
-      api.adminFinanceDiscounts().catch(() => null),
-      api.adminFinanceCommissions({ month: now.getMonth() + 1, year: now.getFullYear() }).catch(() => null),
+      api.adminFinanceOverview({ country }),
+      api.adminFinanceDiscounts({ country }).catch(() => null),
+      api.adminFinanceCommissions({ month: now.getMonth() + 1, year: now.getFullYear(), country }).catch(() => null),
     ])
       .then(([ov, dc, cm]) => { setData(ov); setDiscounts(dc); setCommissions(cm); })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [country]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -398,16 +395,18 @@ function OverviewSection() {
   if (error) return <ErrorState message={error} onRetry={load} />;
   if (!data) return null;
 
+  const cur = data.currency || CURRENCY_FOR[country] || 'COP';
+  const counts = data.counts || {};
   const cards = [
-    { label: 'MRR actual', value: formatMoney(data.mrrCents), hint: data.mrrPotentialCents != null ? `Potencial: ${formatMoney(data.mrrPotentialCents)}` : undefined, color: 'var(--gold)' },
-    { label: 'ARR', value: formatMoney(data.arrCents), color: 'var(--gold)' },
-    { label: 'Ingresos del mes', value: formatMoney(data.revenueThisMonthCents), color: 'var(--success)' },
-    { label: 'Negocios activos', value: data.activeBusinesses ?? 0, color: 'var(--success)' },
-    { label: 'En trial', value: data.trialBusinesses ?? 0, hint: data.trialConversionRate != null ? `Conversión: ${(data.trialConversionRate * 100).toFixed(0)}%` : undefined, color: 'var(--text)' },
-    { label: 'Vencidos (past due)', value: data.pastDueBusinesses ?? 0, color: 'var(--warning)' },
-    { label: 'Cancelados', value: data.cancelledBusinesses ?? 0, color: 'var(--error)' },
-    { label: 'Total descuentos', value: formatMoney(discounts?.totalDiscountCents), hint: 'Cortesía + promotor + referido', color: 'var(--violet)' },
-    { label: 'Comisiones del mes', value: formatMoney(commissions?.totals?.monthlyCommissionCents), hint: 'A pagar a promotores', color: 'var(--violet)' },
+    { label: 'MRR actual', value: formatMoney(data.mrrCents, cur), hint: data.mrrPotentialCents != null ? `Potencial: ${formatMoney(data.mrrPotentialCents, cur)}` : undefined, color: 'var(--gold)' },
+    { label: 'ARR', value: formatMoney(data.arrCents, cur), color: 'var(--gold)' },
+    { label: 'Ingresos del mes', value: formatMoney(data.revenueThisMonthCents, cur), color: 'var(--success)' },
+    { label: 'Negocios activos', value: counts.active ?? 0, color: 'var(--success)' },
+    { label: 'En trial', value: counts.trial ?? 0, hint: data.trialConversionRate != null ? `Conversión: ${(data.trialConversionRate * 100).toFixed(0)}%` : undefined, color: 'var(--text)' },
+    { label: 'Vencidos (past due)', value: counts.pastDue ?? 0, color: 'var(--warning)' },
+    { label: 'Cancelados', value: counts.cancelledOrExpired ?? 0, color: 'var(--error)' },
+    { label: 'Total descuentos', value: formatMoney(discounts?.totalDiscountCents, cur), hint: 'Cortesía + promotor + referido', color: 'var(--violet)' },
+    { label: 'Comisiones del mes', value: formatMoney(commissions?.totals?.monthlyCommissionCents, cur), hint: 'A pagar a promotores', color: 'var(--violet)' },
   ];
 
   return (
@@ -418,17 +417,42 @@ function OverviewSection() {
 }
 
 export default function AdminFinancePage() {
+  // Selector global de país/moneda: las finanzas se muestran SIEMPRE de un solo
+  // país a la vez (CO→COP, US→USD); nunca se suman ni convierten monedas.
+  const [country, setCountry] = useState('CO');
+
   return (
     <div>
-      <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: 4 }}>Finanzas</h1>
-      <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-6)' }}>
-        Ingresos, suscripciones, descuentos y comisiones de la plataforma
-      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--sp-4)', flexWrap: 'wrap', marginBottom: 'var(--sp-6)' }}>
+        <div>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: 4 }}>Finanzas</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+            Ingresos, suscripciones, descuentos y comisiones de la plataforma
+          </p>
+        </div>
+        {/* Selector país/moneda */}
+        <div style={{ display: 'inline-flex', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-full)', padding: 2 }}>
+          {['CO', 'US'].map(c => (
+            <button
+              key={c}
+              onClick={() => setCountry(c)}
+              style={{
+                padding: '6px 16px', borderRadius: 'var(--r-full)', border: 'none', cursor: 'pointer',
+                fontWeight: 700, fontSize: 'var(--text-sm)',
+                background: country === c ? 'var(--gold)' : 'transparent',
+                color: country === c ? '#000' : 'var(--text-muted)',
+              }}
+            >
+              {c === 'CO' ? '🇨🇴 Colombia (COP)' : '🇺🇸 USA (USD)'}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <OverviewSection />
-      <SubscriptionsSection />
-      <DiscountsSection />
-      <CommissionsSection />
+      <OverviewSection country={country} />
+      <SubscriptionsSection country={country} />
+      <DiscountsSection country={country} />
+      <CommissionsSection country={country} />
     </div>
   );
 }
