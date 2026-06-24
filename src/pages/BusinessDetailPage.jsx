@@ -68,6 +68,15 @@ function promoVigencia(p) {
   const end = new Date(p.endDate);
   return `Válida hasta el ${end.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`;
 }
+function fmtCO(n) { return `$${Math.round(Number(n) || 0).toLocaleString('es-CO')}`; }
+// Precio de un servicio bajo una promoción concreta (misma lógica que el backend).
+function priceUnderPromo(p, basePrice) {
+  const price = Number(basePrice) || 0;
+  if (p.discountType === 'PERCENTAGE'  && p.discountValue) return Math.max(0, price * (1 - Number(p.discountValue) / 100));
+  if (p.discountType === 'FIXED'       && p.discountValue) return Math.max(0, price - Number(p.discountValue));
+  if (p.discountType === 'CUSTOM_PRICE'&& p.customPrice)   return Number(p.customPrice);
+  return price;
+}
 // Regla de prioridad: gana el mayor % de descuento; si ninguna es porcentual,
 // la que vence antes (más urgente). Determinística y sin caos visual.
 function pickFeaturedPromo(promos) {
@@ -79,7 +88,7 @@ function pickFeaturedPromo(promos) {
 /* ══════════════════════════════════════════════════════════
    HERO — with cover photo support
    ══════════════════════════════════════════════════════════ */
-function BizHero({ business, stats, promo, onPromoCta }) {
+function BizHero({ business, stats, promo, onPromoCta, fontColors = {} }) {
   const avgRating   = stats?.avgRating ?? null;
   const reviewCount = stats?.reviewCount ?? 0;
   const bookingCount = stats?.bookingCount ?? 0;
@@ -108,9 +117,9 @@ function BizHero({ business, stats, promo, onPromoCta }) {
             </span>
           </div>
 
-          <h1 className="biz-hero-name">
+          <h1 className="biz-hero-name" style={fontColors.name ? { color: fontColors.name } : undefined}>
             {business.name.split(' ').slice(0, -1).join(' ')}{' '}
-            <em>{business.name.split(' ').slice(-1)[0]}</em>
+            <em style={fontColors.name ? { color: fontColors.name } : undefined}>{business.name.split(' ').slice(-1)[0]}</em>
           </h1>
 
           <div className="biz-hero-address">
@@ -134,14 +143,14 @@ function BizHero({ business, stats, promo, onPromoCta }) {
           </div>
 
           {business.description && (
-            <p className="biz-hero-desc">{business.description}</p>
+            <p className="biz-hero-desc" style={fontColors.desc ? { color: fontColors.desc } : undefined}>{business.description}</p>
           )}
 
           <div className="biz-hero-stats">
             {avgRating !== null ? (
               <div className="biz-hero-stat">
                 <span className="biz-hero-stat-num">{avgRating.toFixed(1)}</span>
-                <span className="biz-hero-stat-label">
+                <span className="biz-hero-stat-label" style={fontColors.review ? { color: fontColors.review } : undefined}>
                   <Stars rating={avgRating} />&nbsp;{reviewCount} reseña{reviewCount !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -153,7 +162,7 @@ function BizHero({ business, stats, promo, onPromoCta }) {
             )}
             <div className="biz-hero-stat-sep" />
             <div className="biz-hero-stat">
-              <span className="biz-hero-stat-num">{formatBookingCount(bookingCount)}</span>
+              <span className="biz-hero-stat-num" style={fontColors.booking ? { color: fontColors.booking } : undefined}>{formatBookingCount(bookingCount)}</span>
               <span className="biz-hero-stat-label">Reservas</span>
             </div>
           </div>
@@ -709,6 +718,9 @@ export default function BusinessDetailPage() {
   const [promotions, setPromotions]         = useState([]);
   const [selectedProf, setSelectedProf]     = useState('');
   const [selectedService, setSelectedService] = useState('');
+  // Servicio que el cliente quiere reservar (p.ej. al pulsar "Reservar" en una
+  // promo); se conserva para preseleccionarlo aun tras elegir profesional.
+  const [pendingService, setPendingService] = useState('');
   const [error, setError]                   = useState('');
   const [loadError, setLoadError]           = useState('');
   const [stats, setStats]                   = useState(null);
@@ -753,13 +765,15 @@ export default function BusinessDetailPage() {
   }, [id, user]);
 
   useEffect(() => {
-    if (!selectedProf) { setServices(allServices); setSelectedService(''); return; }
+    if (!selectedProf) { setServices(allServices); setSelectedService(pendingService || ''); return; }
     api.getProfessionalServices(selectedProf)
       .then(proServices => {
         // Con profesional seleccionado solo mostramos lo que ese pro ofrece.
         // Sin fallback al catálogo completo: si no ofrece nada, queda vacío.
-        setServices(proServices || []);
-        setSelectedService('');
+        const list = proServices || [];
+        setServices(list);
+        // Preserva el servicio pedido desde la promo si este pro lo ofrece.
+        setSelectedService(pendingService && list.some(s => s.id === pendingService) ? pendingService : '');
       })
       .catch(() => { setServices([]); setSelectedService(''); });
   }, [selectedProf]); // eslint-disable-line
@@ -777,6 +791,15 @@ export default function BusinessDetailPage() {
   const selectedServiceData = services.find((s) => s.id === selectedService);
   const featuredPromo = pickFeaturedPromo(promotions);
   const scrollToBooking = () => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Reservar un servicio concreto desde una promo: lo preselecciona (incluso si
+  // luego se elige profesional) y baja al flujo de reserva del mismo negocio.
+  function bookService(serviceId) {
+    setPendingService(serviceId);
+    setSelectedService(serviceId);
+    setError('');
+    scrollToBooking();
+  }
 
   if (loadError) {
     return (
@@ -826,9 +849,19 @@ export default function BusinessDetailPage() {
       ? { '--gold': business.accentColor, '--gold-dark': business.accentColor, '--gold-light': business.accentColor }
       : undefined);
 
+  // Colores de fuente configurables por el negocio (según el modo activo). Solo
+  // se aplican cuando el negocio los definió; si no, conservan el estilo base.
+  const bizTheme = (theme === 'light' ? business.themeLight : business.themeDark) || {};
+  const fontColors = {
+    name:    bizTheme.businessNameColor,
+    desc:    bizTheme.businessDescriptionColor,
+    review:  bizTheme.reviewCountColor,
+    booking: bizTheme.bookingCountColor,
+  };
+
   return (
     <div style={accentVars}>
-      <BizHero business={business} stats={stats} promo={featuredPromo} onPromoCta={scrollToBooking} />
+      <BizHero business={business} stats={stats} promo={featuredPromo} onPromoCta={scrollToBooking} fontColors={fontColors} />
 
       <div className="page detail-page" ref={contentRef}>
 
@@ -841,7 +874,12 @@ export default function BusinessDetailPage() {
               <div className="detail-section-label-line" />
             </div>
             <div className="promo-grid">
-              {promotions.map((p) => (
+              {promotions.map((p) => {
+                // Servicios alcanzados por la promo (vacío = aplica a todos).
+                const promoSvcs = (p.serviceIds?.length
+                  ? allServices.filter(s => p.serviceIds.includes(s.id))
+                  : allServices);
+                return (
                 <div key={p.id} className="promo-card">
                   <span className="promo-card-badge">{promoLabel(p)}</span>
                   <p className="promo-card-title">{p.title}</p>
@@ -849,8 +887,38 @@ export default function BusinessDetailPage() {
                     <p className="promo-card-desc">{p.message || p.description}</p>
                   )}
                   {promoVigencia(p) && <p className="promo-card-meta">{promoVigencia(p)}</p>}
+
+                  {/* Servicios en promo con toda su información + reserva directa */}
+                  <div className="promo-card-services">
+                    {promoSvcs.length === 0 && (
+                      <p className="promo-card-meta">Aplica a los servicios del negocio.</p>
+                    )}
+                    {promoSvcs.map(sv => {
+                      const final = priceUnderPromo(p, sv.price);
+                      const hasDiscount = final < (Number(sv.price) || 0);
+                      return (
+                        <div key={sv.id} className="promo-svc">
+                          <div className="promo-svc-info">
+                            <p className="promo-svc-name">{sv.name}</p>
+                            {sv.description && <p className="promo-svc-desc">{sv.description}</p>}
+                            <div className="promo-svc-meta">
+                              {sv.duration ? <span>{sv.duration} min</span> : null}
+                              <span className="promo-svc-price">
+                                {hasDiscount && <s>{fmtCO(sv.price)}</s>}
+                                <strong>{fmtCO(final)}</strong>
+                              </span>
+                            </div>
+                          </div>
+                          <button type="button" className="btn btn-primary btn-sm promo-svc-cta" onClick={() => bookService(sv.id)}>
+                            Reservar ahora
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}

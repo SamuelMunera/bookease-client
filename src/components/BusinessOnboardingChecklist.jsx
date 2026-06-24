@@ -20,7 +20,7 @@ const STEPS = [
     label: 'Agregar un servicio',
     desc: 'Sin servicios los clientes no pueden hacer reservas.',
     done: b => (b.services?.length ?? 0) > 0,
-    cta: { label: 'Ir a Agenda', href: '/agenda' },
+    cta: { label: 'Crear servicio', action: 'createService' },
   },
   {
     id: 'professional',
@@ -38,7 +38,7 @@ const STEPS = [
   },
 ];
 
-export default function BusinessOnboardingChecklist({ business, onSwitchTab, onOpenGuide }) {
+export default function BusinessOnboardingChecklist({ business, onSwitchTab, onCreateService, onOpenGuide }) {
   const steps  = STEPS.map(s => ({ ...s, isDone: s.done(business) }));
   const done   = steps.filter(s => s.isDone).length;
   const total  = steps.length;
@@ -75,9 +75,11 @@ export default function BusinessOnboardingChecklist({ business, onSwitchTab, onO
               {!step.isDone && <p className="ob-step-desc">{step.desc}</p>}
             </div>
             {!step.isDone && step.cta && (
-              step.cta.tab
-                ? <button className="ob-step-cta" onClick={() => onSwitchTab(step.cta.tab)}>{step.cta.label}</button>
-                : <Link to={step.cta.href} className="ob-step-cta">{step.cta.label}</Link>
+              step.cta.action === 'createService'
+                ? <button className="ob-step-cta" onClick={() => onCreateService?.()}>{step.cta.label}</button>
+                : step.cta.tab
+                  ? <button className="ob-step-cta" onClick={() => onSwitchTab(step.cta.tab)}>{step.cta.label}</button>
+                  : <Link to={step.cta.href} className="ob-step-cta">{step.cta.label}</Link>
             )}
           </div>
         ))}

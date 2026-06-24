@@ -5474,6 +5474,26 @@ html { scroll-padding-top: 68px; }
 .promo-card-desc  { margin: 4px 0 0; font-size: var(--text-sm); color: var(--text-muted); line-height: 1.5; }
 .promo-card-meta  { margin: var(--sp-3) 0 0; font-size: var(--text-xs); color: var(--promo); font-weight: 600; }
 
+/* Servicios dentro de una promo (info completa + reserva directa) */
+.promo-card-services { margin-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.promo-svc {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border-radius: var(--r-md);
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.promo-svc-info { flex: 1; min-width: 0; }
+.promo-svc-name { margin: 0; font-weight: 600; font-size: var(--text-sm); color: var(--text); }
+.promo-svc-desc { margin: 2px 0 0; font-size: var(--text-xs); color: var(--text-muted); line-height: 1.4; }
+.promo-svc-meta { display: flex; align-items: center; gap: var(--sp-3); margin-top: 4px; font-size: var(--text-xs); color: var(--text-muted); }
+.promo-svc-price { display: inline-flex; align-items: center; gap: 6px; }
+.promo-svc-price s { color: var(--text-subtle); }
+.promo-svc-price strong { color: var(--promo, var(--gold)); font-size: var(--text-sm); }
+.promo-svc-cta { flex-shrink: 0; white-space: nowrap; }
+@media (max-width: 480px) {
+  .promo-svc { flex-direction: column; align-items: stretch; }
+  .promo-svc-cta { width: 100%; }
+}
+
 @media (max-width: 600px) {
   .hero-promo { gap: var(--sp-3); }
   .hero-promo-cta { width: 100%; justify-content: center; }

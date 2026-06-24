@@ -70,14 +70,23 @@ const THEME_KEYS = [
   { key: 'text',      label: 'Texto' },
   { key: 'textMuted', label: 'Texto tenue' },
   { key: 'border',    label: 'Borde' },
+  // Colores de fuente específicos del perfil público.
+  { key: 'businessNameColor',        label: 'Nombre del negocio' },
+  { key: 'businessDescriptionColor', label: 'Descripción' },
+  { key: 'reviewCountColor',         label: 'Cantidad de reseñas' },
+  { key: 'bookingCountColor',        label: 'Cantidad de reservas' },
 ];
 const DEFAULT_THEME_DARK = {
   accent: '#7C5CFC', bg: '#07070C', surface: '#0D0C1A',
   text: '#EAE8FF', textMuted: '#9490AE', border: '#26243A',
+  businessNameColor: '#EAE8FF', businessDescriptionColor: '#9490AE',
+  reviewCountColor: '#9490AE', bookingCountColor: '#EAE8FF',
 };
 const DEFAULT_THEME_LIGHT = {
   accent: '#7C5CFC', bg: '#F5F4FF', surface: '#FFFFFF',
   text: '#12101F', textMuted: '#4A4866', border: '#E2E0F0',
+  businessNameColor: '#12101F', businessDescriptionColor: '#4A4866',
+  reviewCountColor: '#4A4866', bookingCountColor: '#12101F',
 };
 // Mezcla overrides recibidos del backend sobre los defaults (tolera nulls/parciales).
 function mergeTheme(base, overrides) {
@@ -103,9 +112,17 @@ function ThemePreview({ theme }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div style={{ width: 38, height: 38, borderRadius: 10, background: theme.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18, flexShrink: 0 }}>S</div>
         <div style={{ minWidth: 0 }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: theme.text }}>Tu Negocio</p>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: theme.businessNameColor || theme.text }}>Tu Negocio</p>
           <p style={{ margin: 0, fontSize: 11, color: theme.textMuted }}>Barbería · Tu ciudad</p>
         </div>
+      </div>
+      {/* Descripción + métricas (reseñas / reservas) */}
+      <p style={{ margin: '0 0 8px', fontSize: 11, lineHeight: 1.5, color: theme.businessDescriptionColor || theme.textMuted }}>
+        Cortes y afeitado clásico con la mejor atención.
+      </p>
+      <div style={{ display: 'flex', gap: 14, marginBottom: 14, fontSize: 11, fontWeight: 700 }}>
+        <span style={{ color: theme.reviewCountColor || theme.textMuted }}>★ 128 reseñas</span>
+        <span style={{ color: theme.bookingCountColor || theme.text }}>500+ reservas</span>
       </div>
       {/* Card de servicio */}
       <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 12, padding: '12px 14px', marginBottom: 12 }}>
@@ -788,7 +805,7 @@ export default function BusinessDashboardPage() {
       {tab === 'panel' && (
         <>
           {/* Onboarding checklist */}
-          <BusinessOnboardingChecklist business={business} onSwitchTab={setTab} onOpenGuide={() => setShowWelcome(true)} />
+          <BusinessOnboardingChecklist business={business} onSwitchTab={setTab} onCreateService={() => { setTab('panel'); setShowSvcModal(true); }} onOpenGuide={() => setShowWelcome(true)} />
 
           {/* Services + Professionals */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--sp-4)', marginBottom: 'var(--sp-4)' }}>
