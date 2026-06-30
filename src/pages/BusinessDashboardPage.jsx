@@ -142,7 +142,7 @@ function ThemePreview({ theme }) {
 }
 
 export default function BusinessDashboardPage() {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState('panel');
   const [business, setBusiness] = useState(null);
@@ -199,6 +199,10 @@ export default function BusinessDashboardPage() {
   const [reviewsPublic, setReviewsPublic] = useState(true);
   const [savingReviewsCfg, setSavingReviewsCfg] = useState(false);
   const [reviewsCfgMsg, setReviewsCfgMsg] = useState('');
+  // Dueño que también atiende como profesional
+  const [ownerPro, setOwnerPro] = useState(null);   // perfil profesional del dueño (o null)
+  const [ownerProBusy, setOwnerProBusy] = useState(false);
+  const [ownerProMsg, setOwnerProMsg] = useState('');
   // Service categories
   const [svcCats, setSvcCats] = useState([]);
   const [newCatName, setNewCatName] = useState('');
@@ -267,6 +271,7 @@ export default function BusinessDashboardPage() {
     setApptVerifyEnabled(business.apptVerifyEnabled ?? false);
     setApptVerifyHoursBefore(business.apptVerifyHoursBefore ?? 2);
     setReviewsPublic(business.reviewsPublic ?? true);
+    api.getOwnerProfessional().then(d => setOwnerPro(d?.professional || null)).catch(() => {});
     api.getMySubscription().then(setSubscription).catch(() => {});
     api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
     api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
@@ -471,6 +476,42 @@ export default function BusinessDashboardPage() {
       setSavingReviewsCfg(false);
       setTimeout(() => setReviewsCfgMsg(''), 3000);
     }
+  }
+
+  async function activateAsProfessional() {
+    setOwnerProBusy(true); setOwnerProMsg('');
+    try {
+      const prof = await api.activateOwnerProfessional();
+      setOwnerPro(prof);
+      // Refresca el token/contextos para que aparezca el rol PROFESSIONAL en el
+      // switcher de la barra, sin pedir otra cuenta ni re-login.
+      try { const data = await api.switchContext('BUSINESS_OWNER'); login(data); } catch {}
+      setOwnerProMsg('✓ Activado. Configura tu disponibilidad desde tu panel de profesional.');
+    } catch (err) {
+      setOwnerProMsg('Error: ' + err.message);
+    } finally {
+      setOwnerProBusy(false);
+      setTimeout(() => setOwnerProMsg(''), 5000);
+    }
+  }
+
+  async function toggleOwnerProBookable(next) {
+    setOwnerProBusy(true); setOwnerProMsg('');
+    try {
+      const prof = await api.setOwnerProfessionalBookable(next);
+      setOwnerPro(prof);
+      setOwnerProMsg(next ? '✓ Ahora apareces disponible para reservas.' : '✓ Ocultado de reservas.');
+    } catch (err) {
+      setOwnerProMsg('Error: ' + err.message);
+    } finally {
+      setOwnerProBusy(false);
+      setTimeout(() => setOwnerProMsg(''), 4000);
+    }
+  }
+
+  async function goToProfessionalPanel() {
+    try { const data = await api.switchContext('PROFESSIONAL'); login(data); navigate('/pro/dashboard'); }
+    catch (err) { setOwnerProMsg('Error: ' + err.message); }
   }
 
   async function createServiceCategory() {
@@ -1435,6 +1476,48 @@ export default function BusinessDashboardPage() {
               </button>
             </div>
             {reviewsCfgMsg && <p style={{ fontSize:'var(--text-xs)', marginTop:'var(--sp-3)', color: reviewsCfgMsg.startsWith('Error') ? 'var(--error)' : 'var(--success)' }}>{reviewsCfgMsg}</p>}
+          </div>
+
+          {/* También atiendo como profesional (misma cuenta) */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>También atiendo como profesional</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)', maxWidth:520 }}>
+              Actívate como profesional dentro de tu propio negocio, con tu misma cuenta.
+              Tendrás tu propia agenda, servicios y aparecerás como opción reservable para tus clientes — sin crear otra cuenta.
+            </p>
+
+            {!ownerPro ? (
+              <button className="btn btn-primary btn-sm" onClick={activateAsProfessional} disabled={ownerProBusy}>
+                {ownerProBusy ? 'Activando…' : 'Activarme como profesional'}
+              </button>
+            ) : (
+              <>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'var(--sp-3)', flexWrap:'wrap', marginBottom:'var(--sp-4)' }}>
+                  <div>
+                    <p style={{ fontWeight:600, color:'var(--text)', fontSize:'var(--text-sm)', marginBottom:2 }}>Disponible para reservas</p>
+                    <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>
+                      {ownerPro.isBookable ? 'Apareces como profesional reservable en tu perfil público.' : 'Estás oculto de las reservas (tu perfil y agenda se conservan).'}
+                    </p>
+                  </div>
+                  <button
+                    type="button" role="switch" aria-checked={!!ownerPro.isBookable}
+                    disabled={ownerProBusy}
+                    onClick={() => toggleOwnerProBookable(!ownerPro.isBookable)}
+                    style={{
+                      width:46, height:26, borderRadius:'var(--r-full)', flexShrink:0,
+                      background: ownerPro.isBookable ? 'var(--violet)' : 'var(--surface-4)',
+                      border:'1px solid var(--border)', cursor: ownerProBusy ? 'default' : 'pointer', position:'relative', transition:'background .15s',
+                    }}
+                  >
+                    <span style={{ position:'absolute', top:2, left: ownerPro.isBookable ? 22 : 2, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .15s' }} />
+                  </button>
+                </div>
+                <button className="btn btn-secondary btn-sm" onClick={goToProfessionalPanel} disabled={ownerProBusy}>
+                  Configurar agenda y servicios →
+                </button>
+              </>
+            )}
+            {ownerProMsg && <p style={{ fontSize:'var(--text-xs)', marginTop:'var(--sp-3)', color: ownerProMsg.startsWith('Error') ? 'var(--error)' : 'var(--success)' }}>{ownerProMsg}</p>}
           </div>
         </div>
       )}

@@ -71,6 +71,11 @@ const api = {
   updateBusinessSettings: (body) => request('/businesses/me/settings', { method: 'PATCH', body: JSON.stringify(body) }),
   getProRevenue: () => request('/pro/me/revenue'),
 
+  // Owner-as-professional (misma cuenta)
+  getOwnerProfessional: () => request('/businesses/me/professional'),
+  activateOwnerProfessional: () => request('/businesses/me/professional', { method: 'POST' }),
+  setOwnerProfessionalBookable: (isBookable) => request('/businesses/me/professional', { method: 'PATCH', body: JSON.stringify({ isBookable }) }),
+
   // Analytics
   getBusinessAnalytics: (period = 'month') => request(`/businesses/me/analytics?period=${period}`),
   getProAnalytics: (period = 'month') => request(`/pro/me/analytics?period=${period}`),
