@@ -92,6 +92,7 @@ function BizHero({ business, stats, promo, onPromoCta, fontColors = {} }) {
   const avgRating   = stats?.avgRating ?? null;
   const reviewCount = stats?.reviewCount ?? 0;
   const bookingCount = stats?.bookingCount ?? 0;
+  const reviewsPublic = stats?.reviewsPublic !== false;
   const pal = avatarPalette(business.name);
 
   return (
@@ -147,7 +148,9 @@ function BizHero({ business, stats, promo, onPromoCta, fontColors = {} }) {
           )}
 
           <div className="biz-hero-stats">
-            {avgRating !== null ? (
+            {/* Si el negocio marcó las reseñas como privadas, no se muestra
+                ningún bloque de rating/contador en la vista pública. */}
+            {reviewsPublic && (avgRating !== null ? (
               <div className="biz-hero-stat">
                 <span className="biz-hero-stat-num">{avgRating.toFixed(1)}</span>
                 <span className="biz-hero-stat-label" style={fontColors.review ? { color: fontColors.review } : undefined}>
@@ -159,8 +162,8 @@ function BizHero({ business, stats, promo, onPromoCta, fontColors = {} }) {
                 <span className="biz-hero-stat-num">—</span>
                 <span className="biz-hero-stat-label">Sin reseñas</span>
               </div>
-            )}
-            <div className="biz-hero-stat-sep" />
+            ))}
+            {reviewsPublic && <div className="biz-hero-stat-sep" />}
             <div className="biz-hero-stat">
               <span className="biz-hero-stat-num" style={fontColors.booking ? { color: fontColors.booking } : undefined}>{formatBookingCount(bookingCount)}</span>
               <span className="biz-hero-stat-label">Reservas</span>
@@ -610,7 +613,10 @@ function ReviewCard({ review }) {
   );
 }
 
-function ReviewsSection({ reviews, canReview, user, reviewForm, setReviewForm, reviewError, reviewSuccess, submitting, onSubmit }) {
+function ReviewsSection({ reviews, canReview, user, reviewForm, setReviewForm, reviewError, reviewSuccess, submitting, onSubmit, reviewsPublic = true }) {
+  // El dueño desactivó las reseñas públicas: no se muestra el listado, el
+  // contador ni el formulario en la vista pública del negocio.
+  if (!reviewsPublic) return null;
   return (
     <section style={{ marginTop:'var(--sp-12)' }}>
       <div className="detail-section-label" style={{ marginBottom:'var(--sp-6)' }}>
@@ -1073,6 +1079,7 @@ export default function BusinessDetailPage() {
 
         {/* ── Reviews ── */}
         <ReviewsSection
+          reviewsPublic={stats?.reviewsPublic !== false}
           reviews={reviews}
           canReview={canReview}
           user={user}

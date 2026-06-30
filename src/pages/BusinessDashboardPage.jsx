@@ -195,6 +195,10 @@ export default function BusinessDashboardPage() {
   const [apptVerifyHoursBefore, setApptVerifyHoursBefore] = useState(2);
   const [savingVerifyCfg, setSavingVerifyCfg] = useState(false);
   const [verifyCfgMsg, setVerifyCfgMsg] = useState('');
+  // Visibilidad pública de reseñas
+  const [reviewsPublic, setReviewsPublic] = useState(true);
+  const [savingReviewsCfg, setSavingReviewsCfg] = useState(false);
+  const [reviewsCfgMsg, setReviewsCfgMsg] = useState('');
   // Service categories
   const [svcCats, setSvcCats] = useState([]);
   const [newCatName, setNewCatName] = useState('');
@@ -262,6 +266,7 @@ export default function BusinessDashboardPage() {
     setThemeDark(mergeTheme(DEFAULT_THEME_DARK, business.themeDark));
     setApptVerifyEnabled(business.apptVerifyEnabled ?? false);
     setApptVerifyHoursBefore(business.apptVerifyHoursBefore ?? 2);
+    setReviewsPublic(business.reviewsPublic ?? true);
     api.getMySubscription().then(setSubscription).catch(() => {});
     api.getBusinessJoinCode().then(d => setJoinCode(d.joinCode)).catch(() => {});
     api.getBusinessJoinRequests().then(r => setJoinRequests(Array.isArray(r) ? r : [])).catch(() => {});
@@ -449,6 +454,23 @@ export default function BusinessDashboardPage() {
       setVerifyCfgMsg('✓ Guardado');
     } catch (err) { setVerifyCfgMsg('Error: ' + err.message); }
     finally { setSavingVerifyCfg(false); setTimeout(() => setVerifyCfgMsg(''), 3000); }
+  }
+
+  async function saveReviewsConfig(nextValue) {
+    const next = typeof nextValue === 'boolean' ? nextValue : reviewsPublic;
+    setReviewsPublic(next);
+    setSavingReviewsCfg(true); setReviewsCfgMsg('');
+    try {
+      const updated = await api.updateBusinessProfile({ reviewsPublic: next });
+      setBusiness(prev => ({ ...prev, ...updated, reviewsPublic: next }));
+      setReviewsCfgMsg('✓ Guardado');
+    } catch (err) {
+      setReviewsPublic(prev => !prev); // revertir en caso de error
+      setReviewsCfgMsg('Error: ' + err.message);
+    } finally {
+      setSavingReviewsCfg(false);
+      setTimeout(() => setReviewsCfgMsg(''), 3000);
+    }
   }
 
   async function createServiceCategory() {
@@ -1380,6 +1402,39 @@ export default function BusinessDashboardPage() {
               </button>
               {verifyCfgMsg && <span style={{ fontSize:'var(--text-xs)', color: verifyCfgMsg.startsWith('Error') || verifyCfgMsg.includes('horas') ? 'var(--error)' : 'var(--success)' }}>{verifyCfgMsg}</span>}
             </div>
+          </div>
+
+          {/* Visibilidad pública de reseñas */}
+          <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
+            <h3 style={{ fontSize:'var(--text-base)', fontWeight:700, margin:'0 0 var(--sp-2)' }}>Reseñas públicas</h3>
+            <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-4)', maxWidth:480 }}>
+              Controla si las reseñas de tu negocio se muestran en tu perfil público.
+              Al desactivarlas, se oculta el listado, la calificación promedio y el contador de reseñas para los clientes.
+            </p>
+
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'var(--sp-3)', flexWrap:'wrap' }}>
+              <div>
+                <p style={{ fontWeight:600, color:'var(--text)', fontSize:'var(--text-sm)', marginBottom:2 }}>Mostrar reseñas en el perfil público</p>
+                <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)' }}>
+                  {reviewsPublic ? 'Las reseñas son visibles para tus clientes.' : 'Las reseñas están ocultas en tu perfil público.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={reviewsPublic}
+                disabled={savingReviewsCfg}
+                onClick={() => saveReviewsConfig(!reviewsPublic)}
+                style={{
+                  width:46, height:26, borderRadius:'var(--r-full)', flexShrink:0,
+                  background: reviewsPublic ? 'var(--violet)' : 'var(--surface-4)',
+                  border:'1px solid var(--border)', cursor: savingReviewsCfg ? 'default' : 'pointer', position:'relative', transition:'background .15s',
+                }}
+              >
+                <span style={{ position:'absolute', top:2, left: reviewsPublic ? 22 : 2, width:20, height:20, borderRadius:'50%', background:'#fff', transition:'left .15s' }} />
+              </button>
+            </div>
+            {reviewsCfgMsg && <p style={{ fontSize:'var(--text-xs)', marginTop:'var(--sp-3)', color: reviewsCfgMsg.startsWith('Error') ? 'var(--error)' : 'var(--success)' }}>{reviewsCfgMsg}</p>}
           </div>
         </div>
       )}
