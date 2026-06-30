@@ -173,7 +173,7 @@ function SubscriptionsSection({ country }) {
       ) : filtered.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>{rows.length ? 'Ningún resultado con estos filtros.' : 'No hay suscripciones todavía.'}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="admin-table-wrap">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -322,7 +322,7 @@ function CommissionsSection({ country }) {
       ) : promoters.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>No hay comisiones para este periodo.</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="admin-table-wrap">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>

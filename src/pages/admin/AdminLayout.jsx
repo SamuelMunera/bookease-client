@@ -21,14 +21,14 @@ export default function AdminLayout() {
   const Sidebar = ({ mobile = false }) => (
     <aside style={{
       width: mobile ? '100%' : 220, flexShrink: 0,
-      ...(mobile ? {} : { position: 'fixed', top: 0, left: 0, height: '100vh' }),
+      ...(mobile ? {} : { position: 'fixed', top: 0, left: 0, height: '100dvh' }),
       background: 'var(--surface)', borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column',
     }}>
       <div style={{ padding: 'var(--sp-6) var(--sp-5)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontWeight: 800, fontSize: 'var(--text-lg)' }}>
-            <span style={{ color: 'var(--gold)' }}>Book</span><span style={{ color: 'var(--text)' }}>ease</span>
+            <span style={{ color: 'var(--gold)' }}>Slot</span><span style={{ color: 'var(--text)' }}>ly</span>
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
             Admin Panel
@@ -88,7 +88,7 @@ export default function AdminLayout() {
             onClick={() => setSideOpen(false)}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200 }}
           />
-          <div style={{ position: 'fixed', top: 0, left: 0, width: 260, height: '100vh', zIndex: 201 }}>
+          <div style={{ position: 'fixed', top: 0, left: 0, width: 'min(86vw, 280px)', height: '100dvh', zIndex: 201 }}>
             <Sidebar mobile />
           </div>
         </>
@@ -112,7 +112,7 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        <div style={{ padding: 'var(--sp-8)' }} className="admin-content">
+        <div className="admin-content">
           <Outlet />
         </div>
       </main>

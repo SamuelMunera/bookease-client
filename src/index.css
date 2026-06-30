@@ -4124,13 +4124,38 @@ html { scroll-padding-top: 68px; }
   top: 0;
   z-index: 50;
 }
-.admin-content { flex: 1; }
+/* Padding del contenido escalado por dispositivo (un solo sistema, no media
+   queries sueltas por página): desktop holgado → móvil compacto. */
+.admin-content { flex: 1; padding: var(--sp-8); min-width: 0; }
+
+/* Tablas anchas: scroll horizontal estable en móvil en vez de columnas
+   aplastadas. El min-width del table evita que el contenido se comprima. */
+.admin-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  border-radius: var(--r-lg);
+}
+.admin-table-wrap > table { min-width: 640px; }
+
+/* Tablet: el sidebar fijo sigue, pero el contenido respira menos. */
+@media (max-width: 1024px) {
+  .admin-content { padding: var(--sp-6); }
+}
 
 @media (max-width: 768px) {
   .admin-sidebar-desktop { display: none; }
   .admin-main { margin-left: 0; }
   .admin-topbar { display: flex; }
-  .admin-content { padding: var(--sp-5) !important; }
+  .admin-content { padding: var(--sp-5); }
+}
+
+@media (max-width: 480px) {
+  .admin-content { padding: var(--sp-4); }
+  /* Densidad de tablas y tarjetas en móvil */
+  .admin-content section { padding: var(--sp-4) !important; }
+  .admin-table-wrap > table th,
+  .admin-table-wrap > table td { padding: var(--sp-2) var(--sp-3) !important; }
 }
 
 /* Admin category form: stack on small screens */
