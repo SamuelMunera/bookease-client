@@ -5041,17 +5041,52 @@ html { scroll-padding-top: 68px; }
   transition: background .12s;
 }
 .modal-drawer-close:hover { background: var(--surface-3); }
-.modal-drawer-body { flex: 1; overflow-y: auto; padding: var(--sp-5) var(--sp-6); }
+/* El <form> debe ser el contenedor flex que llena el drawer; si no, el body no
+   puede hacer scroll interno y el footer sticky se sale de pantalla. */
+.modal-drawer-form {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0; overflow: hidden;
+}
+.modal-drawer-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: var(--sp-5) var(--sp-6);
+  -webkit-overflow-scrolling: touch;   /* scroll suave en iOS, sin conflicto con el body */
+  overscroll-behavior: contain;        /* el scroll del modal no arrastra la página */
+}
 .modal-drawer-foot {
   display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-4) var(--sp-6);
   border-top: 1px solid var(--border); flex-shrink: 0;
   background: var(--surface-raised);
+  /* respeta el home-indicator en móviles con notch */
+  padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+}
+
+/* Fila de 2 campos: lado a lado con espacio, apilada en pantallas muy angostas. */
+.modal-field-row {
+  display: grid; gap: var(--sp-3);
+  grid-template-columns: 1fr 1fr;
 }
 
 @media (min-width: 600px) {
   .modal-overlay { align-items: center; }
   .modal-drawer  { border-radius: var(--r-2xl); max-height: 85vh; }
+}
+
+/* ── Móvil: sheet a pantalla casi completa, acciones grandes y sin auto-zoom ── */
+@media (max-width: 600px) {
+  .modal-drawer { max-height: 94dvh; }
+  .modal-drawer-head { padding: var(--sp-4) var(--sp-5) var(--sp-3); }
+  .modal-drawer-body { padding: var(--sp-4) var(--sp-5); }
+  .modal-drawer-foot { padding: var(--sp-3) var(--sp-5); padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom)); }
+  /* iOS no hace zoom al enfocar si el input es >= 16px */
+  .modal-drawer .input { font-size: 16px; }
+  /* botones a ancho completo y con buen tamaño táctil */
+  .modal-drawer-foot .btn { flex: 1; min-height: 46px; }
+  .modal-drawer-close { width: 38px; height: 38px; }
+}
+@media (max-width: 380px) {
+  .modal-field-row { grid-template-columns: 1fr; }
 }
 
 /* ══════════════════════════════════════════════════════════

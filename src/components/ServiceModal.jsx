@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api';
 
 /**
@@ -15,6 +15,19 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
   const [form, setForm]     = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
+
+  // Accesibilidad: cerrar con Escape y devolver el foco al elemento que abrió el
+  // modal al desmontar (sin secuestrar el foco inicial, que va al primer campo).
+  useEffect(() => {
+    const opener = document.activeElement;
+    function onKey(e) { if (e.key === 'Escape' && !saving) onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (opener && typeof opener.focus === 'function') opener.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saving]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -44,19 +57,23 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-drawer" onClick={e => e.stopPropagation()}>
+      <div
+        className="modal-drawer"
+        onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="service-modal-title"
+      >
         {/* Header */}
         <div className="modal-drawer-head">
           <div>
             <p style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'.06em', margin:0 }}>Nuevo servicio</p>
-            <h2 className="modal-drawer-title">Crear servicio</h2>
+            <h2 className="modal-drawer-title" id="service-modal-title">Crear servicio</h2>
           </div>
-          <button type="button" onClick={onClose} className="modal-drawer-close">
+          <button type="button" onClick={onClose} className="modal-drawer-close" aria-label="Cerrar">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="modal-drawer-form">
           <div className="modal-drawer-body" style={{ display:'flex', flexDirection:'column', gap:'var(--sp-4)' }}>
             {/* Nombre */}
             <div>
@@ -84,8 +101,8 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
             </div>
 
             {/* Precio + categoría */}
-            <div style={{ display:'flex', gap:'var(--sp-3)' }}>
-              <div style={{ flex:1 }}>
+            <div className={categories.length > 0 ? 'modal-field-row' : undefined}>
+              <div>
                 <label className="input-label">Precio *</label>
                 <input
                   className="input"
@@ -96,7 +113,7 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
                 />
               </div>
               {categories.length > 0 && (
-                <div style={{ flex:1 }}>
+                <div>
                   <label className="input-label">Categoría</label>
                   <select
                     className="input"
