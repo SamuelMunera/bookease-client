@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
       }}>
         <div style={{ textAlign: 'center', marginBottom: 'var(--sp-8)' }}>
           <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--gold)' }}>
-            Book<span style={{ color: 'var(--text)' }}>ease</span>
+            Slot<span style={{ color: 'var(--text)' }}>ly</span>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginTop: 'var(--sp-1)' }}>
             Panel de administración
