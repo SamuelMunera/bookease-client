@@ -5548,7 +5548,22 @@ html { scroll-padding-top: 68px; }
 .promo-svc-price { display: inline-flex; align-items: center; gap: 6px; }
 .promo-svc-price s { color: var(--text-subtle); }
 .promo-svc-price strong { color: var(--promo, var(--gold)); font-size: var(--text-sm); }
+/* CTA propio de la promo: no hereda el gradiente gold del tema del negocio
+   (que sobre el fondo rojo de la promo se veía apagado/"hundido"). Color de
+   promo, texto blanco, y estado presionado SOLO en :active. */
 .promo-svc-cta { flex-shrink: 0; white-space: nowrap; }
+.promo-svc-cta.btn-primary {
+  background: var(--promo-grad, linear-gradient(135deg, #E11D48 0%, #B3123E 100%));
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(177, 18, 62, 0.28);
+}
+.promo-svc-cta.btn-primary::before { content: none; }   /* quita el overlay que lo aplanaba */
+.promo-svc-cta.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(177, 18, 62, 0.36);
+}
+.promo-svc-cta.btn-primary:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(177, 18, 62, 0.30); }
+.promo-svc-cta.btn-primary:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (max-width: 480px) {
   .promo-svc { flex-direction: column; align-items: stretch; }
   .promo-svc-cta { width: 100%; }
