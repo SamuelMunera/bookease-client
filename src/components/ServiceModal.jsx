@@ -2,17 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../api';
 
 /**
- * Modal de creación de servicio para el panel de negocio.
+ * Modal de creación/edición de servicio para el panel de negocio.
  * El dueño define el catálogo: nombre, descripción, precio y categoría.
  * QUÉ profesionales realizan cada servicio lo elige cada profesional
  * desde su propio panel, y la DURACIÓN real también la configura cada
  * profesional; aquí solo se fija una duración base (referencia / fallback)
  * hasta que el profesional ajuste la suya.
+ * Si recibe `service`, opera en modo edición sobre ese servicio.
  */
 const EMPTY = { name: '', description: '', price: '', categoryId: '', duration: '30' };
 
-export default function ServiceModal({ businessId, categories = [], onClose, onCreated }) {
-  const [form, setForm]     = useState(EMPTY);
+export default function ServiceModal({ businessId, categories = [], service = null, onClose, onCreated }) {
+  const isEdit = Boolean(service);
+  const [form, setForm]     = useState(() => isEdit
+    ? {
+        name: service.name ?? '',
+        description: service.description ?? '',
+        price: String(service.price ?? ''),
+        categoryId: service.categoryId ?? '',
+        duration: String(service.duration ?? '30'),
+      }
+    : EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
@@ -39,17 +49,20 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
     if (isNaN(duration) || duration < 5 || duration % 5 !== 0) return setError('La duración base debe ser un múltiplo de 5 minutos (mínimo 5).');
     setSaving(true);
     try {
-      const created = await api.createService(businessId, {
+      const body = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
         price,
         duration,
         categoryId: form.categoryId || null,
-      });
-      onCreated?.(created);
+      };
+      const saved = isEdit
+        ? await api.updateService(businessId, service.id, body)
+        : await api.createService(businessId, body);
+      onCreated?.(saved);
       onClose();
     } catch (err) {
-      setError(err.message || 'No se pudo crear el servicio.');
+      setError(err.message || (isEdit ? 'No se pudo actualizar el servicio.' : 'No se pudo crear el servicio.'));
     } finally {
       setSaving(false);
     }
@@ -65,8 +78,8 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
         {/* Header */}
         <div className="modal-drawer-head">
           <div>
-            <p style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'.06em', margin:0 }}>Nuevo servicio</p>
-            <h2 className="modal-drawer-title" id="service-modal-title">Crear servicio</h2>
+            <p style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'.06em', margin:0 }}>{isEdit ? 'Editar servicio' : 'Nuevo servicio'}</p>
+            <h2 className="modal-drawer-title" id="service-modal-title">{isEdit ? service.name : 'Crear servicio'}</h2>
           </div>
           <button type="button" onClick={onClose} className="modal-drawer-close" aria-label="Cerrar">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -157,7 +170,7 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Guardando…' : 'Crear servicio'}
+              {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear servicio'}
             </button>
           </div>
         </form>

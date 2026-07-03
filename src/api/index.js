@@ -49,6 +49,8 @@ const api = {
     request('/businesses', { method: 'POST', body: JSON.stringify(body) }),
   createService: (businessId, body) =>
     request(`/businesses/${businessId}/services`, { method: 'POST', body: JSON.stringify(body) }),
+  updateService: (businessId, id, body) =>
+    request(`/businesses/${businessId}/services/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   getBusinessBookings: (id, params = {}) =>
     request(`/businesses/${id}/bookings?${new URLSearchParams(params)}`),
 

@@ -221,6 +221,7 @@ export default function BusinessDashboardPage() {
   const [showPromoForm, setShowPromoForm] = useState(false);
   // Service modal
   const [showSvcModal, setShowSvcModal] = useState(false);
+  const [editingSvc, setEditingSvc] = useState(null);
   // Referrals
   const [referrals, setReferrals] = useState(null);
   const [referralCopied, setReferralCopied] = useState(false);
@@ -692,6 +693,16 @@ export default function BusinessDashboardPage() {
         />
       )}
 
+      {editingSvc && (
+        <ServiceModal
+          businessId={business.id}
+          categories={svcCats}
+          service={editingSvc}
+          onClose={() => setEditingSvc(null)}
+          onCreated={refreshBusiness}
+        />
+      )}
+
       {/* ── Email verification banner ── */}
       {business && !business.emailVerified && (
         <div style={{
@@ -908,9 +919,25 @@ export default function BusinessDashboardPage() {
                         <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{s.name}</p>
                         <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>{s.duration} min</p>
                       </div>
-                      <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--gold)', whiteSpace: 'nowrap', marginLeft: 'var(--sp-3)' }}>
-                        ${Number(s.price).toLocaleString('es-CO')}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', marginLeft: 'var(--sp-3)' }}>
+                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--gold)', whiteSpace: 'nowrap' }}>
+                          ${Number(s.price).toLocaleString('es-CO')}
+                        </span>
+                        <button
+                          onClick={() => setEditingSvc(s)}
+                          title="Editar servicio"
+                          aria-label={`Editar ${s.name}`}
+                          style={{
+                            width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
+                            color: 'var(--text-subtle)', cursor: 'pointer', flexShrink: 0,
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
