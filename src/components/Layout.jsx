@@ -254,7 +254,7 @@ export default function Layout() {
 
           {/* — Context switch (identidades con negocio + profesional) — */}
           {user?.availableRoles?.length > 1 && (
-            <div className="nav-ctx-switch" style={{ display: 'flex', gap: 4 }}>
+            <div className="nav-ctx-switch">
               {user.availableRoles
                 .filter(r => r === 'BUSINESS_OWNER' || r === 'PROFESSIONAL')
                 .map(r => (
@@ -306,6 +306,37 @@ export default function Layout() {
       {/* Mobile dropdown */}
       {menuOpen && (
         <div className="nav-mobile-menu" onClick={() => setMenuOpen(false)}>
+          {/* — Cuenta (usuario logueado) — */}
+          {user && (
+            <div className="nav-mobile-account" onClick={e => e.stopPropagation()}>
+              <div className="nav-user-avatar">{user.name?.[0]?.toUpperCase() ?? 'U'}</div>
+              <div className="nav-mobile-account-info">
+                <span className="nav-mobile-account-name">{user.name}</span>
+                <span className="nav-mobile-account-role">
+                  {{ BUSINESS_OWNER: 'Negocio', PROFESSIONAL: 'Profesional', CLIENT: 'Cliente', ADMIN: 'Admin' }[user.role] || ''}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* — Cambio de contexto (negocio + profesional) — */}
+          {user?.availableRoles?.length > 1 && (
+            <div className="nav-mobile-ctx" onClick={e => e.stopPropagation()}>
+              {user.availableRoles
+                .filter(r => r === 'BUSINESS_OWNER' || r === 'PROFESSIONAL')
+                .map(r => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={`nav-mobile-ctx-btn${user.role === r ? ' active' : ''}`}
+                    onClick={() => r !== user.role && switchTo(r)}
+                  >
+                    {r === 'BUSINESS_OWNER' ? 'Negocio' : 'Profesional'}
+                  </button>
+                ))}
+            </div>
+          )}
+
           {!user && (
             <>
               <Link to="/businesses" className="nav-mobile-link">Negocios</Link>

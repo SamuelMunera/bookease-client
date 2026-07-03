@@ -520,12 +520,18 @@ export default function ProfessionalDashboardPage() {
     setSavingDurations(true); setDurationMsg('');
     try {
       const configs = Object.entries(durationConfigs)
-        .filter(([, v]) => myServiceIds.has /* only configured services */ || true)
         .map(([serviceId, customDuration]) => ({
           serviceId,
           customDuration: customDuration !== '' ? Number(customDuration) : null,
-        }))
-        .filter(c => c.customDuration === null || (c.customDuration > 0));
+        }));
+      const invalid = configs.find(c => c.customDuration !== null &&
+        (!Number.isFinite(c.customDuration) || c.customDuration < 5 || c.customDuration % 5 !== 0));
+      if (invalid) {
+        setDurationMsg('Usa múltiplos de 5 min');
+        setSavingDurations(false);
+        setTimeout(() => setDurationMsg(''), 2500);
+        return;
+      }
       await api.saveProServiceConfigs(configs);
       setDurationMsg('Guardado');
     } catch { setDurationMsg('Error al guardar'); }
@@ -1169,7 +1175,8 @@ export default function ProfessionalDashboardPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
                   <input
                     type="number"
-                    min="1"
+                    min="5"
+                    step="5"
                     max="480"
                     placeholder={String(s.duration)}
                     value={durationConfigs[s.id] ?? ''}

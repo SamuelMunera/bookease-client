@@ -36,7 +36,7 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
     const duration = parseInt(form.duration, 10);
     if (!form.name.trim()) return setError('El nombre del servicio es obligatorio.');
     if (form.price === '' || isNaN(price) || price < 0) return setError('Ingresa un precio válido (≥ 0).');
-    if (isNaN(duration) || duration <= 0) return setError('La duración base debe ser un número positivo.');
+    if (isNaN(duration) || duration < 5 || duration % 5 !== 0) return setError('La duración base debe ser un múltiplo de 5 minutos (mínimo 5).');
     setSaving(true);
     try {
       const created = await api.createService(businessId, {
@@ -132,7 +132,7 @@ export default function ServiceModal({ businessId, categories = [], onClose, onC
               <label className="input-label">Duración base (min)</label>
               <input
                 className="input"
-                type="number" min="1" step="5"
+                type="number" min="5" step="5" max="480"
                 value={form.duration}
                 onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
                 style={{ maxWidth:160 }}
