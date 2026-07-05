@@ -2,6 +2,11 @@ import { useEffect } from 'react';
 
 const SITE_NAME = 'Slotly';
 const SITE_URL = 'https://slotly.app';
+// CORE-08: fallback description used to reset when a page that set a custom
+// description unmounts, or when the next page omits one — otherwise the stale
+// description of the previous page would leak into the new page.
+const DEFAULT_DESCRIPTION =
+  'Slotly — reserva citas online con los mejores negocios y profesionales.';
 
 function setMetaTag(attr, key, content) {
   if (!content) return;
@@ -34,11 +39,12 @@ export default function useSEO({ title, description, path, noindex = false }) {
     const fullTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
     document.title = fullTitle;
 
-    if (description) {
-      setMetaTag('name', 'description', description);
-      setMetaTag('property', 'og:description', description);
-      setMetaTag('name', 'twitter:description', description);
-    }
+    // CORE-08: always write a description — the page's own or the default —
+    // so a page without one doesn't inherit the previous page's description.
+    const effectiveDescription = description || DEFAULT_DESCRIPTION;
+    setMetaTag('name', 'description', effectiveDescription);
+    setMetaTag('property', 'og:description', effectiveDescription);
+    setMetaTag('name', 'twitter:description', effectiveDescription);
 
     setMetaTag('property', 'og:title', fullTitle);
     setMetaTag('name', 'twitter:title', fullTitle);
@@ -49,5 +55,13 @@ export default function useSEO({ title, description, path, noindex = false }) {
     }
 
     setMetaTag('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
+
+    // CORE-08: on unmount / before the next run, reset the description back to
+    // the default so a stale page-specific description never persists.
+    return () => {
+      setMetaTag('name', 'description', DEFAULT_DESCRIPTION);
+      setMetaTag('property', 'og:description', DEFAULT_DESCRIPTION);
+      setMetaTag('name', 'twitter:description', DEFAULT_DESCRIPTION);
+    };
   }, [title, description, path, noindex]);
 }

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -74,6 +74,70 @@ function RouteFallback() {
   );
 }
 
+/* ── CORE-09: real 404 page instead of a silent redirect to "/" ── */
+function NotFoundPage() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '70vh',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: 'var(--sp-8)',
+      }}
+    >
+      <div
+        style={{
+          fontSize: 'var(--text-5xl, 64px)',
+          fontWeight: 800,
+          color: 'var(--gold)',
+          lineHeight: 1,
+          marginBottom: 'var(--sp-4)',
+        }}
+      >
+        404
+      </div>
+      <h1
+        style={{
+          fontSize: 'var(--text-xl)',
+          fontWeight: 800,
+          color: 'var(--text)',
+          marginBottom: 'var(--sp-3)',
+        }}
+      >
+        Página no encontrada
+      </h1>
+      <p
+        style={{
+          fontSize: 'var(--text-sm)',
+          color: 'var(--text-muted)',
+          maxWidth: 420,
+          marginBottom: 'var(--sp-6)',
+        }}
+      >
+        La página que buscas no existe o fue movida.
+      </p>
+      <Link
+        to="/"
+        style={{
+          display: 'inline-block',
+          padding: '10px 28px',
+          background: 'var(--gold)',
+          color: '#000',
+          borderRadius: 999,
+          fontWeight: 700,
+          fontSize: 'var(--text-sm)',
+          textDecoration: 'none',
+        }}
+      >
+        Volver al inicio
+      </Link>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -124,7 +188,7 @@ export default function App() {
             <Route path="pro/dashboard" element={
               <ProtectedRoute role="PROFESSIONAL"><ProfessionalDashboardPage /></ProtectedRoute>
             } />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
           {/* ── Admin panel ── */}

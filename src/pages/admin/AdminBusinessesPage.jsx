@@ -1,8 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
 import { PLAN_NAMES_ES, getPlanLimit } from '../../utils/plans';
 
 const CAT_EMOJI = { BARBERSHOP: '✂️', SPA: '💆', SALON: '💅' };
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div style={{
+      border: '1px solid var(--error-border)', background: 'var(--error-bg)',
+      borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)', textAlign: 'center',
+    }}>
+      <p style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)' }}>
+        {message || 'No se pudieron cargar los datos.'}
+      </p>
+      <button className="btn btn-primary" onClick={onRetry}>Reintentar</button>
+    </div>
+  );
+}
 
 // Solo lectura: el plan/tipo de suscripción no se puede editar desde admin.
 // Cualquier cambio de plan ocurre únicamente a través del flujo real de
@@ -34,11 +48,18 @@ function PlanBadge({ currentPlan, professionalCount }) {
 export default function AdminBusinessesPage() {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    api.adminBusinesses().then(setBusinesses).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    api.adminBusinesses()
+      .then(setBusinesses)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = businesses.filter(b =>
     (b.name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
@@ -62,6 +83,8 @@ export default function AdminBusinessesPage() {
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>Sin resultados.</p>
       ) : (

@@ -1,5 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div style={{
+      border: '1px solid var(--error-border)', background: 'var(--error-bg)',
+      borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)', textAlign: 'center',
+    }}>
+      <p style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)' }}>
+        {message || 'No se pudieron cargar los datos.'}
+      </p>
+      <button className="btn btn-primary" onClick={onRetry}>Reintentar</button>
+    </div>
+  );
+}
 
 const TABS = [
   { id: 'promoters',   label: 'Promotor',     icon: '🤝' },
@@ -49,7 +63,9 @@ function CodeChip({ code }) {
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch (err) {
+      console.error('No se pudo copiar el código al portapapeles:', err);
+    }
   }
 
   return (
@@ -125,11 +141,18 @@ function PromotersTab() {
   const [form, setForm]           = useState({ firstName: '', lastName: '', email: '', phone: '', country: 'CO' });
   const [saving, setSaving]       = useState(false);
   const [error, setError]         = useState('');
+  const [loadError, setLoadError] = useState('');
   const [togglingId, setTogglingId] = useState(null);
 
-  useEffect(() => {
-    api.adminPromoters().then(setPromoters).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setLoadError('');
+    api.adminPromoters()
+      .then(setPromoters)
+      .catch(err => setLoadError(err.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -252,6 +275,8 @@ function PromotersTab() {
         </h2>
         {loading ? (
           <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={load} />
         ) : promoters.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>No hay promotores registrados todavía.</p>
         ) : (
@@ -329,14 +354,18 @@ function ConversionsTab() {
   const [promoters, setPromoters] = useState([]);
   const [stats, setStats]         = useState(null);
   const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
   const [selected, setSelected]   = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true); setError('');
     Promise.all([api.adminPromoters(), api.adminReferralStats()])
       .then(([p, s]) => { setPromoters(p); setStats(s); })
-      .catch(() => {})
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   if (selected) {
     return <PromoterDetail promoter={selected} onBack={() => setSelected(null)} />;
@@ -363,6 +392,8 @@ function ConversionsTab() {
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : promoters.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>No hay promotores registrados todavía.</p>
       ) : (
@@ -408,12 +439,19 @@ function ConversionsTab() {
 function PromoterDetail({ promoter, onBack }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [justPaidOnly, setJustPaidOnly] = useState(false);
 
-  useEffect(() => {
-    api.adminPromoterDetail(promoter.id).then(setData).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    api.adminPromoterDetail(promoter.id)
+      .then(setData)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, [promoter.id]);
+
+  useEffect(() => { load(); }, [load]);
 
   const items = (data?.items || []).filter(i =>
     (statusFilter === 'all' || i.currentStatus === statusFilter)
@@ -468,6 +506,8 @@ function PromoterDetail({ promoter, onBack }) {
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : items.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>
           {data?.items.length ? 'Ningún resultado con estos filtros.' : 'Este promotor aún no tiene negocios ni independientes referidos.'}
@@ -528,11 +568,18 @@ function CourtesyTab() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError]     = useState('');
+  const [loadError, setLoadError] = useState('');
   const [form, setForm]       = useState({ plan: 'team', label: '' });
 
-  useEffect(() => {
-    api.adminCourtesyCodes().then(setCodes).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setLoadError('');
+    api.adminCourtesyCodes()
+      .then(setCodes)
+      .catch(err => setLoadError(err.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   async function handleGenerate(e) {
     e.preventDefault();
@@ -602,6 +649,8 @@ function CourtesyTab() {
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : loadError ? (
+        <ErrorState message={loadError} onRetry={load} />
       ) : codes.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>No hay códigos de cortesía generados todavía.</p>
       ) : (

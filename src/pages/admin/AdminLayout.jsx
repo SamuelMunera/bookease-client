@@ -11,14 +11,12 @@ const NAV = [
   { to: 'finance',      label: 'Finanzas',       icon: '💰' },
 ];
 
-export default function AdminLayout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [sideOpen, setSideOpen] = useState(false);
-
-  function handleLogout() { logout(); navigate('/admin/login'); }
-
-  const Sidebar = ({ mobile = false }) => (
+// Definido a nivel de módulo (no dentro de AdminLayout): si se declara dentro
+// del componente, en cada render se crea un tipo nuevo y React desmonta/remonta
+// todo el subárbol del sidebar (p.ej. al abrir el drawer). Todo lo que necesita
+// llega por props: mobile, user, onClose (cerrar drawer) y onLogout.
+function Sidebar({ mobile = false, user, onClose, onLogout }) {
+  return (
     <aside style={{
       width: mobile ? '100%' : 220, flexShrink: 0,
       ...(mobile ? {} : { position: 'fixed', top: 0, left: 0, height: '100dvh' }),
@@ -35,14 +33,14 @@ export default function AdminLayout() {
           </div>
         </div>
         {mobile && (
-          <button onClick={() => setSideOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         )}
       </div>
       <nav style={{ flex: 1, padding: 'var(--sp-4) var(--sp-3)', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV.map(n => (
-          <NavLink key={n.to} to={n.to} onClick={() => setSideOpen(false)}
+          <NavLink key={n.to} to={n.to} onClick={onClose}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
               padding: 'var(--sp-3)', borderRadius: 'var(--r-md)',
@@ -62,7 +60,7 @@ export default function AdminLayout() {
         <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', padding: 'var(--sp-2) var(--sp-3)', marginBottom: 'var(--sp-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {user?.name}
         </div>
-        <button onClick={handleLogout} style={{
+        <button onClick={onLogout} style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
           padding: 'var(--sp-3)', borderRadius: 'var(--r-md)',
           border: 'none', background: 'none', cursor: 'pointer',
@@ -73,23 +71,32 @@ export default function AdminLayout() {
       </div>
     </aside>
   );
+}
+
+export default function AdminLayout() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [sideOpen, setSideOpen] = useState(false);
+
+  function handleLogout() { logout(); navigate('/admin/login'); }
+  const closeSide = () => setSideOpen(false);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Desktop sidebar */}
       <div className="admin-sidebar-desktop">
-        <Sidebar />
+        <Sidebar user={user} onClose={closeSide} onLogout={handleLogout} />
       </div>
 
       {/* Mobile overlay */}
       {sideOpen && (
         <>
           <div
-            onClick={() => setSideOpen(false)}
+            onClick={closeSide}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200 }}
           />
           <div style={{ position: 'fixed', top: 0, left: 0, width: 'min(86vw, 280px)', height: '100dvh', zIndex: 201 }}>
-            <Sidebar mobile />
+            <Sidebar mobile user={user} onClose={closeSide} onLogout={handleLogout} />
           </div>
         </>
       )}

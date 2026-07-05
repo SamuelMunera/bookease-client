@@ -1,6 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
 import { PLAN_NAMES_ES } from '../../utils/plans';
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div style={{
+      border: '1px solid var(--error-border)', background: 'var(--error-bg)',
+      borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)', textAlign: 'center',
+    }}>
+      <p style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)' }}>
+        {message || 'No se pudieron cargar los datos.'}
+      </p>
+      <button className="btn btn-primary" onClick={onRetry}>Reintentar</button>
+    </div>
+  );
+}
 
 function Avatar({ name }) {
   const initials = name?.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -35,11 +49,18 @@ function PlanBadge({ currentPlan }) {
 export default function AdminProfessionalsPage() {
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    api.adminProfessionals().then(setProfessionals).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    api.adminProfessionals()
+      .then(setProfessionals)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const filtered = professionals.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -63,6 +84,8 @@ export default function AdminProfessionalsPage() {
 
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>Sin resultados.</p>
       ) : (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
 import ConfirmModal from '../../components/ConfirmModal';
 
@@ -8,18 +8,39 @@ function slugify(str) {
   return str.toLowerCase().trim().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
 }
 
+function ErrorState({ message, onRetry }) {
+  return (
+    <div style={{
+      border: '1px solid var(--error-border)', background: 'var(--error-bg)',
+      borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)', textAlign: 'center',
+    }}>
+      <p style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)' }}>
+        {message || 'No se pudieron cargar los datos.'}
+      </p>
+      <button className="btn btn-primary" onClick={onRetry}>Reintentar</button>
+    </div>
+  );
+}
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [form, setForm]             = useState({ name: '', slug: '', icon: '✂️' });
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState('');
+  const [loadError, setLoadError]   = useState('');
   const [deletingId, setDeletingId] = useState(null);
   const [confirmId, setConfirmId]   = useState(null);
 
-  useEffect(() => {
-    api.adminCategories().then(setCategories).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setLoadError('');
+    api.adminCategories()
+      .then(setCategories)
+      .catch(err => setLoadError(err.message))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   function handleNameChange(e) {
     const name = e.target.value;
@@ -126,6 +147,8 @@ export default function AdminCategoriesPage() {
       {/* List */}
       {loading ? (
         <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+      ) : loadError ? (
+        <ErrorState message={loadError} onRetry={load} />
       ) : categories.length === 0 ? (
         <p style={{ color: 'var(--text-muted)' }}>No hay categorías todavía.</p>
       ) : (

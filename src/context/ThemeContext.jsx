@@ -12,9 +12,13 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
+    // CORE-06: only reflect the theme on the DOM here. We must NOT persist to
+    // localStorage on mount, otherwise the prefers-color-scheme listener below
+    // (guarded by `!localStorage.getItem('theme')`) would be permanently dead
+    // for users who never chose a theme manually. Persistence happens only in
+    // toggleTheme, i.e. on an explicit user choice.
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.style.colorScheme = theme;
-    localStorage.setItem('theme', theme);
   }, [theme]);
 
   useEffect(() => {
@@ -28,7 +32,13 @@ export function ThemeProvider({ children }) {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme(t => {
+    const next = t === 'dark' ? 'light' : 'dark';
+    // CORE-06: persist only on explicit user choice so system-theme sync keeps
+    // working until the user actively picks a theme.
+    localStorage.setItem('theme', next);
+    return next;
+  });
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

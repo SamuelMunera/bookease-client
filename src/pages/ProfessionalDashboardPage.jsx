@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
@@ -293,6 +293,22 @@ function fmtWeekRange(weekStart) {
   return `${fmt(mon)} – ${fmt(sun)}`;
 }
 
+/* ── Inline error state with retry (mirrors AdminFinancePage ErrorState) ── */
+function DashboardError({ message, onRetry, style }) {
+  return (
+    <div style={{
+      border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.06)',
+      borderRadius: 'var(--r-lg)', padding: 'var(--sp-6)', textAlign: 'center',
+      ...style,
+    }}>
+      <p style={{ color: 'var(--red)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)' }}>
+        {message || 'No se pudieron cargar los datos.'}
+      </p>
+      <button className="btn btn-secondary btn-sm" onClick={onRetry}>Reintentar</button>
+    </div>
+  );
+}
+
 export default function ProfessionalDashboardPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -306,6 +322,10 @@ export default function ProfessionalDashboardPage() {
   const [joinCodeLoading, setJoinCodeLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [profileError, setProfileError] = useState('');
+  const [bookingsError, setBookingsError] = useState('');
+  const [revenueError, setRevenueError] = useState('');
+  const [homeError, setHomeError] = useState('');
 
   // Services
   const [bizServices, setBizServices]   = useState([]);
@@ -372,10 +392,19 @@ export default function ProfessionalDashboardPage() {
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [scheduleMsg, setScheduleMsg]   = useState('');
 
-  useEffect(() => {
-    api.getProSubscription().then(setSubscription).catch(() => {});
+  // ── Revenue load (retry-able) ──
+  const loadRevenue = useCallback(() => {
+    setRevenueError('');
+    return api.getProRevenue()
+      .then(r => setProRevenue(r))
+      .catch(() => setRevenueError('No se pudieron cargar tus ingresos.'));
+  }, []);
 
-    api.getProMe()
+  // ── Profile + dependent data (retry-able) ──
+  const loadProfile = useCallback(() => {
+    setLoadingProfile(true);
+    setProfileError('');
+    return api.getProMe()
       .then(data => {
         setProfile(data);
         setBufferTime(data?.bufferTime ?? 0);
@@ -386,17 +415,31 @@ export default function ProfessionalDashboardPage() {
           api.getBusinessServices(data.businessId)
             .then(s => setBizServices(Array.isArray(s) ? s : []))
             .catch(() => {});
-          api.getProRevenue()
-            .then(r => setProRevenue(r))
-            .catch(() => {});
+          loadRevenue();
         } else {
           api.getMyJoinRequest()
-            .then(r => setJoinRequest(r))
+            .then(r => setJoinRequest(r ?? null))
             .catch(() => setJoinRequest(null));
         }
       })
-      .catch(() => {})
+      .catch(() => setProfileError('No se pudo cargar tu perfil. Revisa tu conexión e inténtalo de nuevo.'))
       .finally(() => setLoadingProfile(false));
+  }, [loadRevenue]);
+
+  // ── Bookings load (retry-able) ──
+  const loadBookings = useCallback(() => {
+    setLoadingBookings(true);
+    setBookingsError('');
+    return api.getProBookings()
+      .then(data => setBookings(Array.isArray(data) ? data : data.bookings ?? []))
+      .catch(() => setBookingsError('No se pudieron cargar tus reservas.'))
+      .finally(() => setLoadingBookings(false));
+  }, []);
+
+  useEffect(() => {
+    api.getProSubscription().then(setSubscription).catch(() => {});
+
+    loadProfile();
 
     api.getProServiceConfigs()
       .then(cfgs => {
@@ -406,16 +449,13 @@ export default function ProfessionalDashboardPage() {
       })
       .catch(() => {});
 
-    api.getProBookings()
-      .then(data => setBookings(Array.isArray(data) ? data : data.bookings ?? []))
-      .catch(() => {})
-      .finally(() => setLoadingBookings(false));
+    loadBookings();
 
     api.getProServices()
       .then(s => setMyServiceIds(new Set((Array.isArray(s) ? s : []).map(x => x.id))))
       .catch(() => {});
 
-  }, []);
+  }, [loadProfile, loadBookings]);
 
   // Reload schedule when week changes
   useEffect(() => {
@@ -428,10 +468,13 @@ export default function ProfessionalDashboardPage() {
       .catch(() => {});
   }, [weekOffset]);
 
-  useEffect(() => {
-    if (activeTab !== 'domicilio' || homeServicesLoaded) return;
-    Promise.all([
-      api.getHomeConfig().catch(() => null),
+  // ── Home-service tab data (retry-able) ──
+  const loadHome = useCallback(() => {
+    setHomeError('');
+    // getHomeConfig is the critical call that gates the panel; a network/401
+    // failure there must surface an error instead of an infinite "Cargando…".
+    return Promise.all([
+      api.getHomeConfig(),
       api.getMyHomeServices().catch(() => []),
       api.getMyHomeSchedule().catch(() => []),
     ]).then(([cfg, svcs, sched]) => {
@@ -444,8 +487,13 @@ export default function ProfessionalDashboardPage() {
         }));
       }
       setHomeServicesLoaded(true);
-    });
-  }, [activeTab, homeServicesLoaded]);
+    }).catch(() => setHomeError('No se pudo cargar la configuración de domicilio.'));
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'domicilio' || homeServicesLoaded) return;
+    loadHome();
+  }, [activeTab, homeServicesLoaded, loadHome]);
 
   async function saveHomeConfig() {
     setHomeConfigSaving(true); setHomeConfigMsg('');
@@ -810,6 +858,15 @@ export default function ProfessionalDashboardPage() {
         ))}
       </div>
 
+      {/* ── Profile load failure (drives all dashboard content) ── */}
+      {!loadingProfile && profileError && (
+        <DashboardError
+          message={profileError}
+          onRetry={loadProfile}
+          style={{ marginBottom: 'var(--sp-6)' }}
+        />
+      )}
+
       {/* ── Analytics tab ── */}
       {activeTab === 'analytics' && (
         <AnalyticsPanel role="professional" />
@@ -876,7 +933,16 @@ export default function ProfessionalDashboardPage() {
             </>
           )}
 
-          {!joinRequest && (
+          {/* undefined = solicitud aún cargando: no mostrar el formulario todavía */}
+          {joinRequest === undefined && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="pro-skeleton-line" style={{ height: 16, width: 220, background: 'rgba(255,255,255,0.08)', borderRadius: 6 }} />
+              <div className="pro-skeleton-line" style={{ height: 12, width: 300, maxWidth: '80%', background: 'rgba(255,255,255,0.08)', borderRadius: 6 }} />
+              <div className="pro-skeleton-line" style={{ height: 40, width: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: 8, marginTop: 4 }} />
+            </div>
+          )}
+
+          {joinRequest === null && (
             <>
               <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-2)' }}>
                 No estás vinculado a ningún negocio
@@ -956,6 +1022,8 @@ export default function ProfessionalDashboardPage() {
                 <div key={i} style={{ height: 68, borderRadius: 'var(--r-md)', background: 'var(--surface-raised)', border: '1px solid var(--border)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
+          ) : bookingsError ? (
+            <DashboardError message={bookingsError} onRetry={loadBookings} />
           ) : upcomingBookings.length === 0 ? (
             <div style={{
               padding: 'var(--sp-8)',
@@ -1061,6 +1129,13 @@ export default function ProfessionalDashboardPage() {
         </div>
 
       </div>
+
+      {/* ── Mis ingresos: error de carga ── */}
+      {!loadingProfile && !profileError && pro.businessId && revenueError && !proRevenue && (
+        <div style={{ marginTop: 'var(--sp-6)' }}>
+          <DashboardError message={revenueError} onRetry={loadRevenue} />
+        </div>
+      )}
 
       {/* ── Mis ingresos (si el negocio lo permite) ── */}
       {proRevenue && pro.businessId && (
@@ -1529,7 +1604,9 @@ export default function ProfessionalDashboardPage() {
             <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, marginBottom: 'var(--sp-4)', paddingBottom: 'var(--sp-3)', borderBottom: '1px solid var(--border)' }}>
               Configuración de servicios a domicilio
             </h3>
-            {!homeConfig ? (
+            {homeError ? (
+              <DashboardError message={homeError} onRetry={loadHome} />
+            ) : !homeConfig ? (
               <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando…</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
@@ -1885,7 +1962,11 @@ export default function ProfessionalDashboardPage() {
 
             {photos.length === 0 ? (
               <div
+                role="button"
+                tabIndex={0}
+                aria-label="Subir tus primeras fotos"
                 onClick={() => galleryInputRef.current?.click()}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); galleryInputRef.current?.click(); } }}
                 style={{
                   border: '2px dashed var(--border)', borderRadius: 'var(--r-lg)',
                   padding: 'var(--sp-10)', textAlign: 'center', cursor: 'pointer',
@@ -1922,18 +2003,21 @@ export default function ProfessionalDashboardPage() {
                     </button>
                   </div>
                 ))}
-                <div
+                <button
+                  type="button"
+                  aria-label="Añadir más fotos"
                   onClick={() => galleryInputRef.current?.click()}
                   style={{
                     aspectRatio: '1', borderRadius: 'var(--r-lg)',
                     border: '2px dashed var(--border)', cursor: 'pointer',
+                    background: 'transparent', font: 'inherit',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     color: 'var(--text-muted)', fontSize: 'var(--text-xs)', gap: 6,
                   }}
                 >
                   <span style={{ fontSize: 24 }}>+</span>
                   Añadir
-                </div>
+                </button>
               </div>
             )}
           </div>

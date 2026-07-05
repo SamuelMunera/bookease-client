@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import api from '../api';
 
@@ -7,8 +7,15 @@ export default function VerifyBusinessEmailPage() {
   const token    = params.get('token');
   const [status, setStatus] = useState('loading'); // loading | ok | already | error
   const [msg,    setMsg]    = useState('');
+  // AUTH-06: verifyBusinessEmail is a mutating GET that consumes the token.
+  // React StrictMode mounts effects twice in dev; the 2nd call fails (token
+  // already used) and would overwrite the successful 1st result. Guard so the
+  // request fires exactly once per token.
+  const verifiedRef = useRef(false);
 
   useEffect(() => {
+    if (verifiedRef.current) return;
+    verifiedRef.current = true;
     if (!token) { setStatus('error'); setMsg('Enlace inválido.'); return; }
     api.verifyBusinessEmail(token)
       .then(r => {
