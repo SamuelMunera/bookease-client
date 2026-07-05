@@ -367,7 +367,7 @@ export default function BusinessDashboardPage() {
       const updated = await api.updateBusinessProfile(profileForm);
       setBusiness(prev => ({ ...prev, ...updated }));
       setProfileMsg('✓ Perfil actualizado');
-    } catch (err) { setProfileMsg('Error: ' + err.message); }
+    } catch (err) { console.error(err); setProfileMsg('No se pudo actualizar el perfil. Intenta de nuevo.'); }
     finally { setProfileSaving(false); schedule(() => setProfileMsg(''), 3000); }
   }
 
@@ -379,7 +379,7 @@ export default function BusinessDashboardPage() {
       const res = await api.uploadBusinessLogo(file);
       if (res.error) throw new Error(res.error);
       setBusiness(prev => ({ ...prev, logoUrl: res.url }));
-    } catch (err) { setProfileMsg('Error al subir logo: ' + err.message); }
+    } catch (err) { console.error(err); setProfileMsg('No se pudo subir el logo. Revisa el archivo e intenta de nuevo.'); }
     finally { setLogoUploading(false); }
   }
 
@@ -393,7 +393,7 @@ export default function BusinessDashboardPage() {
       await api.changePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
       setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
       setPwMsg('✓ Contraseña actualizada');
-    } catch (err) { setPwMsg('Error: ' + err.message); }
+    } catch (err) { console.error(err); setPwMsg('No se pudo cambiar la contraseña. Verifica tu contraseña actual e intenta de nuevo.'); }
     finally { setPwSaving(false); schedule(() => setPwMsg(''), 4000); }
   }
 
@@ -427,8 +427,8 @@ export default function BusinessDashboardPage() {
       const item = await api.uploadBusinessGalleryPhoto(file, '');
       if (item.error) throw new Error(item.error);
       setGallery(prev => [...prev, item]);
-      setGalleryMsg('Foto añadida');
-    } catch (err) { setGalleryMsg('Error: ' + err.message); }
+      setGalleryMsg('✓ Foto añadida');
+    } catch (err) { console.error(err); setGalleryMsg('No se pudo subir la foto. Intenta de nuevo.'); }
     finally { setGalleryUploading(false); schedule(() => setGalleryMsg(''), 3000); }
   }
 
@@ -436,7 +436,7 @@ export default function BusinessDashboardPage() {
     try {
       await api.deleteBusinessGalleryPhoto(id);
       setGallery(prev => prev.filter(p => p.id !== id));
-    } catch (err) { setGalleryMsg('Error al eliminar'); schedule(() => setGalleryMsg(''), 3000); }
+    } catch (err) { console.error(err); setGalleryMsg('No se pudo eliminar la foto. Intenta de nuevo.'); schedule(() => setGalleryMsg(''), 3000); }
   }
 
   async function handleCoverUpload(e) {
@@ -447,8 +447,8 @@ export default function BusinessDashboardPage() {
       const res = await api.uploadBusinessCover(file);
       if (res.error) throw new Error(res.error);
       setBusiness(prev => ({ ...prev, coverUrl: res.url }));
-      setGalleryMsg('Portada actualizada');
-    } catch (err) { setGalleryMsg('Error: ' + err.message); }
+      setGalleryMsg('✓ Portada actualizada');
+    } catch (err) { console.error(err); setGalleryMsg('No se pudo actualizar la portada. Intenta de nuevo.'); }
     finally { setCoverUploading(false); schedule(() => setGalleryMsg(''), 3000); }
   }
 
@@ -458,7 +458,7 @@ export default function BusinessDashboardPage() {
       await api.updateBusinessCustomization({ accentColor: accentColor || null });
       setBusiness(prev => ({ ...prev, accentColor }));
       setAccentMsg('Guardado');
-    } catch (err) { setAccentMsg('Error'); }
+    } catch (err) { console.error(err); setAccentMsg('No se pudo guardar el color. Intenta de nuevo.'); }
     finally { setSavingAccent(false); schedule(() => setAccentMsg(''), 2500); }
   }
 
@@ -636,7 +636,7 @@ export default function BusinessDashboardPage() {
 
   async function confirmDeletePromotion() {
     const id = promoToDelete;
-    if (!id) return;
+    if (!id || deletingPromo) return;
     setDeletingPromo(true);
     try {
       await api.deletePromotion(id);
@@ -919,14 +919,24 @@ export default function BusinessDashboardPage() {
       </div>
 
       {/* ── Tab bar ── */}
-      <div style={{
-        display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)',
-        borderBottom: '1px solid var(--border)', paddingBottom: 0,
-        overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch',
-      }}>
+      <div
+        role="tablist"
+        aria-label="Secciones del panel"
+        style={{
+          display: 'flex', gap: 'var(--sp-1)', marginBottom: 'var(--sp-5)',
+          borderBottom: '1px solid var(--border)', paddingBottom: 0,
+          overflowX: 'auto', flexWrap: 'nowrap', WebkitOverflowScrolling: 'touch',
+          // R-004: oculta la scrollbar nativa (Android/Firefox/IE) sin perder el scroll horizontal
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+        }}
+      >
         {TABS.map(t => (
           <button
             key={t.key}
+            role="tab"
+            id={`tab-${t.key}`}
+            aria-selected={tab === t.key}
+            aria-controls={`panel-${t.key}`}
             onClick={() => setTab(t.key)}
             style={{
               padding: 'var(--sp-2) var(--sp-4)',
@@ -945,7 +955,7 @@ export default function BusinessDashboardPage() {
 
       {/* ══════════ PANEL TAB ══════════ */}
       {tab === 'panel' && (
-        <>
+        <div role="tabpanel" id="panel-panel" aria-labelledby="tab-panel">
           {/* Onboarding checklist */}
           <BusinessOnboardingChecklist business={business} onSwitchTab={setTab} onCreateService={() => { setTab('panel'); setShowSvcModal(true); }} onOpenGuide={() => setShowWelcome(true)} />
 
@@ -1213,12 +1223,12 @@ export default function BusinessDashboardPage() {
               </div>
             )}
           </SectionCard>
-        </>
+        </div>
       )}
 
       {/* ══════════ PERFIL TAB ══════════ */}
       {tab === 'perfil' && profileForm && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+        <div role="tabpanel" id="panel-perfil" aria-labelledby="tab-perfil" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
 
           {/* ── Sección: Perfil ── */}
           <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)' }}>
@@ -1619,12 +1629,14 @@ export default function BusinessDashboardPage() {
 
       {/* ══════════ ANALYTICS TAB ══════════ */}
       {tab === 'analytics' && (
-        <AnalyticsPanel role="business" />
+        <div role="tabpanel" id="panel-analytics" aria-labelledby="tab-analytics">
+          <AnalyticsPanel role="business" />
+        </div>
       )}
 
       {/* ══════════ APARIENCIA TAB ══════════ */}
       {tab === 'apariencia' && (
-        <div style={{ display:'flex', flexDirection:'column', gap:'var(--sp-5)' }}>
+        <div role="tabpanel" id="panel-apariencia" aria-labelledby="tab-apariencia" style={{ display:'flex', flexDirection:'column', gap:'var(--sp-5)' }}>
 
           {/* Portada */}
           <div style={{ background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-xl)', padding:'var(--sp-6)' }}>
@@ -1641,7 +1653,7 @@ export default function BusinessDashboardPage() {
             <button className="btn btn-secondary btn-sm" onClick={() => coverInputRef.current?.click()} disabled={coverUploading}>
               {coverUploading ? 'Subiendo…' : (business.coverUrl ? 'Cambiar portada' : 'Subir portada')}
             </button>
-            {galleryMsg && <span style={{ fontSize:'var(--text-xs)', color: galleryMsg.startsWith('Error') ? 'var(--error, #e53e3e)' : 'var(--success)', marginLeft:'var(--sp-3)' }}>{galleryMsg}</span>}
+            {galleryMsg && <span style={{ fontSize:'var(--text-xs)', color: galleryMsg.startsWith('✓') ? 'var(--success)' : 'var(--error, #e53e3e)', marginLeft:'var(--sp-3)' }}>{galleryMsg}</span>}
           </div>
 
           {/* Color de acento */}
@@ -1674,7 +1686,7 @@ export default function BusinessDashboardPage() {
                   Quitar color
                 </button>
               )}
-              {accentMsg && <span style={{ fontSize:'var(--text-xs)', color: accentMsg === 'Error' ? 'var(--error, #e53e3e)' : 'var(--success)' }}>{accentMsg}</span>}
+              {accentMsg && <span style={{ fontSize:'var(--text-xs)', color: accentMsg === 'Guardado' ? 'var(--success)' : 'var(--error, #e53e3e)' }}>{accentMsg}</span>}
             </div>
           </div>
 
@@ -1811,7 +1823,7 @@ export default function BusinessDashboardPage() {
       )}
 
       {tab === 'finanzas' && (
-        <>
+        <div role="tabpanel" id="panel-finanzas" aria-labelledby="tab-finanzas">
           {/* Toggle visibilidad profesionales */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1829,6 +1841,10 @@ export default function BusinessDashboardPage() {
               </p>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={showRevenue}
+              aria-label="Profesionales ven sus ingresos"
               onClick={toggleRevenuePerm}
               disabled={togglingRevenue}
               style={{
@@ -1930,12 +1946,12 @@ export default function BusinessDashboardPage() {
               {[1,2,3].map(n => <div key={n} className="skeleton" style={{ height: 80, borderRadius: 'var(--r-xl)' }} />)}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ══════════ REFERIDOS TAB ══════════ */}
       {tab === 'referidos' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+        <div role="tabpanel" id="panel-referidos" aria-labelledby="tab-referidos" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
           {referralsError ? (
             <div style={{ textAlign: 'center', padding: 'var(--sp-8) var(--sp-4)' }}>
               <p className="error-msg" style={{ marginBottom: 'var(--sp-4)' }}>
@@ -2062,7 +2078,7 @@ export default function BusinessDashboardPage() {
 
       {/* ══════════ PROMOCIONES TAB ══════════ */}
       {tab === 'promociones' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+        <div role="tabpanel" id="panel-promociones" aria-labelledby="tab-promociones" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
 
           {/* Header + CTA */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--sp-3)' }}>

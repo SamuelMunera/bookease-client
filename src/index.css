@@ -430,7 +430,7 @@ html { scroll-padding-top: 68px; }
 /* Hamburger */
 .nav-hamburger {
   display: none;
-  width: 36px; height: 36px;
+  width: 44px; height: 44px; /* R-003: min 44px tap target */
   align-items: center; justify-content: center;
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--r-md); color: var(--text-muted);
@@ -1126,7 +1126,7 @@ html { scroll-padding-top: 68px; }
 .biz-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .biz-gallery-thumb-del {
   position: absolute; top: var(--sp-1); right: var(--sp-1);
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%; /* R-012: tap target */
   background: rgba(0,0,0,0.6); border: none; color: #fff;
   display: flex; align-items: center; justify-content: center; cursor: pointer;
   opacity: 0; transition: opacity 0.15s;
@@ -1166,6 +1166,11 @@ html { scroll-padding-top: 68px; }
   .biz-gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .biz-gallery-item--featured { grid-column: 1 / 3; }
   .biz-hours-config-row { grid-template-columns: 80px 1fr 1fr; }
+}
+/* R-007: collapse hours row so time inputs don't get crushed on tiny screens */
+@media (max-width: 400px) {
+  .biz-hours-config-row { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+  .biz-hours-config-day { grid-column: 1 / -1; }
 }
 
 /* ── Responsive nav/footer ── */
@@ -1366,6 +1371,13 @@ html { scroll-padding-top: 68px; }
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp-5); }
 .grid-2    { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-5); }
 .grid-3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); }
+/* R-010: collapse multi-column helper grids on small screens */
+@media (max-width: 860px) {
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
 
 /* ══════════════════════════════════════════════════════════
    BADGES & CHIPS
@@ -2607,6 +2619,11 @@ html { scroll-padding-top: 68px; }
   display: block; white-space: nowrap;
 }
 
+/* R-008: intermediate breakpoint so hero stats don't force overflow */
+@media (max-width: 640px) {
+  .biz-hero-stat { min-width: 120px; padding: var(--sp-4) var(--sp-6); }
+}
+
 /* ══════════════════════════════════════════════════════════
    BUSINESS DETAIL — PROFESSIONALS & SERVICES
    ══════════════════════════════════════════════════════════ */
@@ -2824,7 +2841,7 @@ html { scroll-padding-top: 68px; }
 }
 
 .mini-cal-arrow {
-  width: 32px; height: 32px;
+  width: 44px; height: 44px; /* R-003: min 44px tap target */
   display: flex; align-items: center; justify-content: center;
   border-radius: var(--r-full); border: 1px solid var(--border);
   background: var(--surface-2); color: var(--text-muted);
@@ -3721,7 +3738,7 @@ html { scroll-padding-top: 68px; }
 
 .agenda-date-nav { display: flex; align-items: center; gap: var(--sp-2); }
 .agenda-nav-arrow {
-  width: 34px; height: 34px;
+  width: 44px; height: 44px; /* R-003: min 44px tap target */
   display: flex; align-items: center; justify-content: center;
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--r-full); color: var(--text-muted); cursor: pointer;
@@ -5157,7 +5174,7 @@ html { scroll-padding-top: 68px; }
 }
 .modal-drawer-title { margin: var(--sp-1) 0 0; font-family: var(--font-heading); font-size: var(--text-xl); font-weight: 700; color: var(--text); }
 .modal-drawer-close {
-  width: 32px; height: 32px; border-radius: var(--r-full);
+  width: 40px; height: 40px; border-radius: var(--r-full); /* R-006: tap target */
   border: 1px solid var(--border); background: var(--surface-2);
   display: flex; align-items: center; justify-content: center;
   color: var(--text-muted); cursor: pointer; flex-shrink: 0;
@@ -5206,7 +5223,7 @@ html { scroll-padding-top: 68px; }
   .modal-drawer .input { font-size: 16px; }
   /* botones a ancho completo y con buen tamaño táctil */
   .modal-drawer-foot .btn { flex: 1; min-height: 46px; }
-  .modal-drawer-close { width: 38px; height: 38px; }
+  .modal-drawer-close { width: 44px; height: 44px; } /* R-006 */
 }
 @media (max-width: 380px) {
   .modal-field-row { grid-template-columns: 1fr; }
