@@ -1,6 +1,26 @@
 const BASE = import.meta.env.VITE_API_URL || '/api';
 
+// Modo de autenticación. 'cookie' => sesión vía cookie HttpOnly + CSRF (anti-XSS,
+// sin token en JS). Cualquier otro valor / ausente => comportamiento actual
+// (token en localStorage + Authorization: Bearer). Default seguro: NO cookie.
+const AUTH_MODE = import.meta.env.VITE_AUTH_MODE;
+const COOKIE_MODE = AUTH_MODE === 'cookie';
+
+// Lee una cookie legible por JS (p.ej. csrfToken, que NO es HttpOnly).
+function getCookie(name) {
+  if (typeof document === 'undefined' || !document.cookie) return null;
+  const match = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
+}
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 function getToken() {
+  // En modo cookie no existe token accesible desde JS: la sesión vive en la
+  // cookie HttpOnly. Devolver null evita mandar Authorization por accidente.
+  if (COOKIE_MODE) return null;
   return localStorage.getItem('token');
 }
 
@@ -48,10 +68,20 @@ function handleUnauthorized() {
 
 async function request(path, options = {}) {
   const token = getToken();
+  const method = (options.method || 'GET').toUpperCase();
+  // CSRF: en mutaciones, reflejar la cookie legible csrfToken en el header.
+  // Solo se añade si la cookie existe (modo cookie); inofensivo en modo Bearer.
+  const csrf = MUTATING_METHODS.has(method) ? getCookie('csrfToken') : null;
   const res = await fetch(`${BASE}${path}`, {
+    // credentials:include => las cookies (HttpOnly token + csrfToken) viajan
+    // cross-origin. En modo Bearer no molesta.
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      // Bearer solo fuera de modo cookie (y si hay token). En modo cookie
+      // getToken() devuelve null, así que este header nunca se añade.
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
     },
     ...options,
   });
@@ -83,9 +113,15 @@ async function request(path, options = {}) {
 // manejo de 401 con request(): un 413/500 ya no se trata como éxito.
 async function uploadRequest(path, form) {
   const token = getToken();
+  // uploadRequest siempre es POST (mutante): añadir CSRF si hay cookie.
+  const csrf = getCookie('csrfToken');
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    credentials: 'include',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+    },
     body: form,
   });
   if (res.status === 401 && !isAuthExempt(path)) {
@@ -112,6 +148,7 @@ const api = {
   register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
   login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
   switchContext: (role) => request('/auth/switch-context', { method: 'POST', body: JSON.stringify({ role }) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
   updateMe: (body) => request('/auth/me', { method: 'PATCH', body: JSON.stringify(body) }),
 
   // Businesses

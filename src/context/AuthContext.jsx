@@ -1,6 +1,10 @@
 import { createContext, useContext, useState } from 'react';
+import api from '../api';
 
 const AuthContext = createContext(null);
+
+// 'cookie' => la sesión vive en la cookie HttpOnly; no se guarda el token en JS.
+const COOKIE_MODE = import.meta.env.VITE_AUTH_MODE === 'cookie';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -17,12 +21,23 @@ export function AuthProvider({ children }) {
   });
 
   function login(data) {
-    localStorage.setItem('token', data.token);
+    // En modo cookie NO persistimos el token en JS (anti-XSS): la sesión vive
+    // en la cookie HttpOnly. En modo default se mantiene el token en localStorage.
+    if (!COOKIE_MODE && data.token) {
+      localStorage.setItem('token', data.token);
+    }
     localStorage.setItem('user', JSON.stringify(data.user));
     setUser(data.user);
   }
 
-  function logout() {
+  async function logout() {
+    // Pide al backend que limpie las cookies (HttpOnly token + csrfToken).
+    // Tolerante a fallos: aunque el endpoint falle, limpiamos el estado local.
+    try {
+      await api.logout();
+    } catch {
+      // Ignorar: la limpieza local debe ocurrir igualmente.
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
