@@ -90,8 +90,9 @@ export default function ServiceModal({ businessId, categories = [], service = nu
           <div className="modal-drawer-body" style={{ display:'flex', flexDirection:'column', gap:'var(--sp-4)' }}>
             {/* Nombre */}
             <div>
-              <label className="input-label">Nombre del servicio *</label>
+              <label className="input-label" htmlFor="svc-name">Nombre del servicio *</label>
               <input
+                id="svc-name"
                 className="input"
                 placeholder="Ej. Corte de cabello"
                 value={form.name}
@@ -102,8 +103,9 @@ export default function ServiceModal({ businessId, categories = [], service = nu
 
             {/* Descripción */}
             <div>
-              <label className="input-label">Descripción (opcional)</label>
+              <label className="input-label" htmlFor="svc-description">Descripción (opcional)</label>
               <textarea
+                id="svc-description"
                 className="input"
                 rows={2}
                 placeholder="Breve descripción del servicio"
@@ -116,8 +118,9 @@ export default function ServiceModal({ businessId, categories = [], service = nu
             {/* Precio + categoría */}
             <div className={categories.length > 0 ? 'modal-field-row' : undefined}>
               <div>
-                <label className="input-label">Precio *</label>
+                <label className="input-label" htmlFor="svc-price">Precio *</label>
                 <input
+                  id="svc-price"
                   className="input"
                   type="number" min="0" step="100"
                   placeholder="0"
@@ -127,8 +130,9 @@ export default function ServiceModal({ businessId, categories = [], service = nu
               </div>
               {categories.length > 0 && (
                 <div>
-                  <label className="input-label">Categoría</label>
+                  <label className="input-label" htmlFor="svc-category">Categoría</label>
                   <select
+                    id="svc-category"
                     className="input"
                     value={form.categoryId}
                     onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
@@ -142,8 +146,9 @@ export default function ServiceModal({ businessId, categories = [], service = nu
 
             {/* Duración base */}
             <div>
-              <label className="input-label">Duración base (min)</label>
+              <label className="input-label" htmlFor="svc-duration">Duración base (min)</label>
               <input
+                id="svc-duration"
                 className="input"
                 type="number" min="5" step="5" max="480"
                 value={form.duration}

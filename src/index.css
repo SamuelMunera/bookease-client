@@ -1124,6 +1124,10 @@ html { scroll-padding-top: 68px; }
   opacity: 0; transition: opacity 0.15s;
 }
 .biz-gallery-thumb:hover .biz-gallery-thumb-del { opacity: 1; }
+.biz-gallery-thumb:focus-within .biz-gallery-thumb-del { opacity: 1; }
+@media (pointer: coarse) {
+  .biz-gallery-thumb-del { opacity: 1; }
+}
 
 /* Hours config grid */
 .biz-hours-config { display: flex; flex-direction: column; gap: var(--sp-2); }

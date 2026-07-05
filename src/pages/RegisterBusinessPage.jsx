@@ -161,8 +161,8 @@ export default function RegisterBusinessPage() {
 
             {/* Name */}
             <div className="form-group">
-              <label className="form-label">Nombre del negocio *</label>
-              <input className="input" placeholder="Ej: Barbería El Corte Moderno" value={form.name} onChange={set('name')} required />
+              <label className="form-label" htmlFor="biz-name">Nombre del negocio *</label>
+              <input id="biz-name" className="input" placeholder="Ej: Barbería El Corte Moderno" value={form.name} onChange={set('name')} required />
             </div>
 
             {/* Category */}
@@ -206,8 +206,8 @@ export default function RegisterBusinessPage() {
             {/* Timezone for US */}
             {form.country === 'US' && (
               <div className="form-group">
-                <label className="form-label">Timezone *</label>
-                <select className="input" value={form.timezone} onChange={set('timezone')} required>
+                <label className="form-label" htmlFor="biz-timezone">Timezone *</label>
+                <select id="biz-timezone" className="input" value={form.timezone} onChange={set('timezone')} required>
                   <option value="">Select your timezone…</option>
                   {US_TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
                 </select>
@@ -216,40 +216,41 @@ export default function RegisterBusinessPage() {
 
             {/* Address */}
             <div className="form-group">
-              <label className="form-label">{cfg.addressLabel} *</label>
-              <input className="input" placeholder={cfg.addressPlaceholder} value={form.address} onChange={set('address')} required />
+              <label className="form-label" htmlFor="biz-address">{cfg.addressLabel} *</label>
+              <input id="biz-address" className="input" placeholder={cfg.addressPlaceholder} value={form.address} onChange={set('address')} required />
             </div>
 
             {/* City + State (US) + ZIP (US) */}
             <div style={{ display:'flex', gap:'var(--sp-3)', flexWrap:'wrap' }}>
               <div className="form-group" style={{ flex:'1 1 120px' }}>
-                <label className="form-label">{cfg.cityLabel} *</label>
-                <input className="input" placeholder={cfg.cityPlaceholder} value={form.city} onChange={set('city')} required />
+                <label className="form-label" htmlFor="biz-city">{cfg.cityLabel} *</label>
+                <input id="biz-city" className="input" placeholder={cfg.cityPlaceholder} value={form.city} onChange={set('city')} required />
               </div>
               {cfg.hasState && (
                 <div className="form-group" style={{ flex:'0 0 80px' }}>
-                  <label className="form-label">{cfg.stateLabel}</label>
-                  <input className="input" placeholder={cfg.statePlaceholder} value={form.state} onChange={set('state')} maxLength={2} style={{ textTransform:'uppercase' }} />
+                  <label className="form-label" htmlFor="biz-state">{cfg.stateLabel}</label>
+                  <input id="biz-state" className="input" placeholder={cfg.statePlaceholder} value={form.state} onChange={set('state')} maxLength={2} style={{ textTransform:'uppercase' }} />
                 </div>
               )}
               {cfg.hasZip && (
                 <div className="form-group" style={{ flex:'0 0 110px' }}>
-                  <label className="form-label">{cfg.zipLabel}</label>
-                  <input className="input" placeholder={cfg.zipPlaceholder} value={form.zipCode} onChange={set('zipCode')} maxLength={10} />
+                  <label className="form-label" htmlFor="biz-zip">{cfg.zipLabel}</label>
+                  <input id="biz-zip" className="input" placeholder={cfg.zipPlaceholder} value={form.zipCode} onChange={set('zipCode')} maxLength={10} />
                 </div>
               )}
             </div>
 
             {/* Phone */}
             <div className="form-group">
-              <label className="form-label">Teléfono</label>
-              <input className="input" placeholder={cfg.phonePlaceholder} value={form.phone} onChange={set('phone')} />
+              <label className="form-label" htmlFor="biz-phone">Teléfono</label>
+              <input id="biz-phone" className="input" placeholder={cfg.phonePlaceholder} value={form.phone} onChange={set('phone')} />
             </div>
 
             {/* Description */}
             <div className="form-group">
-              <label className="form-label">Descripción</label>
+              <label className="form-label" htmlFor="biz-description">Descripción</label>
               <textarea
+                id="biz-description"
                 className="input"
                 placeholder="Describe tu negocio brevemente…"
                 value={form.description}
@@ -261,8 +262,9 @@ export default function RegisterBusinessPage() {
 
             {/* Referral / courtesy code */}
             <div className="form-group">
-              <label className="form-label">Código de referido o cortesía (opcional)</label>
+              <label className="form-label" htmlFor="biz-referral">Código de referido o cortesía (opcional)</label>
               <input
+                id="biz-referral"
                 className="input"
                 placeholder="Ej: SLOT-XXXXXX, PROMO-XXXXXXXX o CORTESIA-XXXXXXXX"
                 value={form.referralCode}

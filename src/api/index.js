@@ -4,6 +4,48 @@ function getToken() {
   return localStorage.getItem('token');
 }
 
+// Endpoints donde un 401 es un fallo de credenciales normal (login/registro),
+// NO una sesión expirada: no deben limpiar sesión ni redirigir, o el propio
+// formulario de login entraría en un bucle de recarga/redirección.
+const AUTH_EXEMPT_PATHS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/google',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/pro/register',
+];
+
+function isAuthExempt(path) {
+  return AUTH_EXEMPT_PATHS.some((p) => path.startsWith(p));
+}
+
+// Deriva el login correcto según la zona de la app en la que está el usuario,
+// para no mandar a un admin/profesional al login de clientes.
+function loginPathForCurrentLocation() {
+  const p = window.location.pathname;
+  if (p.startsWith('/admin')) return '/admin/login';
+  if (
+    p.startsWith('/pro') ||
+    p.startsWith('/dashboard') ||
+    p.startsWith('/agenda') ||
+    p.startsWith('/register-business')
+  ) {
+    return '/pro/login';
+  }
+  return '/login';
+}
+
+// Sesión expirada / token inválido: limpiar credenciales y mandar al login.
+function handleUnauthorized() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  const target = loginPathForCurrentLocation();
+  if (window.location.pathname !== target) {
+    window.location.href = target;
+  }
+}
+
 async function request(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
@@ -13,6 +55,11 @@ async function request(path, options = {}) {
     },
     ...options,
   });
+  // Manejo global de 401: si la sesión expiró (no en el propio login/registro),
+  // limpiar sesión y redirigir para no dejar al usuario "logueado" viendo vacíos.
+  if (res.status === 401 && !isAuthExempt(path)) {
+    handleUnauthorized();
+  }
   if (res.status === 204) return null;
   const text = await res.text();
   let data;
@@ -26,6 +73,34 @@ async function request(path, options = {}) {
     if (data.code) err.code = data.code;
     else if (res.status === 401) err.code = 'AUTH_REQUIRED';
     else if (res.status === 403) err.code = 'AUTH_FORBIDDEN';
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+// Subida de archivos (multipart). Comparte la comprobación de res.ok y el
+// manejo de 401 con request(): un 413/500 ya no se trata como éxito.
+async function uploadRequest(path, form) {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: form,
+  });
+  if (res.status === 401 && !isAuthExempt(path)) {
+    handleUnauthorized();
+  }
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error('El servidor no está disponible. Intenta de nuevo.');
+  }
+  if (!res.ok) {
+    const err = new Error(data.error || 'No se pudo subir el archivo.');
+    if (data.code) err.code = data.code;
     err.status = res.status;
     throw err;
   }
@@ -113,39 +188,24 @@ const api = {
   getMyBusiness: () => request('/businesses/me'),
   updateBusinessProfile: (body) => request('/businesses/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
   uploadBusinessLogo: (file) => {
-    const token = localStorage.getItem('token');
     const form = new FormData();
     form.append('file', file);
-    return fetch(`${BASE}/businesses/me/logo`, {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: form,
-    }).then(r => r.json());
+    return uploadRequest('/businesses/me/logo', form);
   },
   uploadBusinessCover: (file) => {
-    const token = localStorage.getItem('token');
     const form = new FormData();
     form.append('file', file);
-    return fetch(`${BASE}/businesses/me/cover`, {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: form,
-    }).then(r => r.json());
+    return uploadRequest('/businesses/me/cover', form);
   },
   updateBusinessCustomization: (body) => request('/businesses/me/customization', { method: 'PATCH', body: JSON.stringify(body) }),
 
   // Business gallery
   getMyBusinessGallery: () => request('/businesses/me/gallery'),
   uploadBusinessGalleryPhoto: (file, caption) => {
-    const token = localStorage.getItem('token');
     const form = new FormData();
     form.append('file', file);
     if (caption) form.append('caption', caption);
-    return fetch(`${BASE}/businesses/me/gallery`, {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: form,
-    }).then(r => r.json());
+    return uploadRequest('/businesses/me/gallery', form);
   },
   updateBusinessGalleryPhoto: (id, body) => request(`/businesses/me/gallery/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deleteBusinessGalleryPhoto: (id) => request(`/businesses/me/gallery/${id}`, { method: 'DELETE' }),
@@ -166,29 +226,19 @@ const api = {
   // Professional profile
   updateProProfile: (body) => request('/pro/me/profile', { method: 'PATCH', body: JSON.stringify(body) }),
   uploadProAvatar: (file) => {
-    const token = localStorage.getItem('token');
     const form = new FormData();
     form.append('file', file);
-    return fetch(`${BASE}/pro/me/avatar`, {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: form,
-    }).then(r => r.json());
+    return uploadRequest('/pro/me/avatar', form);
   },
   unlinkFromBusiness: () => request('/pro/me/business', { method: 'DELETE' }),
 
   // Professional gallery
   getProPhotos: () => request('/pro/me/photos'),
   uploadProPhoto: (file, caption) => {
-    const token = localStorage.getItem('token');
     const form = new FormData();
     form.append('file', file);
     if (caption) form.append('caption', caption);
-    return fetch(`${BASE}/pro/me/photos`, {
-      method: 'POST',
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: form,
-    }).then(r => r.json());
+    return uploadRequest('/pro/me/photos', form);
   },
   deleteProPhoto: (id) => request(`/pro/me/photos/${id}`, { method: 'DELETE' }),
 

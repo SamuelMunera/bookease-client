@@ -285,7 +285,7 @@ export default function ProRegisterPage() {
                   <label className="form-label">País *</label>
                   <div style={{ display:'flex', gap:'var(--sp-2)' }}>
                     {COUNTRIES.map(c => (
-                      <button key={c.code} type="button" onClick={() => { set('country')({ target:{ value:c.code } }); set('timezone')({ target:{ value:'' } }); }}
+                      <button key={c.code} type="button" onClick={() => { set('country', c.code); set('timezone', ''); }}
                         style={{ flex:1, padding:'var(--sp-2) var(--sp-3)', borderRadius:'var(--r-lg)', cursor:'pointer', border:`1.5px solid ${form.country===c.code?'var(--violet)':'var(--border)'}`, background:form.country===c.code?'var(--violet-subtle)':'var(--surface-2)', color:form.country===c.code?'var(--violet)':'var(--text-muted)', fontWeight:form.country===c.code?700:500, fontSize:'var(--text-sm)', transition:'all .12s' }}>
                         {c.label}
                       </button>
@@ -295,7 +295,7 @@ export default function ProRegisterPage() {
                 {form.country === 'US' && (
                   <div className="form-group">
                     <label className="form-label">Timezone *</label>
-                    <select className="input" value={form.timezone} onChange={e => set('timezone')(e)} required>
+                    <select className="input" value={form.timezone} onChange={e => set('timezone', e.target.value)} required>
                       <option value="">Select your timezone…</option>
                       {US_TIMEZONES.map(tz => <option key={tz.value} value={tz.value}>{tz.label}</option>)}
                     </select>

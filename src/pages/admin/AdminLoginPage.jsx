@@ -45,13 +45,13 @@ export default function AdminLoginPage() {
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           <div className="form-group">
-            <label className="form-label">Email</label>
-            <input className="input" type="email" value={form.email}
+            <label className="form-label" htmlFor="admin-email">Email</label>
+            <input id="admin-email" className="input" type="email" value={form.email}
               onChange={e => setForm(p => ({ ...p, email: e.target.value }))} required />
           </div>
           <div className="form-group">
-            <label className="form-label">Contraseña</label>
-            <input className="input" type="password" value={form.password}
+            <label className="form-label" htmlFor="admin-password">Contraseña</label>
+            <input id="admin-password" className="input" type="password" value={form.password}
               onChange={e => setForm(p => ({ ...p, password: e.target.value }))} required />
           </div>
           {error && <p className="error-msg">{error}</p>}

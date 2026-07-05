@@ -44,9 +44,12 @@ function formatBookingCount(n) {
 
 function StarPickerPro({ value, onChange }) {
   return (
-    <div style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
+    <div role="radiogroup" aria-label="Calificación" style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
       {[1,2,3,4,5].map(n => (
-        <span key={n} onClick={() => onChange(n)}
+        <span key={n} role="radio" tabIndex={0} aria-checked={n <= value}
+          aria-label={`${n} estrella${n === 1 ? '' : 's'}`}
+          onClick={() => onChange(n)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(n); } }}
           style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}>★</span>
       ))}
     </div>

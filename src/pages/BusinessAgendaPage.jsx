@@ -146,7 +146,7 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
 
         {/* Client info */}
         {(() => {
-          const clientName = b.client?.name ?? b.guestName ?? 'Cliente';
+          const clientName = b.guestName ?? b.client?.name ?? 'Cliente';
           return (
             <div className="agenda-client-row">
               <div className="agenda-client-avatar">

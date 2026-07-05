@@ -583,9 +583,13 @@ function CategorizedServices({ services, categories, selectedService, onSelect, 
    ══════════════════════════════════════════════════════════ */
 function StarPicker({ value, onChange }) {
   return (
-    <div style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
+    <div role="radiogroup" aria-label="Calificación" style={{ display:'flex', gap:'var(--sp-1)', cursor:'pointer' }}>
       {[1,2,3,4,5].map(n => (
-        <span key={n} onClick={() => onChange(n)} style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}>★</span>
+        <span key={n} role="radio" tabIndex={0} aria-checked={n <= value}
+          aria-label={`${n} estrella${n === 1 ? '' : 's'}`}
+          onClick={() => onChange(n)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange(n); } }}
+          style={{ fontSize:28, color: n <= value ? '#D4A853' : 'var(--border)', lineHeight:1, userSelect:'none' }}>★</span>
       ))}
     </div>
   );
@@ -739,6 +743,19 @@ export default function BusinessDetailPage() {
   const contentRef = useRef(null);
 
   useEffect(() => {
+    // Flag para descartar respuestas obsoletas: si el usuario navega de un
+    // negocio a otro (cambia :id), las requests del id anterior no deben pisar
+    // el estado del nuevo. Ver PUB-01 / PUB-02.
+    let alive = true;
+
+    // Reset inmediato del estado dependiente del negocio para no mostrar datos
+    // del negocio anterior ni arrastrar la selección de profesional/servicio.
+    setBusiness(null);
+    setSelectedProf('');
+    setSelectedService('');
+    setPendingService('');
+    setLoadError('');
+
     Promise.all([
       api.getBusiness(id),
       api.getBusinessProfessionals(id),
@@ -750,6 +767,7 @@ export default function BusinessDetailPage() {
       api.getBusinessHours(id).catch(() => []),
       api.getPublicPromotions(id).catch(() => []),
     ]).then(([biz, profs, svcs, bizStats, bizReviews, gal, cats, hrs, promos]) => {
+      if (!alive) return;
       if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
       setProfessionals(profs || []);
@@ -761,7 +779,12 @@ export default function BusinessDetailPage() {
       setCategories(cats || []);
       setHours(hrs || []);
       setPromotions(Array.isArray(promos) ? promos : []);
-    }).catch((err) => setLoadError(err.message || 'No se pudo cargar el negocio.'));
+    }).catch((err) => {
+      if (!alive) return;
+      setLoadError(err.message || 'No se pudo cargar el negocio.');
+    });
+
+    return () => { alive = false; };
   }, [id]);
 
   useEffect(() => {
