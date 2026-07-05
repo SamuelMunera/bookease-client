@@ -28,9 +28,11 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'CLIENT', country: 'CO' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false); // registro por Google en curso
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (googleBusy) return; // no competir con el registro de Google
     setError('');
     setLoading(true);
     try {
@@ -210,7 +212,7 @@ export default function RegisterPage() {
             <button
               className="btn btn-primary btn-lg btn-full"
               type="submit"
-              disabled={loading}
+              disabled={loading || googleBusy}
               style={{ marginTop: 'var(--sp-2)' }}
             >
               {loading ? (
@@ -237,7 +239,7 @@ export default function RegisterPage() {
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
-          <GoogleAuthButton role={form.role} onError={setError} />
+          <GoogleAuthButton role={form.role} onError={setError} disabled={loading} onBusy={setGoogleBusy} />
 
           <p className="auth-foot">
             ¿Ya tienes cuenta?{' '}

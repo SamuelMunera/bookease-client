@@ -131,7 +131,7 @@ export default function LoginPage() {
             <button
               className="btn btn-primary btn-lg btn-full"
               type="submit"
-              disabled={loading}
+              disabled={loading || googleBusy}
               style={{ marginTop: 'var(--sp-2)' }}
             >
               {loading ? (
@@ -158,7 +158,7 @@ export default function LoginPage() {
             <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
           </div>
 
-          <GoogleAuthButton role="CLIENT" onError={setError} />
+          <GoogleAuthButton role="CLIENT" onError={setError} disabled={loading} onBusy={setGoogleBusy} />
 
           <p className="auth-foot">
             ¿No tienes cuenta?{' '}

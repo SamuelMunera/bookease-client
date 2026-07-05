@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
@@ -54,6 +54,10 @@ export default function ProRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const [googleToken, setGoogleToken] = useState('');
+  // Una vez que googleAuth + login tienen éxito, no volvemos a ejecutarlos en un
+  // reintento: si falla un paso posterior (perfil/domicilio), el usuario reintenta
+  // solo esos pasos sin re-registrar ni dejar estado inconsistente.
+  const googleAuthedRef = useRef(false);
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
@@ -121,8 +125,12 @@ export default function ProRegisterPage() {
       const isIndependent = mode === 'independent';
 
       if (googleToken) {
-        const data = await api.googleAuth(googleToken, 'PROFESSIONAL');
-        login(data);
+        // googleAuth + login solo una vez; en reintentos se omite (ya autenticado).
+        if (!googleAuthedRef.current) {
+          const data = await api.googleAuth(googleToken, 'PROFESSIONAL');
+          login(data);
+          googleAuthedRef.current = true;
+        }
         await api.updateProProfile({ specialty, bio, experience });
         if (isIndependent) {
           await api.updateHomeConfig({
