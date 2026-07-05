@@ -303,7 +303,9 @@ export default function MyBookingsPage() {
     const req = isPro ? api.getProBookings() : api.getMyBookings();
     req.then(data => setBookings(Array.isArray(data) ? data : [])).finally(() => setLoading(false));
   }
-  useEffect(load, []);
+  // Re-cargar cuando cambie el rol: si el rol se hidrata después del mount
+  // (isPro pasa de false a true), esto asegura llamar al endpoint correcto.
+  useEffect(() => { load(); }, [isPro]);
 
   async function handleCancel(id, isHome) {
     await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));

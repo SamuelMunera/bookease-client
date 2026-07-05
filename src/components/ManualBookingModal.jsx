@@ -86,16 +86,21 @@ export default function ManualBookingModal({ mode, businessId, professionals = [
     }
   }, [proId, mode]);
 
-  // Load slots when service + date changes
+  // Load slots when service + date changes.
+  // DASH-14: cancelamos la respuesta obsoleta (flag `alive`) para que al cambiar
+  // de fecha rápido no lleguen los slots de una fecha anterior y se pisen los de
+  // la fecha actual (evita reservar la hora de otro día).
   useEffect(() => {
     const pid = mode === 'pro' ? (professionals[0]?.id || proId) : proId;
     if (!serviceId || !pid || !date) { setSlots([]); return; }
+    let alive = true;
     setSlL(true); setSlot('');
     api.getSlots({ professionalId: pid, serviceId, date })
-      .then(d => setSlots(d.slots || []))
-      .catch(() => setSlots([]))
-      .finally(() => setSlL(false));
-  }, [serviceId, date, proId]);
+      .then(d => { if (alive) setSlots(d.slots || []); })
+      .catch(() => { if (alive) setSlots([]); })
+      .finally(() => { if (alive) setSlL(false); });
+    return () => { alive = false; };
+  }, [serviceId, date, proId, mode, professionals]);
 
   async function searchClient() {
     if (!clientEmail.trim()) return;

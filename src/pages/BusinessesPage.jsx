@@ -37,6 +37,10 @@ export default function BusinessesPage() {
 
   useEffect(() => { api.getCategories().then(setCategories).catch(() => {}); }, []);
 
+  // Mantener el input sincronizado con el query param de ciudad de la URL,
+  // para que back/forward del navegador refleje el estado en el input.
+  useEffect(() => { setCityInput(city); }, [city]);
+
   useEffect(() => {
     setLoading(true);
     setApiError(false);

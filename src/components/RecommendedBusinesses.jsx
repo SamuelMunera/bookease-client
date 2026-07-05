@@ -153,19 +153,25 @@ export default function RecommendedBusinesses({ currentBusinessId, category, cit
 
   useEffect(() => {
     let cancelled = false;
-    api.getBusinesses(category ? { category } : {})
+    // Pasar la ciudad al servidor (el endpoint soporta ?city=) para no
+    // sobre-descargar ni recomendar negocios de otra ciudad.
+    const params = { ...(category ? { category } : {}), ...(city ? { city } : {}) };
+    api.getBusinesses(params)
       .then((data) => {
         if (cancelled) return;
-        const filtered = (data || [])
-          .filter((b) => b.id !== currentBusinessId)
-          .slice(0, 4);
-        setRecs(filtered);
+        let list = (data || []).filter((b) => b.id !== currentBusinessId);
+        // Filtro cliente por ciudad como respaldo, por si el servidor no filtra.
+        if (city) {
+          const norm = (s) => (s || '').trim().toLowerCase();
+          list = list.filter((b) => norm(b.city) === norm(city));
+        }
+        setRecs(list.slice(0, 4));
       })
       .catch(() => {
         if (!cancelled) setRecs([]);
       });
     return () => { cancelled = true; };
-  }, [currentBusinessId, category]);
+  }, [currentBusinessId, category, city]);
 
   if (!recs.length) return null;
 

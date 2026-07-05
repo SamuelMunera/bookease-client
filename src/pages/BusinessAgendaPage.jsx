@@ -557,7 +557,7 @@ export default function BusinessAgendaPage() {
       {/* ── Timeline ── */}
       {!loading && !loadError && sorted.length > 0 && (
         <div className="agenda-timeline">
-          {sorted.map((b, idx) => (
+          {sorted.map(b => (
             <TimelineRow
               key={b.id}
               b={b}
@@ -566,7 +566,6 @@ export default function BusinessAgendaPage() {
               onNoShow={handleNoShow}
               onComplete={handleComplete}
               timezone={selectedTimezone}
-              isLast={idx === sorted.length - 1}
             />
           ))}
         </div>

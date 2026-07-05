@@ -1,13 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div style={{
+      border: '1px solid var(--error-border)', background: 'var(--error-bg)',
+      borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)', textAlign: 'center',
+    }}>
+      <p style={{ color: 'var(--error)', fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)' }}>
+        {message || 'No se pudieron cargar los datos.'}
+      </p>
+      <button className="btn btn-primary" onClick={onRetry}>Reintentar</button>
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    api.adminStats().then(setStats).catch(() => {}).finally(() => setLoading(false));
+  const load = useCallback(() => {
+    setLoading(true); setError('');
+    api.adminStats()
+      .then(setStats)
+      .catch(err => setError(err.message || 'No se pudo cargar el dashboard.'))
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const cards = [
     { label: 'Negocios', value: stats?.businesses, icon: '🏢', color: 'var(--warning)' },
@@ -29,6 +50,8 @@ export default function AdminDashboardPage() {
             <div key={i} className="skeleton" style={{ height: 148, borderRadius: 'var(--r-xl)' }} />
           ))}
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--sp-5)' }}>
           {cards.map(c => (
