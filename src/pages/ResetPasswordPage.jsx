@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -13,6 +13,14 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
 
+  // Redirección al login tras el éxito. El timeout se limpia si el componente se
+  // desmonta antes de dispararse, evitando una navegación fantasma.
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => navigate('/login'), 3000);
+    return () => clearTimeout(t);
+  }, [done, navigate]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (newPassword !== confirm) return setError('Las contraseñas no coinciden');
@@ -22,7 +30,6 @@ export default function ResetPasswordPage() {
     try {
       await api.resetPassword({ token, newPassword });
       setDone(true);
-      setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
       setError(err.message);
     } finally {

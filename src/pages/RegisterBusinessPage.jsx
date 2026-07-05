@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api';
 import { COUNTRIES, COUNTRY_CONFIG, US_TIMEZONES, getTimezone } from '../utils/countryConfig';
@@ -14,7 +14,6 @@ export default function RegisterBusinessPage() {
   const [error,         setError]        = useState('');
   const [loading,       setLoading]      = useState(false);
   const [dupWarning,    setDupWarning]   = useState(false);
-  const dupTimer = useRef(null);
 
   const cfg = COUNTRY_CONFIG[form.country] || COUNTRY_CONFIG.CO;
 
@@ -38,17 +37,20 @@ export default function RegisterBusinessPage() {
   const set = f => e => {
     const val = e.target.value;
     setForm(p => ({ ...p, [f]: val }));
-    if (['name', 'phone', 'address'].includes(f)) {
-      clearTimeout(dupTimer.current);
-      dupTimer.current = setTimeout(() => {
-        const snapshot = { name: form.name, phone: form.phone, address: form.address, [f]: val };
-        if (snapshot.name.trim().length < 3) return;
-        api.checkBusinessDuplicate({ name: snapshot.name, phone: snapshot.phone, address: snapshot.address })
-          .then(r => setDupWarning(r.isDuplicate))
-          .catch(() => {});
-      }, 800);
-    }
   };
+
+  // Chequeo de duplicados con debounce. Al depender de los campos actuales del
+  // formulario, siempre usa el valor vigente (nada de snapshots obsoletos) y el
+  // timeout se limpia en cada cambio y al desmontar (sin fugas ni callbacks fantasma).
+  useEffect(() => {
+    if (form.name.trim().length < 3) { setDupWarning(false); return; }
+    const t = setTimeout(() => {
+      api.checkBusinessDuplicate({ name: form.name, phone: form.phone, address: form.address })
+        .then(r => setDupWarning(r.isDuplicate))
+        .catch(() => {});
+    }, 800);
+    return () => clearTimeout(t);
+  }, [form.name, form.phone, form.address]);
 
   function setCountry(code) {
     setForm(p => ({ ...p, country: code, timezone: '', state: '', zipCode: '' }));
