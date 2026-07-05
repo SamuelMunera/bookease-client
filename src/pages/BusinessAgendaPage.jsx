@@ -22,13 +22,30 @@ function isToday(dateStr) {
 const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada', COMPLETED: 'Completada', NO_SHOW: 'No asistió' };
 const STATUS_BADGE = { CONFIRMED: 'badge-confirmed', PENDING: 'badge-pending', CANCELLED: 'badge-cancelled', COMPLETED: 'badge-confirmed', NO_SHOW: 'badge-cancelled' };
 
-function isPast(b) {
-  const today = new Date().toISOString().slice(0, 10);
-  if (b.date.slice(0, 10) < today) return true;
-  if (b.date.slice(0, 10) === today) {
-    const now = new Date();
+// F-004: la hora "actual" debe evaluarse en la timezone del negocio, no en la
+// del navegador. Intl.DateTimeFormat con timeZone nos da fecha y hora locales
+// del negocio de forma fiable (hourCycle h23 garantiza 00–23).
+function nowInTimezone(tz) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz || 'America/Bogota',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const get = (t) => parts.find(p => p.type === t)?.value;
+  return {
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+    hour: Number(get('hour')),
+    minute: Number(get('minute')),
+  };
+}
+
+function isPast(b, tz) {
+  const now = nowInTimezone(tz);
+  const bookingDate = b.date.slice(0, 10);
+  if (bookingDate < now.date) return true;
+  if (bookingDate === now.date) {
     const [h, m] = (b.startTime || '00:00').split(':').map(Number);
-    return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+    return now.hour > h || (now.hour === h && now.minute >= m);
   }
   return false;
 }
@@ -92,7 +109,7 @@ function StatCard({ num, label, color, icon }) {
 }
 
 /* ── Timeline row ────────────────────────────────────────── */
-function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
+function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone }) {
   const [confirm, setConfirm] = useState(null); // 'no-show' | 'complete' | 'cancel' | null
   const statusColor = {
     CONFIRMED: 'var(--success)',
@@ -170,7 +187,7 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
                 Confirmar
               </button>
             )}
-            {isPast(b) && confirm === null && (
+            {isPast(b, timezone) && confirm === null && (
               <>
                 <button
                   className="btn btn-sm"
@@ -226,7 +243,7 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete }) {
             {/* C-37: Cancelar solo para citas futuras (cancelar una cita pasada
                 no tiene sentido; para pasadas quedan Completar/No asistió).
                 C-31: confirmación inline (sin window.confirm nativo). */}
-            {!isPast(b) && confirm === null && (
+            {!isPast(b, timezone) && confirm === null && (
               <button className="btn btn-danger btn-sm" onClick={() => setConfirm('cancel')}>
                 Cancelar
               </button>
@@ -262,12 +279,21 @@ export default function BusinessAgendaPage() {
     if (businessId) api.getBusinessProfessionals(businessId).then(setProfessionals).catch(() => {});
   }, [businessId]);
 
+  // F-002: usar el endpoint autenticado /businesses/me (getMyBusiness) en vez
+  // del listado público getBusinesses(), que filtra status:'ACTIVE' y hacía
+  // desaparecer el negocio (y su agenda) cuando la suscripción vencía
+  // (status INACTIVE). getMyBusiness resuelve el negocio por ownerId del token
+  // sin filtrar por status. El modelo backend es un negocio por dueño
+  // (findFirst por ownerId en todos los endpoints /me), por lo que lo
+  // envolvemos en un array para conservar la estructura existente.
   useEffect(() => {
-    api.getBusinesses().then(all => {
-      const mine = all.filter(b => b.ownerId === user.id);
-      setBusinesses(mine);
-      if (mine.length === 1) setBusinessId(mine[0].id);
-    });
+    api.getMyBusiness()
+      .then(biz => {
+        const mine = biz ? [biz] : [];
+        setBusinesses(mine);
+        if (mine.length === 1) setBusinessId(mine[0].id);
+      })
+      .catch(() => setBusinesses([]));
   }, [user.id]);
 
   function load() {

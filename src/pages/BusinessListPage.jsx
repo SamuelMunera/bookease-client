@@ -163,7 +163,7 @@ function FeaturedCard({ b, badge, onClick, categories = [] }) {
       <div className={`feat-card-img ${b.logoUrl ? '' : (CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop')}`}
         style={b.logoUrl ? { background: 'var(--surface-2)', overflow: 'hidden', padding: 0 } : {}}>
         {b.logoUrl
-          ? <img src={b.logoUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          ? <img src={b.logoUrl} alt={b.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           : <>
               <span className="biz-card-img-letter">{b.name[0]}</span>
               <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
@@ -600,6 +600,7 @@ export default function BusinessListPage() {
   useEffect(() => { setCategory(heroCategory); }, [heroCategory]);
 
   useEffect(() => {
+    let alive = true;
     setLoading(true);
     setApiError(false);
     const params = {};
@@ -608,9 +609,12 @@ export default function BusinessListPage() {
     if (searchTime)  params.time        = searchTime;
     if (country)     params.userCountry = country;
     api.getBusinesses(params)
-      .then((data) => setBusinesses(data || []))
-      .catch(() => { setBusinesses([]); setApiError(true); })
-      .finally(() => setLoading(false));
+      .then((data) => { if (alive) setBusinesses(data || []); })
+      .catch(() => { if (alive) { setBusinesses([]); setApiError(true); } })
+      .finally(() => { if (alive) setLoading(false); });
+    // Invalidate this fetch when deps change so a stale response from an old
+    // filter can't overwrite the results of the currently active filter.
+    return () => { alive = false; };
   }, [city, category, searchTime, country]);
 
   // Normalize text: remove diacritics + trim (frontend normalization before API call)
@@ -1014,7 +1018,7 @@ export default function BusinessListPage() {
                     <div className={`biz-card-img ${b.logoUrl ? '' : (CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop')}`}
                       style={b.logoUrl ? { background: 'var(--surface-2)', overflow: 'hidden', padding: 0 } : {}}>
                       {b.logoUrl
-                        ? <img src={b.logoUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        ? <img src={b.logoUrl} alt={b.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         : <>
                             <span className="biz-card-img-letter">{b.name[0]}</span>
                             <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>

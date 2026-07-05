@@ -342,10 +342,14 @@ function MapSection({ business }) {
   useEffect(() => {
     if (coords) return;
     if (!address && !city) return;
+    // PUB-09: el navegador ignora (y prohíbe) el header User-Agent en fetch, así
+    // que se elimina. Se añade AbortController para cancelar la petición si el
+    // componente se desmonta o cambia la dirección antes de resolver.
+    const ctrl = new AbortController();
     setGeocoding(true);
     const q = encodeURIComponent(`${address}, ${city}`);
     fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
-      headers: { 'User-Agent': 'Slotly/1.0 (slotly.app)' },
+      signal: ctrl.signal,
     })
       .then(r => r.json())
       .then(data => {
@@ -354,7 +358,8 @@ function MapSection({ business }) {
         }
       })
       .catch(() => {})
-      .finally(() => setGeocoding(false));
+      .finally(() => { if (!ctrl.signal.aborted) setGeocoding(false); });
+    return () => ctrl.abort();
   }, [address, city, coords]);
 
   const mapSrc = coords
@@ -441,10 +446,9 @@ function ProfCard({ p, selected, onSelect }) {
           </Link>
         </div>
         {p.bio && <p className="prof-card2-bio">{p.bio}</p>}
-        <div className="prof-card2-avail">
-          <span className="prof-card2-avail-dot" />
-          Disponible hoy
-        </div>
+        {/* F-008: se elimina el indicador estático "Disponible hoy" porque no
+            refleja la agenda real del profesional; no hay dato fiable de
+            disponibilidad del día cargado aquí para condicionarlo. */}
       </div>
       <div className={`prof-card2-check${selected ? ' visible' : ''}`}>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
