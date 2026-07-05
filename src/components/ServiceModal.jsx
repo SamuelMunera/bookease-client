@@ -26,18 +26,24 @@ export default function ServiceModal({ businessId, categories = [], service = nu
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
-  // Accesibilidad: cerrar con Escape y devolver el foco al elemento que abrió el
-  // modal al desmontar (sin secuestrar el foco inicial, que va al primer campo).
+  // Accesibilidad: devolver el foco al elemento que abrió el modal SOLO al
+  // desmontar. Va en su propio effect con deps [] para que un cambio de `saving`
+  // (p. ej. al empezar a guardar) no dispare el cleanup y robe el foco en pleno
+  // guardado. El foco inicial (autoFocus en el primer campo) queda intacto.
   useEffect(() => {
     const opener = document.activeElement;
-    function onKey(e) { if (e.key === 'Escape' && !saving) onClose(); }
-    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener('keydown', onKey);
       if (opener && typeof opener.focus === 'function') opener.focus();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saving]);
+  }, []);
+
+  // Cerrar con Escape (ignorado mientras se guarda). Se re-suscribe con `saving`
+  // para leer el valor vigente, sin tocar el foco.
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape' && !saving) onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [saving, onClose]);
 
   async function handleSubmit(e) {
     e.preventDefault();

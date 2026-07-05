@@ -20,9 +20,11 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false); // login por Google en curso
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (googleBusy) return; // no competir con el login de Google
     setError('');
     setLoading(true);
     try {

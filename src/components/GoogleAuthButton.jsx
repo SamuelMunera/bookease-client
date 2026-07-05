@@ -1,5 +1,5 @@
 import { useGoogleLogin } from '@react-oauth/google';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -15,7 +15,7 @@ const IconGoogle = () => (
 
 const HAS_GOOGLE = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar con Google', onError }) {
+export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar con Google', onError, disabled = false, onBusy }) {
   if (!HAS_GOOGLE) return null;
 
   const { login } = useAuth();
@@ -24,6 +24,10 @@ export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar c
   const [phoneState, setPhoneState] = useState(null); // { data, phone }
   const [phoneError, setPhoneError] = useState('');
   const [savingPhone, setSavingPhone] = useState(false);
+
+  // Informa al padre cuando este botón está ocupado, para que pueda deshabilitar
+  // el login por email y evitar dos login() compitiendo en paralelo.
+  useEffect(() => { onBusy?.(loading); }, [loading, onBusy]);
 
   function getRedirect(user, isNew) {
     if (user.role === 'BUSINESS_OWNER' && isNew) return '/register-business';
@@ -106,11 +110,13 @@ export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar c
     );
   }
 
+  const isDisabled = loading || disabled;
+
   return (
     <button
       type="button"
-      onClick={() => googleLogin()}
-      disabled={loading}
+      onClick={() => { if (!isDisabled) googleLogin(); }}
+      disabled={isDisabled}
       style={{
         width: '100%',
         display: 'flex',
@@ -124,11 +130,11 @@ export default function GoogleAuthButton({ role = 'CLIENT', label = 'Continuar c
         color: 'var(--text)',
         fontSize: 'var(--text-sm)',
         fontWeight: 600,
-        cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.7 : 1,
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        opacity: isDisabled ? 0.7 : 1,
         transition: 'background var(--ease), border-color var(--ease)',
       }}
-      onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'var(--surface-3)'; }}
+      onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.background = 'var(--surface-3)'; }}
       onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-2)'; }}
     >
       {loading
