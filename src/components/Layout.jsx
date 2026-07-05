@@ -98,6 +98,7 @@ export default function Layout() {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackHover, setFeedbackHover] = useState(false);
   const [footerStats, setFooterStats] = useState(null);
 
   useEffect(() => {
@@ -533,14 +534,15 @@ export default function Layout() {
             <button
               onClick={() => setFeedbackOpen(true)}
               style={{
-                background:'rgba(212,168,83,.1)', border:'1px solid rgba(212,168,83,.25)',
+                background: feedbackHover ? 'rgba(212,168,83,.2)' : 'rgba(212,168,83,.1)',
+                border:'1px solid rgba(212,168,83,.25)',
                 borderRadius:'var(--r-full)', padding:'4px 14px',
                 color:'var(--gold)', fontSize:'var(--text-xs)', fontWeight:600,
                 cursor:'pointer', letterSpacing:'.04em', textTransform:'uppercase',
                 transition:'background .15s',
               }}
-              onMouseEnter={e => e.currentTarget.style.background='rgba(212,168,83,.2)'}
-              onMouseLeave={e => e.currentTarget.style.background='rgba(212,168,83,.1)'}
+              onMouseEnter={() => setFeedbackHover(true)}
+              onMouseLeave={() => setFeedbackHover(false)}
             >
               Ayúdanos a mejorar
             </button>

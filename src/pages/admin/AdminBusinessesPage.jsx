@@ -41,8 +41,8 @@ export default function AdminBusinessesPage() {
   }, []);
 
   const filtered = businesses.filter(b =>
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    b.city.toLowerCase().includes(search.toLowerCase())
+    (b.name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
+    (b.city?.toLowerCase() ?? '').includes(search.toLowerCase())
   );
 
   return (

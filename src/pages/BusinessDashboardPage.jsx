@@ -305,6 +305,8 @@ export default function BusinessDashboardPage() {
   }, [business?.id]);
 
   async function handleApprove(id) {
+    if (processingJoin[id]) return;
+    setProcessingJoin(prev => ({ ...prev, [id]: true }));
     try {
       await api.approveJoinRequest(id);
       setJoinRequests(prev => prev.filter(r => r.id !== id));
@@ -318,16 +320,24 @@ export default function BusinessDashboardPage() {
         setActionMsg(err.message);
       }
     }
-    finally { schedule(() => setActionMsg(''), 3000); }
+    finally {
+      setProcessingJoin(prev => { const next = { ...prev }; delete next[id]; return next; });
+      schedule(() => setActionMsg(''), 3000);
+    }
   }
 
   async function handleReject(id) {
+    if (processingJoin[id]) return;
+    setProcessingJoin(prev => ({ ...prev, [id]: true }));
     try {
       await api.rejectJoinRequest(id);
       setJoinRequests(prev => prev.filter(r => r.id !== id));
       setActionMsg('Solicitud rechazada');
     } catch (err) { setActionMsg(err.message); }
-    finally { schedule(() => setActionMsg(''), 3000); }
+    finally {
+      setProcessingJoin(prev => { const next = { ...prev }; delete next[id]; return next; });
+      schedule(() => setActionMsg(''), 3000);
+    }
   }
 
   async function saveCancelPolicy() {
@@ -559,8 +569,33 @@ export default function BusinessDashboardPage() {
     finally { setSavingHours(false); schedule(() => setHoursMsg(''), 3000); }
   }
 
+  // DASH-17: validación cliente de promociones. Devuelve mensaje de error o null.
+  function validatePromotion(form) {
+    if (!form.title.trim()) return 'El título es obligatorio.';
+    if (!form.startDate) return 'Indica la fecha de inicio.';
+    if (!form.endDate) return 'Indica la fecha de fin.';
+    if (form.endDate < form.startDate) return 'La fecha de fin no puede ser anterior a la de inicio.';
+    if (form.discountType === 'PERCENTAGE') {
+      const v = parseFloat(form.discountValue);
+      if (!Number.isFinite(v) || v < 1 || v > 100) return 'El porcentaje de descuento debe estar entre 1 y 100.';
+    } else if (form.discountType === 'FIXED') {
+      const v = parseFloat(form.discountValue);
+      if (!Number.isFinite(v) || v < 1) return 'El monto de descuento debe ser mayor que 0.';
+    } else if (form.discountType === 'CUSTOM_PRICE') {
+      const v = parseFloat(form.customPrice);
+      if (!Number.isFinite(v) || v < 1) return 'El precio especial debe ser mayor que 0.';
+    }
+    return null;
+  }
+
   async function savePromotion(e) {
     e.preventDefault();
+    const validationError = validatePromotion(promoForm);
+    if (validationError) {
+      setPromoMsg(validationError);
+      schedule(() => setPromoMsg(''), 4000);
+      return;
+    }
     setPromoSaving(true); setPromoMsg('');
     try {
       const body = {
@@ -571,16 +606,19 @@ export default function BusinessDashboardPage() {
       if (promoEditing) {
         const updated = await api.updatePromotion(promoEditing, body);
         setPromotions(prev => prev.map(p => p.id === promoEditing ? updated : p));
-        setPromoMsg('Promoción actualizada');
+        setPromoMsg('✓ Promoción actualizada');
       } else {
         const created = await api.createPromotion(body);
         setPromotions(prev => [created, ...prev]);
-        setPromoMsg('Promoción creada');
+        setPromoMsg('✓ Promoción creada');
       }
       setPromoForm(EMPTY_PROMO);
       setPromoEditing(null);
       setShowPromoForm(false);
-    } catch (err) { setPromoMsg('Error: ' + err.message); }
+    } catch (err) {
+      console.error(err);
+      setPromoMsg('No se pudo guardar la promoción. Intenta de nuevo.');
+    }
     finally { setPromoSaving(false); schedule(() => setPromoMsg(''), 4000); }
   }
 
@@ -591,12 +629,26 @@ export default function BusinessDashboardPage() {
     } catch {}
   }
 
-  async function deletePromotion(id) {
-    if (!window.confirm('¿Eliminar esta promoción?')) return;
+  // U-010: abre el modal de confirmación en vez de window.confirm nativo.
+  function deletePromotion(id) {
+    setPromoToDelete(id);
+  }
+
+  async function confirmDeletePromotion() {
+    const id = promoToDelete;
+    if (!id) return;
+    setDeletingPromo(true);
     try {
       await api.deletePromotion(id);
       setPromotions(prev => prev.filter(p => p.id !== id));
-    } catch (err) { setPromoMsg('Error: ' + err.message); schedule(() => setPromoMsg(''), 3000); }
+    } catch (err) {
+      console.error(err);
+      setPromoMsg('No se pudo eliminar la promoción. Intenta de nuevo.');
+      schedule(() => setPromoMsg(''), 3000);
+    } finally {
+      setDeletingPromo(false);
+      setPromoToDelete(null);
+    }
   }
 
   function startEditPromo(promo) {
@@ -1085,11 +1137,11 @@ export default function BusinessDashboardPage() {
                         {r.professional.specialty && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{r.professional.specialty}</p>}
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-                        <button onClick={() => handleReject(r.id)} className="btn btn-ghost btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', color: 'var(--red)' }}>
-                          Rechazar
+                        <button onClick={() => handleReject(r.id)} disabled={!!processingJoin[r.id]} className="btn btn-ghost btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', color: 'var(--red)', opacity: processingJoin[r.id] ? 0.6 : 1 }}>
+                          {processingJoin[r.id] ? 'Procesando…' : 'Rechazar'}
                         </button>
-                        <button onClick={() => handleApprove(r.id)} className="btn btn-primary btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', background: 'var(--violet)' }}>
-                          Aprobar
+                        <button onClick={() => handleApprove(r.id)} disabled={!!processingJoin[r.id]} className="btn btn-primary btn-sm" style={{ padding: '5px 12px', fontSize: 'var(--text-xs)', background: 'var(--violet)', opacity: processingJoin[r.id] ? 0.6 : 1 }}>
+                          {processingJoin[r.id] ? 'Procesando…' : 'Aprobar'}
                         </button>
                       </div>
                     </div>
@@ -2033,7 +2085,7 @@ export default function BusinessDashboardPage() {
           </div>
 
           {promoMsg && (
-            <p style={{ fontSize: 'var(--text-sm)', color: promoMsg.startsWith('Error') ? 'var(--error)' : 'var(--success)' }}>{promoMsg}</p>
+            <p style={{ fontSize: 'var(--text-sm)', color: promoMsg.startsWith('✓') ? 'var(--success)' : 'var(--error)' }}>{promoMsg}</p>
           )}
 
           {/* Form */}
@@ -2201,6 +2253,17 @@ export default function BusinessDashboardPage() {
           )}
         </div>
       )}
+
+      {/* U-010: confirmación de borrado de promoción */}
+      <ConfirmModal
+        open={promoToDelete != null}
+        title="Eliminar promoción"
+        message="¿Seguro que quieres eliminar esta promoción? Esta acción no se puede deshacer."
+        confirmLabel={deletingPromo ? 'Eliminando…' : 'Eliminar'}
+        variant="danger"
+        onConfirm={confirmDeletePromotion}
+        onCancel={() => { if (!deletingPromo) setPromoToDelete(null); }}
+      />
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default function AdminLayout() {
             <span style={{ color: 'var(--gold)' }}>Slot</span><span style={{ color: 'var(--text)' }}>ly</span>
           </div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-            Admin Panel
+            Panel de administración
           </div>
         </div>
         {mobile && (

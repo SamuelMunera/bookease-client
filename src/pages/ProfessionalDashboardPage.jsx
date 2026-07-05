@@ -202,6 +202,7 @@ const STATUS_META = {
   CONFIRMED: { label: 'Confirmada',  color: 'var(--green)',   bg: 'rgba(34,197,94,0.1)' },
   CANCELLED: { label: 'Cancelada',   color: 'var(--red)',     bg: 'rgba(239,68,68,0.1)' },
   COMPLETED: { label: 'Completada',  color: 'var(--text-muted)', bg: 'rgba(100,100,120,0.1)' },
+  NO_SHOW:   { label: 'No asistió',  color: 'var(--red, #ef4444)', bg: 'rgba(239,68,68,0.1)' },
 };
 
 function formatDate(dateStr) {

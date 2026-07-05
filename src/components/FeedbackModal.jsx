@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 
@@ -20,6 +20,17 @@ export default function FeedbackModal({ onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+
+  // A11y: cerrar con Escape y bloquear el scroll del body mientras está abierto.
+  useEffect(() => {
+    function handleKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', handleKey);
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.classList.remove('no-scroll');
+    };
+  }, [onClose]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -45,7 +56,7 @@ export default function FeedbackModal({ onClose }) {
       }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
+      <div role="dialog" aria-modal="true" aria-label="Ayúdanos a mejorar" style={{
         background:'var(--surface)', borderRadius:'var(--r-2xl)',
         border:'1px solid var(--border)', padding:'var(--sp-6)',
         width:'100%', maxWidth:480,

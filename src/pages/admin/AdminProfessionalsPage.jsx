@@ -93,8 +93,8 @@ export default function AdminProfessionalsPage() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)', paddingTop: 'var(--sp-3)', borderTop: '1px solid var(--border)' }}>
                 {[
-                  { label: 'Reservas', value: p._count.bookings },
-                  { label: 'Servicios', value: p._count.services },
+                  { label: 'Reservas', value: p._count?.bookings ?? 0 },
+                  { label: 'Servicios', value: p._count?.services ?? 0 },
                 ].map(s => (
                   <div key={s.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--gold)' }}>{s.value}</div>

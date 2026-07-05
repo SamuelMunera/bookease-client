@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
@@ -5,40 +6,73 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CountryProvider } from './context/CountryContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import BusinessListPage from './pages/BusinessListPage';
-import BusinessDetailPage from './pages/BusinessDetailPage';
-import BookingPage from './pages/BookingPage';
-import MyBookingsPage from './pages/MyBookingsPage';
-import BusinessAgendaPage from './pages/BusinessAgendaPage';
-import ProfessionalProfilePage from './pages/ProfessionalProfilePage';
-import BusinessesPage from './pages/BusinessesPage';
-import HowItWorksPage from './pages/HowItWorksPage';
-import RegisterBusinessPage from './pages/RegisterBusinessPage';
-import BusinessDashboardPage from './pages/BusinessDashboardPage';
-import ProLoginPage from './pages/ProLoginPage';
-import ProRegisterPage from './pages/ProRegisterPage';
-import ProfessionalDashboardPage from './pages/ProfessionalDashboardPage';
-import HomeBookingPage from './pages/HomeBookingPage';
-import HomeServicePage from './pages/HomeServicePage';
 
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import PrivacyPage from './pages/PrivacyPage';
-import TermsPage from './pages/TermsPage';
-import CookiesPage from './pages/CookiesPage';
-import AdminLoginPage from './pages/admin/AdminLoginPage';
-import AdminLayout from './pages/admin/AdminLayout';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage';
-import AdminFinancesPage from './pages/admin/AdminFinancesPage';
-import AdminFinancePage from './pages/admin/AdminFinancePage';
-import AdminBusinessesPage from './pages/admin/AdminBusinessesPage';
-import AdminProfessionalsPage from './pages/admin/AdminProfessionalsPage';
-import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
-import AdminReferralCodesPage from './pages/admin/AdminReferralCodesPage';
-import VerifyBusinessEmailPage from './pages/VerifyBusinessEmailPage';
-import PricingPage from './pages/PricingPage';
+/* ── CORE-02: entry public routes stay eager to protect first paint ── */
+import BusinessListPage from './pages/BusinessListPage';
+import LoginPage from './pages/LoginPage';
+
+/* ── CORE-02: everything below is code-split via React.lazy ── */
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const BusinessDetailPage = lazy(() => import('./pages/BusinessDetailPage'));
+const BookingPage = lazy(() => import('./pages/BookingPage'));
+const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage'));
+const BusinessAgendaPage = lazy(() => import('./pages/BusinessAgendaPage'));
+const ProfessionalProfilePage = lazy(() => import('./pages/ProfessionalProfilePage'));
+const BusinessesPage = lazy(() => import('./pages/BusinessesPage'));
+const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'));
+const RegisterBusinessPage = lazy(() => import('./pages/RegisterBusinessPage'));
+const BusinessDashboardPage = lazy(() => import('./pages/BusinessDashboardPage'));
+const ProLoginPage = lazy(() => import('./pages/ProLoginPage'));
+const ProRegisterPage = lazy(() => import('./pages/ProRegisterPage'));
+const ProfessionalDashboardPage = lazy(() => import('./pages/ProfessionalDashboardPage'));
+const HomeBookingPage = lazy(() => import('./pages/HomeBookingPage'));
+const HomeServicePage = lazy(() => import('./pages/HomeServicePage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const CookiesPage = lazy(() => import('./pages/CookiesPage'));
+const VerifyBusinessEmailPage = lazy(() => import('./pages/VerifyBusinessEmailPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+
+/* ── CORE-02: admin panel is never on the first-paint path ── */
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminFinancesPage = lazy(() => import('./pages/admin/AdminFinancesPage'));
+const AdminFinancePage = lazy(() => import('./pages/admin/AdminFinancePage'));
+const AdminBusinessesPage = lazy(() => import('./pages/admin/AdminBusinessesPage'));
+const AdminProfessionalsPage = lazy(() => import('./pages/admin/AdminProfessionalsPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
+const AdminReferralCodesPage = lazy(() => import('./pages/admin/AdminReferralCodesPage'));
+
+/* ── CORE-02: shared fallback while a lazy chunk loads ── */
+function RouteFallback() {
+  return (
+    <div
+      style={{
+        minHeight: '60vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--gold)"
+        strokeWidth="2"
+        role="status"
+        aria-label="Cargando"
+        style={{ animation: 'spin 1s linear infinite' }}
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -47,6 +81,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <ScrollToTop />
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* ── Main app ── */}
           <Route element={<Layout />}>
@@ -107,6 +142,7 @@ export default function App() {
             <Route path="finance" element={<AdminFinancePage />} />
           </Route>
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
     </CountryProvider>

@@ -10,10 +10,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   const cards = [
-    { label: 'Negocios', value: stats?.businesses, icon: '🏢', color: '#f59e0b' },
-    { label: 'Profesionales', value: stats?.professionals, icon: '👤', color: '#6366f1' },
-    { label: 'Reservas', value: stats?.bookings, icon: '📅', color: '#10b981' },
-    { label: 'Usuarios', value: stats?.users, icon: '🧑', color: '#3b82f6' },
+    { label: 'Negocios', value: stats?.businesses, icon: '🏢', color: 'var(--warning)' },
+    { label: 'Profesionales', value: stats?.professionals, icon: '👤', color: 'var(--violet)' },
+    { label: 'Reservas', value: stats?.bookings, icon: '📅', color: 'var(--success)' },
+    { label: 'Usuarios', value: stats?.users, icon: '🧑', color: 'var(--teal)' },
   ];
 
   return (
@@ -24,7 +24,11 @@ export default function AdminDashboardPage() {
       </p>
 
       {loading ? (
-        <p style={{ color: 'var(--text-muted)' }}>Cargando…</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--sp-5)' }}>
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="skeleton" style={{ height: 148, borderRadius: 'var(--r-xl)' }} />
+          ))}
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--sp-5)' }}>
           {cards.map(c => (
