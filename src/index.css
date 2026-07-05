@@ -1184,6 +1184,9 @@ html { scroll-padding-top: 68px; }
   .footer-body { grid-template-columns: 1fr 1fr 1fr; }
   .footer-brand-col { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: var(--sp-6); }
   .footer-brand-desc { max-width: 100%; }
+  /* R-011: raise nav control tap targets on touch/tablet widths */
+  .theme-toggle { width: 44px; height: 44px; }
+  .nav-logout-btn { width: 44px; height: 44px; }
 }
 
 @media (max-width: 768px) {
@@ -5477,10 +5480,17 @@ html { scroll-padding-top: 68px; }
   border: 1px solid var(--border); border-radius: var(--r-xl);
 }
 .pricing2-matrix {
-  width: 100%; min-width: 480px;
+  width: 100%; min-width: 400px; /* R-009: reduced so it fits more phones */
   border-collapse: collapse;
   background: var(--surface-2);
   font-size: var(--text-sm);
+}
+/* R-009: fade the right edge as a horizontal-scroll affordance on small screens */
+@media (max-width: 640px) {
+  .pricing2-matrix-wrap {
+    -webkit-mask-image: linear-gradient(to right, #000 84%, transparent 100%);
+            mask-image: linear-gradient(to right, #000 84%, transparent 100%);
+  }
 }
 .pricing2-matrix th, .pricing2-matrix td {
   padding: var(--sp-3) var(--sp-4);
