@@ -160,22 +160,21 @@ export default function HomeBookingPage() {
   /* Load slots when service or date changes — no step dep to avoid resetting slot on step advance */
   useEffect(() => {
     if (!selectedService) return;
+    // PUB-04: cancelamos el resultado si cambia la fecha/servicio antes de que
+    // resuelva el fetch, para no dejar renderizados los slots de otro día y
+    // evitar que el usuario reserve una hora equivocada.
+    let alive = true;
     setSlotsLoading(true);
     setSlot(null);
     setError('');
+    // PUB-06: el filtro de turnos pasados de "hoy" se delega al backend (que usa
+    // la timezone del negocio). Ya no filtramos en cliente con la hora local del
+    // navegador para no reintroducir el bug cross-timezone, igual que BookingPage.
     api.getHomeSlots({ professionalId, homeServiceId: selectedService.id, date })
-      .then(d => {
-        let s = d.slots || [];
-        const now = new Date();
-        const t = todayStr();
-        if (date === t) {
-          const nowMins = now.getHours()*60 + now.getMinutes();
-          s = s.filter(sl => { const [h,m] = sl.startTime.split(':').map(Number); return h*60+m > nowMins; });
-        }
-        setSlots(s);
-      })
-      .catch(() => setSlots([]))
-      .finally(() => setSlotsLoading(false));
+      .then(d => { if (alive) setSlots(d.slots || []); })
+      .catch(() => { if (alive) setSlots([]); })
+      .finally(() => { if (alive) setSlotsLoading(false); });
+    return () => { alive = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedService, date, professionalId]);
 

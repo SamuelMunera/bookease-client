@@ -1,5 +1,7 @@
 /* ─── Fonts ─────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+/* CORE-07: removed render-blocking @import of Space Grotesk + Inter.
+   Neither family is referenced; the system uses --font-heading:'lora' and
+   --font-body/--font-ui:'DM Sans'. */
 
 /* ─── Tokens ─────────────────────────────────────────────── */
 :root {
@@ -768,7 +770,7 @@ html { scroll-padding-top: 68px; }
   position: fixed; inset: 0; z-index: 1000;
   background: rgba(0,0,0,0.92);
   display: flex; align-items: center; justify-content: center;
-  animation: fade-in 0.15s ease;
+  animation: fadeIn 0.15s ease;
 }
 .biz-lightbox-img {
   max-width: 90vw; max-height: 90vh;
@@ -2898,10 +2900,8 @@ html { scroll-padding-top: 68px; }
   text-align: center; min-height: 60vh;
   animation: fadeUp 0.4s ease both;
 }
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* ANIM-05: duplicate @keyframes fadeUp removed here; single definition
+   (24px offset) lives in the ANIMATIONS section. */
 
 .booking-success-ring {
   width: 80px; height: 80px;

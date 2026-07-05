@@ -13,6 +13,22 @@ function formatLabel(dateStr) {
   return `${DAYS_ES[d.getDay()]}, ${d.getDate()} de ${MONTHS_ES[d.getMonth()]}`;
 }
 
+// Un id de query válido debe ser un string no vacío y distinto de los
+// literales 'null'/'undefined' que produce serializar valores faltantes (F-006).
+function isValidId(v) {
+  return typeof v === 'string' && v.trim() !== '' && v !== 'null' && v !== 'undefined';
+}
+
+// Política de cancelación real del profesional/negocio (F-003). El backend
+// devuelve cancelMinHours (0 = flexible). Mientras se carga (null) mostramos un
+// texto neutro para no afirmar un plazo incorrecto.
+function cancelPolicyText(h) {
+  if (h === null || h === undefined) return 'Cancelación gratuita';
+  if (h <= 0) return 'Cancelación flexible';
+  if (h === 1) return 'Cancelación gratuita hasta 1 h antes';
+  return `Cancelación gratuita hasta ${h} h antes`;
+}
+
 /* ── Mini calendar ───────────────────────────────────────── */
 function MiniCalendar({ value, onChange }) {
   const today = new Date();
@@ -188,8 +204,37 @@ export default function BookingPage() {
   const [success,    setSuccess]    = useState(false);
   const [slotTaken,  setSlotTaken]  = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [cancelMinHours, setCancelMinHours] = useState(null);
+
+  const paramsValid = isValidId(professionalId) && isValidId(serviceId);
+
+  // F-006: si se llega a /book sin professionalId/serviceId válidos (o con el
+  // literal 'null'), no tiene sentido pedir slots — redirigimos al inicio.
+  useEffect(() => {
+    if (!paramsValid) {
+      navigate('/', {
+        replace: true,
+        state: { toast: 'El enlace de reserva no es válido. Elige un servicio para empezar.' },
+      });
+    }
+  }, [paramsValid, navigate]);
+
+  // F-003: cargar la política de cancelación real del profesional/negocio.
+  useEffect(() => {
+    if (!isValidId(professionalId)) return;
+    let alive = true;
+    api.getProfessional(professionalId)
+      .then(p => { if (alive) setCancelMinHours(p?.cancelMinHours ?? 0); })
+      .catch(() => { /* fallback: texto neutro mientras cancelMinHours === null */ });
+    return () => { alive = false; };
+  }, [professionalId]);
 
   useEffect(() => {
+    if (!paramsValid) return;
+    // PUB-04: cancelamos el resultado si la fecha (u otra dep) cambia antes de
+    // que resuelva el fetch, para no renderizar los slots de otro día y evitar
+    // que el usuario reserve una hora equivocada.
+    let alive = true;
     setSelected(null);
     setError('');
     setSlotTaken(false);
@@ -198,10 +243,11 @@ export default function BookingPage() {
       // El backend ya excluye los turnos pasados de hoy usando la timezone del
       // negocio (C-03). No re-filtramos en cliente con la hora local del
       // navegador para no reintroducir el bug cross-timezone (N-01).
-      .then(d  => setSlots(d.slots || []))
-      .catch(e => setError(e.message))
-      .finally(()  => setLoading(false));
-  }, [date, professionalId, serviceId, refreshKey]);
+      .then(d  => { if (alive) setSlots(d.slots || []); })
+      .catch(e => { if (alive) setError(e.message); })
+      .finally(()  => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [date, professionalId, serviceId, refreshKey, paramsValid]);
 
   function refreshSlots() {
     setRefreshKey(k => k + 1);
@@ -389,7 +435,7 @@ export default function BookingPage() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          Cancelación gratuita hasta 24 h antes
+          {cancelPolicyText(cancelMinHours)}
         </p>
         <button
           className="btn btn-primary btn-lg"
