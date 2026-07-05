@@ -397,7 +397,7 @@ export default function AnalyticsPanel({ role = 'business' }) {
                       ))}
                       {p.noShow > 0 && (
                         <div style={{ textAlign: 'center', minWidth: 64 }}>
-                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 2, fontWeight: 600 }}>No-shows</p>
+                          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 2, fontWeight: 600 }}>No asistidos</p>
                           <p style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: '#ef4444', fontFamily: 'var(--font-heading)' }}>
                             {p.noShow}
                             {p.noShowRate > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', marginLeft: 3 }}>({p.noShowRate}%)</span>}

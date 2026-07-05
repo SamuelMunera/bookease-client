@@ -8,6 +8,7 @@ import BusinessWelcomeModal from '../components/BusinessWelcomeModal';
 import BusinessOnboardingChecklist from '../components/BusinessOnboardingChecklist';
 import ServiceModal from '../components/ServiceModal';
 import TrialStatusBanner from '../components/TrialStatusBanner';
+import ConfirmModal from '../components/ConfirmModal';
 import { PLAN_NAMES_ES, getPlanLimit } from '../utils/plans';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
@@ -38,7 +39,7 @@ const CAT_NAME = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Saló
 
 const TABS = [
   { key: 'panel',       label: 'Panel' },
-  { key: 'analytics',   label: 'Analytics' },
+  { key: 'analytics',   label: 'Estadísticas' },
   { key: 'finanzas',    label: 'Finanzas' },
   { key: 'referidos',   label: 'Referidos' },
   { key: 'promociones', label: 'Promociones' },
@@ -226,6 +227,21 @@ export default function BusinessDashboardPage() {
   const [referrals, setReferrals] = useState(null);
   const [referralCopied, setReferralCopied] = useState(false);
   const [referralsError, setReferralsError] = useState(false);
+  // DASH-08: ids de solicitudes en proceso (evita doble submit por fila)
+  const [processingJoin, setProcessingJoin] = useState({});
+  // U-010: modal de confirmación para eliminar promoción
+  const [promoToDelete, setPromoToDelete] = useState(null);
+  const [deletingPromo, setDeletingPromo] = useState(false);
+
+  // DASH-07: registra los timeouts de mensajes y los limpia al desmontar
+  // para evitar setState sobre un componente ya desmontado (fugas/warnings).
+  const msgTimers = useRef([]);
+  useEffect(() => () => { msgTimers.current.forEach(clearTimeout); msgTimers.current = []; }, []);
+  function schedule(cb, ms) {
+    const id = setTimeout(cb, ms);
+    msgTimers.current.push(id);
+    return id;
+  }
 
   function loadReferrals() {
     setReferralsError(false);
@@ -297,12 +313,12 @@ export default function BusinessDashboardPage() {
       if (err.code === 'PLAN_LIMIT_EXCEEDED') {
         setActionMsg('Límite de plan alcanzado');
         setPlanLimitMsg(err.message);
-        setTimeout(() => setPlanLimitMsg(''), 8000);
+        schedule(() => setPlanLimitMsg(''), 8000);
       } else {
         setActionMsg(err.message);
       }
     }
-    finally { setTimeout(() => setActionMsg(''), 3000); }
+    finally { schedule(() => setActionMsg(''), 3000); }
   }
 
   async function handleReject(id) {
@@ -311,7 +327,7 @@ export default function BusinessDashboardPage() {
       setJoinRequests(prev => prev.filter(r => r.id !== id));
       setActionMsg('Solicitud rechazada');
     } catch (err) { setActionMsg(err.message); }
-    finally { setTimeout(() => setActionMsg(''), 3000); }
+    finally { schedule(() => setActionMsg(''), 3000); }
   }
 
   async function saveCancelPolicy() {
@@ -320,7 +336,7 @@ export default function BusinessDashboardPage() {
       await api.updateBizCancelPolicy(business.id, cancelMinHours);
       setPolicyMsg('Guardado');
     } catch { setPolicyMsg('Error al guardar'); }
-    finally { setSavingPolicy(false); setTimeout(() => setPolicyMsg(''), 2500); }
+    finally { setSavingPolicy(false); schedule(() => setPolicyMsg(''), 2500); }
   }
 
   async function toggleRevenuePerm() {
@@ -342,7 +358,7 @@ export default function BusinessDashboardPage() {
       setBusiness(prev => ({ ...prev, ...updated }));
       setProfileMsg('✓ Perfil actualizado');
     } catch (err) { setProfileMsg('Error: ' + err.message); }
-    finally { setProfileSaving(false); setTimeout(() => setProfileMsg(''), 3000); }
+    finally { setProfileSaving(false); schedule(() => setProfileMsg(''), 3000); }
   }
 
   async function handleLogoChange(e) {
@@ -368,7 +384,7 @@ export default function BusinessDashboardPage() {
       setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
       setPwMsg('✓ Contraseña actualizada');
     } catch (err) { setPwMsg('Error: ' + err.message); }
-    finally { setPwSaving(false); setTimeout(() => setPwMsg(''), 4000); }
+    finally { setPwSaving(false); schedule(() => setPwMsg(''), 4000); }
   }
 
   async function handleResendVerify() {
@@ -381,7 +397,7 @@ export default function BusinessDashboardPage() {
       setVerifyMsg(e.message);
     } finally {
       setSendingVerify(false);
-      setTimeout(() => setVerifyMsg(''), 6000);
+      schedule(() => setVerifyMsg(''), 6000);
     }
   }
 
@@ -389,7 +405,7 @@ export default function BusinessDashboardPage() {
     if (!joinCode) return;
     navigator.clipboard.writeText(joinCode).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      schedule(() => setCopied(false), 2000);
     });
   }
 
@@ -403,14 +419,14 @@ export default function BusinessDashboardPage() {
       setGallery(prev => [...prev, item]);
       setGalleryMsg('Foto añadida');
     } catch (err) { setGalleryMsg('Error: ' + err.message); }
-    finally { setGalleryUploading(false); setTimeout(() => setGalleryMsg(''), 3000); }
+    finally { setGalleryUploading(false); schedule(() => setGalleryMsg(''), 3000); }
   }
 
   async function handleGalleryDelete(id) {
     try {
       await api.deleteBusinessGalleryPhoto(id);
       setGallery(prev => prev.filter(p => p.id !== id));
-    } catch (err) { setGalleryMsg('Error al eliminar'); setTimeout(() => setGalleryMsg(''), 3000); }
+    } catch (err) { setGalleryMsg('Error al eliminar'); schedule(() => setGalleryMsg(''), 3000); }
   }
 
   async function handleCoverUpload(e) {
@@ -423,7 +439,7 @@ export default function BusinessDashboardPage() {
       setBusiness(prev => ({ ...prev, coverUrl: res.url }));
       setGalleryMsg('Portada actualizada');
     } catch (err) { setGalleryMsg('Error: ' + err.message); }
-    finally { setCoverUploading(false); setTimeout(() => setGalleryMsg(''), 3000); }
+    finally { setCoverUploading(false); schedule(() => setGalleryMsg(''), 3000); }
   }
 
   async function saveAccentColor() {
@@ -433,7 +449,7 @@ export default function BusinessDashboardPage() {
       setBusiness(prev => ({ ...prev, accentColor }));
       setAccentMsg('Guardado');
     } catch (err) { setAccentMsg('Error'); }
-    finally { setSavingAccent(false); setTimeout(() => setAccentMsg(''), 2500); }
+    finally { setSavingAccent(false); schedule(() => setAccentMsg(''), 2500); }
   }
 
   async function saveTheme() {
@@ -443,14 +459,14 @@ export default function BusinessDashboardPage() {
       setBusiness(prev => ({ ...prev, ...updated, themeLight, themeDark }));
       setThemeMsg('✓ Apariencia guardada');
     } catch (err) { setThemeMsg('Error: ' + err.message); }
-    finally { setSavingTheme(false); setTimeout(() => setThemeMsg(''), 3000); }
+    finally { setSavingTheme(false); schedule(() => setThemeMsg(''), 3000); }
   }
 
   async function saveVerifyConfig() {
     const hrs = Number(apptVerifyHoursBefore);
     if (!Number.isFinite(hrs) || hrs < 1 || hrs > 72) {
       setVerifyCfgMsg('Las horas deben estar entre 1 y 72');
-      setTimeout(() => setVerifyCfgMsg(''), 3000);
+      schedule(() => setVerifyCfgMsg(''), 3000);
       return;
     }
     setSavingVerifyCfg(true); setVerifyCfgMsg('');
@@ -459,7 +475,7 @@ export default function BusinessDashboardPage() {
       setBusiness(prev => ({ ...prev, ...updated, apptVerifyEnabled, apptVerifyHoursBefore: hrs }));
       setVerifyCfgMsg('✓ Guardado');
     } catch (err) { setVerifyCfgMsg('Error: ' + err.message); }
-    finally { setSavingVerifyCfg(false); setTimeout(() => setVerifyCfgMsg(''), 3000); }
+    finally { setSavingVerifyCfg(false); schedule(() => setVerifyCfgMsg(''), 3000); }
   }
 
   async function saveReviewsConfig(nextValue) {
@@ -475,7 +491,7 @@ export default function BusinessDashboardPage() {
       setReviewsCfgMsg('Error: ' + err.message);
     } finally {
       setSavingReviewsCfg(false);
-      setTimeout(() => setReviewsCfgMsg(''), 3000);
+      schedule(() => setReviewsCfgMsg(''), 3000);
     }
   }
 
@@ -492,7 +508,7 @@ export default function BusinessDashboardPage() {
       setOwnerProMsg('Error: ' + err.message);
     } finally {
       setOwnerProBusy(false);
-      setTimeout(() => setOwnerProMsg(''), 5000);
+      schedule(() => setOwnerProMsg(''), 5000);
     }
   }
 
@@ -506,7 +522,7 @@ export default function BusinessDashboardPage() {
       setOwnerProMsg('Error: ' + err.message);
     } finally {
       setOwnerProBusy(false);
-      setTimeout(() => setOwnerProMsg(''), 4000);
+      schedule(() => setOwnerProMsg(''), 4000);
     }
   }
 
@@ -524,14 +540,14 @@ export default function BusinessDashboardPage() {
       setNewCatName('');
       setCatMsg('Categoría creada');
     } catch (err) { setCatMsg('Error: ' + err.message); }
-    finally { setSavingCat(false); setTimeout(() => setCatMsg(''), 3000); }
+    finally { setSavingCat(false); schedule(() => setCatMsg(''), 3000); }
   }
 
   async function deleteServiceCategory(id) {
     try {
       await api.deleteServiceCategory(id);
       setSvcCats(prev => prev.filter(c => c.id !== id));
-    } catch (err) { setCatMsg('Error al eliminar'); setTimeout(() => setCatMsg(''), 3000); }
+    } catch (err) { setCatMsg('Error al eliminar'); schedule(() => setCatMsg(''), 3000); }
   }
 
   async function saveHours() {
@@ -540,7 +556,7 @@ export default function BusinessDashboardPage() {
       await api.setMyBusinessHours(hours);
       setHoursMsg('Horarios guardados');
     } catch (err) { setHoursMsg('Error: ' + err.message); }
-    finally { setSavingHours(false); setTimeout(() => setHoursMsg(''), 3000); }
+    finally { setSavingHours(false); schedule(() => setHoursMsg(''), 3000); }
   }
 
   async function savePromotion(e) {
@@ -565,7 +581,7 @@ export default function BusinessDashboardPage() {
       setPromoEditing(null);
       setShowPromoForm(false);
     } catch (err) { setPromoMsg('Error: ' + err.message); }
-    finally { setPromoSaving(false); setTimeout(() => setPromoMsg(''), 4000); }
+    finally { setPromoSaving(false); schedule(() => setPromoMsg(''), 4000); }
   }
 
   async function togglePromoActive(promo) {
@@ -580,7 +596,7 @@ export default function BusinessDashboardPage() {
     try {
       await api.deletePromotion(id);
       setPromotions(prev => prev.filter(p => p.id !== id));
-    } catch (err) { setPromoMsg('Error: ' + err.message); setTimeout(() => setPromoMsg(''), 3000); }
+    } catch (err) { setPromoMsg('Error: ' + err.message); schedule(() => setPromoMsg(''), 3000); }
   }
 
   function startEditPromo(promo) {
@@ -955,7 +971,7 @@ export default function BusinessDashboardPage() {
                   <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: atLimit ? 'var(--error)' : 'var(--text-subtle)' }}>
                     {count}/{limit}
                     {atLimit && (
-                      <Link to="/pricing" style={{ marginLeft: 6, color: 'var(--violet)', textDecoration: 'none' }}>Upgrade →</Link>
+                      <Link to="/pricing" style={{ marginLeft: 6, color: 'var(--violet)', textDecoration: 'none' }}>Mejorar plan →</Link>
                     )}
                   </span>
                 );
@@ -1903,7 +1919,7 @@ export default function BusinessDashboardPage() {
                     onClick={() => {
                       navigator.clipboard?.writeText(referrals.referralCode);
                       setReferralCopied(true);
-                      setTimeout(() => setReferralCopied(false), 2000);
+                      schedule(() => setReferralCopied(false), 2000);
                     }}
                   >
                     {referralCopied ? '¡Copiado!' : 'Copiar código'}

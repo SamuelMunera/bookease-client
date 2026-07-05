@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ConfirmModal from '../components/ConfirmModal';
 import api from '../api';
 
 const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada' };
@@ -146,9 +147,10 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
   const [showReschedule, setShowReschedule] = useState(false);
   const [cancelError, setCancelError]       = useState('');
   const [cancelling, setCancelling]         = useState(false);
+  const [confirmCancel, setConfirmCancel]   = useState(false);
 
-  async function handleCancelClick() {
-    if (!confirm('¿Cancelar esta reserva?')) return;
+  async function doCancel() {
+    setConfirmCancel(false);
     setCancelling(true); setCancelError('');
     try { await onCancel(b.id, isHome); }
     catch (err) { setCancelError(err.message); }
@@ -249,7 +251,7 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
                     Aplazar
                   </button>
                 )}
-                <button className="btn btn-danger btn-sm" disabled={cancelling} onClick={handleCancelClick}>
+                <button className="btn btn-danger btn-sm" disabled={cancelling} onClick={() => setConfirmCancel(true)}>
                   {cancelling ? 'Cancelando…' : 'Cancelar'}
                 </button>
               </div>
@@ -270,6 +272,17 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
           onClose={() => setShowReschedule(false)}
         />
       )}
+
+      <ConfirmModal
+        open={confirmCancel}
+        variant="danger"
+        title="Cancelar reserva"
+        message="¿Cancelar esta reserva? Esta acción no se puede deshacer."
+        confirmLabel="Sí, cancelar"
+        cancelLabel="No, volver"
+        onConfirm={doCancel}
+        onCancel={() => setConfirmCancel(false)}
+      />
     </div>
   );
 }

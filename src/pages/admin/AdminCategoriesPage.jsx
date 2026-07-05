@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const ICONS = ['✂️','💆','💅','🧖','🪒','💇','🧴','🌿','💊','🏋️'];
 
@@ -14,6 +15,7 @@ export default function AdminCategoriesPage() {
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState('');
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmId, setConfirmId]   = useState(null);
 
   useEffect(() => {
     api.adminCategories().then(setCategories).catch(() => {}).finally(() => setLoading(false));
@@ -40,7 +42,7 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm('¿Eliminar esta categoría? Los negocios que la usen quedarán sin categoría válida.')) return;
+    setConfirmId(null);
     setDeletingId(id);
     try {
       await api.adminDeleteCategory(id);
@@ -147,7 +149,7 @@ export default function AdminCategoriesPage() {
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', fontFamily: 'monospace' }}>{c.slug}</p>
               </div>
               <button
-                onClick={() => handleDelete(c.id)}
+                onClick={() => setConfirmId(c.id)}
                 disabled={deletingId === c.id}
                 style={{
                   padding: '6px 14px', borderRadius: 'var(--r-md)',
@@ -162,6 +164,17 @@ export default function AdminCategoriesPage() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmId !== null}
+        variant="danger"
+        title="Eliminar categoría"
+        message="¿Eliminar esta categoría? Los negocios que la usen quedarán sin categoría válida."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        onConfirm={() => handleDelete(confirmId)}
+        onCancel={() => setConfirmId(null)}
+      />
     </div>
   );
 }
