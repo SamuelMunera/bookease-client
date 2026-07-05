@@ -574,7 +574,7 @@ export default function BusinessDashboardPage() {
     if (!form.title.trim()) return 'El título es obligatorio.';
     if (!form.startDate) return 'Indica la fecha de inicio.';
     if (!form.endDate) return 'Indica la fecha de fin.';
-    if (form.endDate < form.startDate) return 'La fecha de fin no puede ser anterior a la de inicio.';
+    if (form.endDate <= form.startDate) return 'La fecha de fin debe ser posterior a la de inicio.';
     if (form.discountType === 'PERCENTAGE') {
       const v = parseFloat(form.discountValue);
       if (!Number.isFinite(v) || v < 1 || v > 100) return 'El porcentaje de descuento debe estar entre 1 y 100.';
@@ -598,10 +598,13 @@ export default function BusinessDashboardPage() {
     }
     setPromoSaving(true); setPromoMsg('');
     try {
+      // Construimos el payload de precio segun discountType: nunca enviamos ambos
+      // campos a la vez, evitando datos sucios (coherencia con el backend).
+      const isCustom = promoForm.discountType === 'CUSTOM_PRICE';
       const body = {
         ...promoForm,
-        discountValue: promoForm.discountValue !== '' ? parseFloat(promoForm.discountValue) : null,
-        customPrice:   promoForm.customPrice   !== '' ? parseFloat(promoForm.customPrice)   : null,
+        discountValue: !isCustom && promoForm.discountValue !== '' ? parseFloat(promoForm.discountValue) : null,
+        customPrice:   isCustom  && promoForm.customPrice   !== '' ? parseFloat(promoForm.customPrice)   : null,
       };
       if (promoEditing) {
         const updated = await api.updatePromotion(promoEditing, body);
@@ -617,7 +620,8 @@ export default function BusinessDashboardPage() {
       setShowPromoForm(false);
     } catch (err) {
       console.error(err);
-      setPromoMsg('No se pudo guardar la promoción. Intenta de nuevo.');
+      // Surfaceamos el motivo real del backend (fechas, porcentaje invalido, etc.).
+      setPromoMsg(err.message || 'No se pudo guardar la promoción. Intenta de nuevo.');
     }
     finally { setPromoSaving(false); schedule(() => setPromoMsg(''), 4000); }
   }
@@ -643,7 +647,7 @@ export default function BusinessDashboardPage() {
       setPromotions(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       console.error(err);
-      setPromoMsg('No se pudo eliminar la promoción. Intenta de nuevo.');
+      setPromoMsg(err.message || 'No se pudo eliminar la promoción. Intenta de nuevo.');
       schedule(() => setPromoMsg(''), 3000);
     } finally {
       setDeletingPromo(false);
@@ -2130,7 +2134,16 @@ export default function BusinessDashboardPage() {
 
                   <div>
                     <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Tipo de descuento</label>
-                    <select className="input" value={promoForm.discountType} onChange={e => setPromoForm(f => ({ ...f, discountType: e.target.value }))} style={{ width: '100%' }}>
+                    <select className="input" value={promoForm.discountType} onChange={e => {
+                      const discountType = e.target.value;
+                      // Limpiamos el campo del tipo que ya no aplica para no arrastrar datos sucios.
+                      setPromoForm(f => ({
+                        ...f,
+                        discountType,
+                        discountValue: discountType === 'CUSTOM_PRICE' ? '' : f.discountValue,
+                        customPrice:   discountType === 'CUSTOM_PRICE' ? f.customPrice : '',
+                      }));
+                    }} style={{ width: '100%' }}>
                       {DISCOUNT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>

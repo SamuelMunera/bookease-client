@@ -800,16 +800,28 @@ export default function BusinessDetailPage() {
 
   useEffect(() => {
     if (!selectedProf) { setServices(allServices); setSelectedService(pendingService || ''); return; }
+    let alive = true;
     api.getProfessionalServices(selectedProf)
       .then(proServices => {
+        if (!alive) return;
         // Con profesional seleccionado solo mostramos lo que ese pro ofrece.
         // Sin fallback al catálogo completo: si no ofrece nada, queda vacío.
         const list = proServices || [];
-        setServices(list);
-        // Preserva el servicio pedido desde la promo si este pro lo ofrece.
-        setSelectedService(pendingService && list.some(s => s.id === pendingService) ? pendingService : '');
+        // Robustez cliente: preferimos el pricing del backend (getProfessionalServices
+        // ya lo trae vía Corrector 2); si faltara, caemos al pricing de allServices
+        // para no perder la promo al elegir profesional. Se conserva el override de
+        // `duration` que viene en proServices.
+        const enriched = list.map(s => ({
+          ...s,
+          pricing: s.pricing ?? allServices.find(a => a.id === s.id)?.pricing,
+        }));
+        setServices(enriched);
+        // Preserva el servicio elegido (promo o selección previa) si este pro lo ofrece.
+        const keep = pendingService || selectedService;
+        setSelectedService(keep && list.some(s => s.id === keep) ? keep : '');
       })
-      .catch(() => { setServices([]); setSelectedService(''); });
+      .catch(() => { if (alive) { setServices([]); setSelectedService(''); } });
+    return () => { alive = false; };
   }, [selectedProf]); // eslint-disable-line
 
   function handleBook() {
@@ -823,6 +835,13 @@ export default function BusinessDetailPage() {
   }
 
   const selectedServiceData = services.find((s) => s.id === selectedService);
+  // Filtrado servicio -> profesional: si hay servicio elegido, solo mostramos los
+  // profesionales que lo ofrecen (serviceIds viene de Corrector 2). Si el backend
+  // no expone serviceIds todavía (rollout parcial), se degrada a lista completa
+  // sin romper: si serviceIds no es array, el profesional pasa el filtro.
+  const visibleProfessionals = selectedService
+    ? professionals.filter(p => !Array.isArray(p.serviceIds) || p.serviceIds.includes(selectedService))
+    : professionals;
   const featuredPromo = pickFeaturedPromo(promotions);
   // Baja a la sección "Tu elección" (elegir profesional + servicio), NO al inicio
   // de la ficha: el botón "Reservar ahora" de una promo suele estar arriba, así que
@@ -986,8 +1005,8 @@ export default function BusinessDetailPage() {
               <div>
                 <p className="detail-col-title">Profesional</p>
                 <p className="detail-col-sub">
-                  {professionals.length > 0
-                    ? `${professionals.length} especialista${professionals.length !== 1 ? 's' : ''}`
+                  {visibleProfessionals.length > 0
+                    ? `${visibleProfessionals.length} especialista${visibleProfessionals.length !== 1 ? 's' : ''}`
                     : 'Sin profesionales'}
                 </p>
               </div>
@@ -998,14 +1017,16 @@ export default function BusinessDetailPage() {
               )}
             </div>
 
-            {professionals.length === 0 ? (
+            {visibleProfessionals.length === 0 ? (
               <div className="empty-state" style={{ padding:'var(--sp-8) var(--sp-4)' }}>
-                <p style={{ fontSize:'var(--text-sm)' }}>Sin profesionales registrados.</p>
+                <p style={{ fontSize:'var(--text-sm)' }}>
+                  {selectedService ? 'Ningún profesional ofrece este servicio.' : 'Sin profesionales registrados.'}
+                </p>
               </div>
             ) : (
               <div className="detail-cards-list">
-                {professionals.map((p) => (
-                  <ProfCard key={p.id} p={p} selected={selectedProf === p.id} onSelect={(id) => { setSelectedProf(id); setError(''); }} />
+                {visibleProfessionals.map((p) => (
+                  <ProfCard key={p.id} p={p} selected={selectedProf === p.id} onSelect={(id) => { setSelectedProf(prev => prev === id ? '' : id); setError(''); }} />
                 ))}
               </div>
             )}
@@ -1047,7 +1068,7 @@ export default function BusinessDetailPage() {
                 services={services}
                 categories={categories}
                 selectedService={selectedService}
-                onSelect={(id) => { setSelectedService(id); setError(''); }}
+                onSelect={(id) => { setSelectedService(prev => prev === id ? '' : id); setError(''); }}
                 category={business.category}
                 profSelected={!!selectedProf}
               />
