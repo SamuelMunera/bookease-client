@@ -343,6 +343,10 @@ export default function BusinessAgendaPage() {
 
   const sorted = [...visibleBookings].sort((a, b) => a.startTime.localeCompare(b.startTime));
 
+  // F-004: timezone del negocio seleccionado para evaluar isPast() con la hora
+  // local del negocio, no la del navegador.
+  const selectedTimezone = businesses.find(b => b.id === businessId)?.timezone;
+
   return (
     <div className="page agenda-page">
 
@@ -561,6 +565,7 @@ export default function BusinessAgendaPage() {
               onCancel={handleCancel}
               onNoShow={handleNoShow}
               onComplete={handleComplete}
+              timezone={selectedTimezone}
               isLast={idx === sorted.length - 1}
             />
           ))}
