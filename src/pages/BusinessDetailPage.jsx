@@ -745,6 +745,7 @@ export default function BusinessDetailPage() {
   const [reviewSuccess, setReviewSuccess]   = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const contentRef = useRef(null);
+  const bookingRef = useRef(null); // sección "Tu elección" (selección de profesional/servicio)
 
   useEffect(() => {
     // Flag para descartar respuestas obsoletas: si el usuario navega de un
@@ -823,7 +824,10 @@ export default function BusinessDetailPage() {
 
   const selectedServiceData = services.find((s) => s.id === selectedService);
   const featuredPromo = pickFeaturedPromo(promotions);
-  const scrollToBooking = () => contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Baja a la sección "Tu elección" (elegir profesional + servicio), NO al inicio
+  // de la ficha: el botón "Reservar ahora" de una promo suele estar arriba, así que
+  // apuntar al inicio no deslizaba nada y parecía estático.
+  const scrollToBooking = () => (bookingRef.current || contentRef.current)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   // Reservar un servicio concreto desde una promo: lo preselecciona (incluso si
   // luego se elige profesional) y baja al flujo de reserva del mismo negocio.
@@ -960,10 +964,12 @@ export default function BusinessDetailPage() {
         <GallerySection photos={gallery} />
 
         {/* ── Section label ── */}
-        <div className="detail-section-label" style={{ marginTop: gallery.length ? 'var(--sp-10)' : 0 }}>
-          <div className="detail-section-label-line" />
-          <span>Tu elección</span>
-          <div className="detail-section-label-line" />
+        <div ref={bookingRef} style={{ scrollMarginTop: 'var(--sp-6)' }}>
+          <div className="detail-section-label" style={{ marginTop: gallery.length ? 'var(--sp-10)' : 0 }}>
+            <div className="detail-section-label-line" />
+            <span>Tu elección</span>
+            <div className="detail-section-label-line" />
+          </div>
         </div>
 
         {/* ── 2-column grid ── */}

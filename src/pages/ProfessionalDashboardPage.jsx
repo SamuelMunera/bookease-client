@@ -616,6 +616,19 @@ export default function ProfessionalDashboardPage() {
     finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
   }
 
+  // Guarda el grid actual como el horario RECURRENTE (tabla Schedule): aplica a
+  // todas las semanas, no solo a la visible. Es la acción principal del editor.
+  async function saveRecurring() {
+    setSavingSchedule(true); setScheduleMsg('');
+    try {
+      await api.setProSchedule(schedule);
+      setScheduleMsg('Horario recurrente guardado');
+      // Ya es el horario base de todas las semanas: deja de ser un override puntual.
+      setSchedule(s => s.map(d => ({ ...d, isOverride: false })));
+    } catch { setScheduleMsg('Error al guardar'); }
+    finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
+  }
+
   async function resetWeek() {
     try {
       await api.deleteWeekSchedule(weekStart);
@@ -1335,14 +1348,17 @@ export default function ProfessionalDashboardPage() {
             <div>
               <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mi disponibilidad</h2>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
-                Horarios específicos por semana. Si no hay override, se usa el horario recurrente.
+                «Guardar recurrente» fija tu horario para todas las semanas. Usa «Guardar solo esta semana» para una excepción puntual, y «Restablecer semana» para eliminar esa excepción y volver al recurrente.
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
               {scheduleMsg && <span style={{ fontSize: 'var(--text-xs)', color: scheduleMsg.includes('Error') ? 'var(--red)' : 'var(--green)' }}>{scheduleMsg}</span>}
-              <button className="btn btn-ghost" onClick={resetWeek} style={{ padding: '5px 12px', fontSize: 'var(--text-xs)' }}>Usar recurrente</button>
-              <button className="btn btn-primary" onClick={saveSchedule} disabled={savingSchedule} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
-                {savingSchedule ? 'Guardando…' : 'Guardar semana'}
+              <button className="btn btn-ghost" onClick={resetWeek} disabled={savingSchedule} style={{ padding: '5px 12px', fontSize: 'var(--text-xs)' }}>Restablecer semana</button>
+              <button className="btn btn-secondary" onClick={saveSchedule} disabled={savingSchedule} style={{ padding: '6px 14px', fontSize: 'var(--text-xs)' }}>
+                {savingSchedule ? 'Guardando…' : 'Guardar solo esta semana'}
+              </button>
+              <button className="btn btn-primary" onClick={saveRecurring} disabled={savingSchedule} style={{ background: 'var(--violet)', padding: '6px 16px' }}>
+                {savingSchedule ? 'Guardando…' : 'Guardar recurrente'}
               </button>
             </div>
           </div>
