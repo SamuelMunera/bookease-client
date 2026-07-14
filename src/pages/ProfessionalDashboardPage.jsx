@@ -391,6 +391,15 @@ export default function ProfessionalDashboardPage() {
   const [schedule, setSchedule]         = useState(DEFAULT_SCHEDULE);
   const [savingSchedule, setSavingSchedule] = useState(false);
   const [scheduleMsg, setScheduleMsg]   = useState('');
+  // Un solo timer para el mensaje del editor: sin esto, el auto-limpiado de un
+  // éxito anterior podía borrar un error mostrado justo después.
+  const scheduleMsgTimer = useRef(null);
+  useEffect(() => () => clearTimeout(scheduleMsgTimer.current), []);
+  function showScheduleMsg(msg, { autoClear = false } = {}) {
+    clearTimeout(scheduleMsgTimer.current);
+    setScheduleMsg(msg);
+    if (autoClear) scheduleMsgTimer.current = setTimeout(() => setScheduleMsg(''), 2500);
+  }
 
   // ── Revenue load (retry-able) ──
   const loadRevenue = useCallback(() => {
@@ -461,13 +470,18 @@ export default function ProfessionalDashboardPage() {
   useEffect(() => {
     const ws = getWeekStart(weekOffset);
     setWeekStartState(ws);
+    // Con clics rápidos en las flechas, una respuesta lenta de una semana
+    // anterior no debe pisar el grid ni el mensaje de la semana ya elegida.
+    let stale = false;
+    setScheduleMsg('');
     api.getWeekSchedule(ws)
       .then(rows => {
-        if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
+        if (!stale && Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
       })
       // Sin esto el grid mostraba la semana anterior en silencio y cualquier
       // edición se hacía sobre datos equivocados.
-      .catch(err => setScheduleMsg(`Error al cargar el horario: ${err.message}`));
+      .catch(err => { if (!stale) setScheduleMsg(`Error al cargar el horario: ${err.message}`); });
+    return () => { stale = true; };
   }, [weekOffset]);
 
   // ── Home-service tab data (retry-able) ──
@@ -608,17 +622,16 @@ export default function ProfessionalDashboardPage() {
   }
 
   async function saveSchedule() {
-    setSavingSchedule(true); setScheduleMsg('');
+    setSavingSchedule(true); showScheduleMsg('');
     try {
       await api.setWeekSchedule(weekStart, schedule);
-      setScheduleMsg('Guardado');
+      showScheduleMsg('Guardado', { autoClear: true });
       // mark all as override
       setSchedule(s => s.map(d => ({ ...d, isOverride: true })));
-      setTimeout(() => setScheduleMsg(''), 2500);
     } catch (err) {
       // El backend valida los bloques (validateDay) y responde 400 con el motivo;
       // ocultarlo dejaba al usuario sin saber por qué "no guarda".
-      setScheduleMsg(`Error al guardar: ${err.message}`);
+      showScheduleMsg(`Error al guardar: ${err.message}`);
     }
     finally { setSavingSchedule(false); }
   }
@@ -626,28 +639,37 @@ export default function ProfessionalDashboardPage() {
   // Guarda el grid actual como el horario RECURRENTE (tabla Schedule): aplica a
   // todas las semanas, no solo a la visible. Es la acción principal del editor.
   async function saveRecurring() {
-    setSavingSchedule(true); setScheduleMsg('');
+    setSavingSchedule(true); showScheduleMsg('');
     try {
       await api.setProSchedule(schedule);
-      setScheduleMsg('Horario recurrente guardado');
-      // El backend elimina las excepciones semanales al guardar el recurrente;
-      // recarga la semana visible para reflejar el estado real de la BD.
+    } catch (err) {
+      showScheduleMsg(`Error al guardar: ${err.message}`);
+      setSavingSchedule(false);
+      return;
+    }
+    // El guardado ya ocurrió: un fallo al refrescar la semana visible no debe
+    // reportarse como "Error al guardar" (sería falso) ni dejar el grid viejo
+    // sin avisar.
+    try {
       const rows = await api.getWeekSchedule(weekStart);
       if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
-      setTimeout(() => setScheduleMsg(''), 2500);
-    } catch (err) { setScheduleMsg(`Error al guardar: ${err.message}`); }
+      showScheduleMsg('Horario recurrente guardado', { autoClear: true });
+    } catch {
+      showScheduleMsg('Guardado, pero no se pudo refrescar la semana. Recarga la página.');
+    }
     finally { setSavingSchedule(false); }
   }
 
   async function resetWeek() {
+    setSavingSchedule(true); showScheduleMsg('');
     try {
       await api.deleteWeekSchedule(weekStart);
       // reload recurring fallback
       const rows = await api.getWeekSchedule(weekStart);
       if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
-      setScheduleMsg('Semana restablecida');
-      setTimeout(() => setScheduleMsg(''), 2500);
-    } catch (err) { setScheduleMsg(`Error al restablecer: ${err.message}`); }
+      showScheduleMsg('Semana restablecida', { autoClear: true });
+    } catch (err) { showScheduleMsg(`Error al restablecer: ${err.message}`); }
+    finally { setSavingSchedule(false); }
   }
 
   function toggleService(id) {
@@ -1358,7 +1380,7 @@ export default function ProfessionalDashboardPage() {
             <div>
               <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mi disponibilidad</h2>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
-                «Guardar recurrente» fija tu horario para todas las semanas (y reemplaza las excepciones semanales que tuvieras). Usa «Guardar solo esta semana» para una excepción puntual, y «Restablecer semana» para eliminar esa excepción y volver al recurrente.
+                «Guardar recurrente» fija tu horario para todas las semanas y limpia las excepciones de semanas pasadas y de la actual; las excepciones de semanas futuras se conservan. Usa «Guardar solo esta semana» para una excepción puntual, y «Restablecer semana» para eliminar esa excepción y volver al recurrente.
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
