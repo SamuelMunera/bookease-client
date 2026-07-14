@@ -623,8 +623,10 @@ export default function ProfessionalDashboardPage() {
     try {
       await api.setProSchedule(schedule);
       setScheduleMsg('Horario recurrente guardado');
-      // Ya es el horario base de todas las semanas: deja de ser un override puntual.
-      setSchedule(s => s.map(d => ({ ...d, isOverride: false })));
+      // El backend elimina las excepciones semanales al guardar el recurrente;
+      // recarga la semana visible para reflejar el estado real de la BD.
+      const rows = await api.getWeekSchedule(weekStart);
+      if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
     } catch { setScheduleMsg('Error al guardar'); }
     finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
   }
@@ -1348,7 +1350,7 @@ export default function ProfessionalDashboardPage() {
             <div>
               <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Mi disponibilidad</h2>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 3 }}>
-                «Guardar recurrente» fija tu horario para todas las semanas. Usa «Guardar solo esta semana» para una excepción puntual, y «Restablecer semana» para eliminar esa excepción y volver al recurrente.
+                «Guardar recurrente» fija tu horario para todas las semanas (y reemplaza las excepciones semanales que tuvieras). Usa «Guardar solo esta semana» para una excepción puntual, y «Restablecer semana» para eliminar esa excepción y volver al recurrente.
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
