@@ -14,7 +14,7 @@ const BRAND_FEATURES = [
 
 export default function LoginPage() {
   useSEO({ title: 'Iniciar sesión', description: 'Inicia sesión en Slotly para gestionar tus reservas.', path: '/login' });
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -29,7 +29,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await api.login({ ...form, audience: 'client' });
-      logout(); // limpia cualquier sesión previa de otro rol antes de entrar
+      // login() sobrescribe la sesión previa; un logout() async aquí borraría
+      // la sesión nueva al resolverse después de login().
       login(data);
       const from = location.state?.from;
       navigate(from || '/');

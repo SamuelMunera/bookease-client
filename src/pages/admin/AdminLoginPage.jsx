@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../api';
 
 export default function AdminLoginPage() {
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -16,7 +16,8 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const data = await api.login({ ...form, audience: 'admin' });
-      logout(); // limpia cualquier sesión previa de otro rol antes de entrar
+      // login() sobrescribe la sesión previa; un logout() async aquí borraría
+      // la sesión nueva al resolverse después de login().
       login(data);
       navigate('/admin/dashboard', { replace: true });
     } catch (err) {

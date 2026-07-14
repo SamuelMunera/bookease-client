@@ -5,7 +5,7 @@ import api from '../api';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function ProLoginPage() {
-  const { login, logout } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [form,      setForm]      = useState({ email: '', password: '' });
   const [error,     setError]     = useState('');
@@ -18,7 +18,10 @@ export default function ProLoginPage() {
   const DEST = { BUSINESS_OWNER: '/dashboard', PROFESSIONAL: '/pro/dashboard' };
 
   function enter(data) {
-    logout(); // limpia cualquier sesión previa de otro rol antes de entrar
+    // No llamar logout() aquí: es async y su limpieza (localStorage + setUser(null))
+    // se ejecutaría DESPUÉS de login(), destruyendo la sesión recién creada.
+    // login() ya sobrescribe token/usuario y el Set-Cookie del login reemplaza
+    // cualquier cookie de sesión previa de otro rol.
     login(data);
     navigate(DEST[data.user.role] || '/');
   }
