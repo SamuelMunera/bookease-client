@@ -799,7 +799,13 @@ export default function BusinessDetailPage() {
   }, [id, user]);
 
   useEffect(() => {
-    if (!selectedProf) { setServices(allServices); setSelectedService(pendingService || ''); return; }
+    if (!selectedProf) {
+      setServices(allServices);
+      // Conserva la elección actual del usuario; pendingService (promo) solo
+      // aplica como fallback cuando no hay ninguna selección.
+      setSelectedService(prev => prev || pendingService || '');
+      return;
+    }
     let alive = true;
     api.getProfessionalServices(selectedProf)
       .then(proServices => {
@@ -816,8 +822,11 @@ export default function BusinessDetailPage() {
           pricing: s.pricing ?? allServices.find(a => a.id === s.id)?.pricing,
         }));
         setServices(enriched);
-        // Preserva el servicio elegido (promo o selección previa) si este pro lo ofrece.
-        const keep = pendingService || selectedService;
+        // Preserva el servicio elegido si este pro lo ofrece. La selección actual
+        // del usuario manda; pendingService (promo) es solo fallback inicial —
+        // si tuviera prioridad, cambiar de profesional revertiría/borraría un
+        // servicio elegido después de la promo.
+        const keep = selectedService || pendingService;
         setSelectedService(keep && list.some(s => s.id === keep) ? keep : '');
       })
       .catch(() => { if (alive) { setServices([]); setSelectedService(''); } });
