@@ -473,14 +473,14 @@ export default function ProfessionalDashboardPage() {
     // Con clics rápidos en las flechas, una respuesta lenta de una semana
     // anterior no debe pisar el grid ni el mensaje de la semana ya elegida.
     let stale = false;
-    setScheduleMsg('');
+    showScheduleMsg('');
     api.getWeekSchedule(ws)
       .then(rows => {
         if (!stale && Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
       })
       // Sin esto el grid mostraba la semana anterior en silencio y cualquier
       // edición se hacía sobre datos equivocados.
-      .catch(err => { if (!stale) setScheduleMsg(`Error al cargar el horario: ${err.message}`); });
+      .catch(err => { if (!stale) showScheduleMsg(`Error al cargar el horario: ${err.message}`); });
     return () => { stale = true; };
   }, [weekOffset]);
 
