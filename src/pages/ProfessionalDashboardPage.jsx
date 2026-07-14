@@ -465,7 +465,9 @@ export default function ProfessionalDashboardPage() {
       .then(rows => {
         if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
       })
-      .catch(() => {});
+      // Sin esto el grid mostraba la semana anterior en silencio y cualquier
+      // edición se hacía sobre datos equivocados.
+      .catch(err => setScheduleMsg(`Error al cargar el horario: ${err.message}`));
   }, [weekOffset]);
 
   // ── Home-service tab data (retry-able) ──
@@ -612,8 +614,13 @@ export default function ProfessionalDashboardPage() {
       setScheduleMsg('Guardado');
       // mark all as override
       setSchedule(s => s.map(d => ({ ...d, isOverride: true })));
-    } catch { setScheduleMsg('Error al guardar'); }
-    finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
+      setTimeout(() => setScheduleMsg(''), 2500);
+    } catch (err) {
+      // El backend valida los bloques (validateDay) y responde 400 con el motivo;
+      // ocultarlo dejaba al usuario sin saber por qué "no guarda".
+      setScheduleMsg(`Error al guardar: ${err.message}`);
+    }
+    finally { setSavingSchedule(false); }
   }
 
   // Guarda el grid actual como el horario RECURRENTE (tabla Schedule): aplica a
@@ -627,8 +634,9 @@ export default function ProfessionalDashboardPage() {
       // recarga la semana visible para reflejar el estado real de la BD.
       const rows = await api.getWeekSchedule(weekStart);
       if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
-    } catch { setScheduleMsg('Error al guardar'); }
-    finally { setSavingSchedule(false); setTimeout(() => setScheduleMsg(''), 2500); }
+      setTimeout(() => setScheduleMsg(''), 2500);
+    } catch (err) { setScheduleMsg(`Error al guardar: ${err.message}`); }
+    finally { setSavingSchedule(false); }
   }
 
   async function resetWeek() {
@@ -639,7 +647,7 @@ export default function ProfessionalDashboardPage() {
       if (Array.isArray(rows)) setSchedule(rows.map(r => ({ ...r })));
       setScheduleMsg('Semana restablecida');
       setTimeout(() => setScheduleMsg(''), 2500);
-    } catch { setScheduleMsg('Error al restablecer'); }
+    } catch (err) { setScheduleMsg(`Error al restablecer: ${err.message}`); }
   }
 
   function toggleService(id) {
