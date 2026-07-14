@@ -325,6 +325,9 @@ export default function ProfessionalDashboardPage() {
   const [profileError, setProfileError] = useState('');
   const [bookingsError, setBookingsError] = useState('');
   const [revenueError, setRevenueError] = useState('');
+  // El negocio tiene apagado "mostrar ingresos a profesionales" (403 del backend):
+  // es configuración de privacidad, no un fallo de carga.
+  const [revenueHidden, setRevenueHidden] = useState(false);
   const [homeError, setHomeError] = useState('');
 
   // Services
@@ -404,9 +407,13 @@ export default function ProfessionalDashboardPage() {
   // ── Revenue load (retry-able) ──
   const loadRevenue = useCallback(() => {
     setRevenueError('');
+    setRevenueHidden(false);
     return api.getProRevenue()
       .then(r => setProRevenue(r))
-      .catch(() => setRevenueError('No se pudieron cargar tus ingresos.'));
+      .catch(err => {
+        if (err.status === 403) setRevenueHidden(true);
+        else setRevenueError('No se pudieron cargar tus ingresos.');
+      });
   }, []);
 
   // ── Profile + dependent data (retry-able) ──
@@ -1179,6 +1186,17 @@ export default function ProfessionalDashboardPage() {
       {!loadingProfile && !profileError && pro.businessId && revenueError && !proRevenue && (
         <div style={{ marginTop: 'var(--sp-6)' }}>
           <DashboardError message={revenueError} onRetry={loadRevenue} />
+        </div>
+      )}
+
+      {/* ── Mis ingresos: ocultos por configuración del negocio ── */}
+      {!loadingProfile && !profileError && pro.businessId && revenueHidden && !proRevenue && (
+        <div style={{ marginTop: 'var(--sp-6)', padding: 'var(--sp-5)', borderRadius: 'var(--r-lg)', background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'var(--text)', margin: '0 0 var(--sp-2)' }}>Mis ingresos</h2>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', margin: 0 }}>
+            El negocio no comparte los ingresos con el equipo. Si eres el dueño,
+            actívalo desde tu panel de negocio con la opción "mostrar ingresos a profesionales".
+          </p>
         </div>
       )}
 
