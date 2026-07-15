@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
 import { COUNTRIES, US_TIMEZONES } from '../utils/countryConfig';
+import { fmtMoney, currencyForCountry } from '../utils/currency';
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import TrialStatusBanner from '../components/TrialStatusBanner';
 
@@ -73,7 +74,7 @@ function AgendaStatCard({ num, label, color, icon }) {
   );
 }
 
-function ProTimelineRow({ b, onNoShow, onComplete }) {
+function ProTimelineRow({ b, onNoShow, onComplete, currency }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const statusColor = {
     CONFIRMED: 'var(--success)', PENDING: 'var(--warning)',
@@ -113,6 +114,19 @@ function ProTimelineRow({ b, onNoShow, onComplete }) {
             {b.client?.phone && <p className="agenda-client-email">{b.client.phone}</p>}
           </div>
         </div>
+
+        {/* Deuda pendiente del cliente (multas por cancelación / no-show) */}
+        {b.clientDebt?.pendingTotal > 0 && (
+          <div style={{
+            marginTop: 'var(--sp-2)', padding: 'var(--sp-2) var(--sp-3)',
+            borderRadius: 'var(--r-md)', background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            fontSize: 'var(--text-xs)', fontWeight: 600, color: '#ef4444',
+          }}>
+            ⚠ Deuda pendiente: {fmtMoney(b.clientDebt.pendingTotal, currency)}
+            {b.clientDebt.pendingCount > 1 ? ` (${b.clientDebt.pendingCount} multas)` : ''}
+          </div>
+        )}
 
         {/* Actions for past, non-terminal bookings */}
         {!isTerminal && isPastBooking(b) && (
@@ -226,7 +240,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function BookingRow({ booking }) {
+function BookingRow({ booking, currency }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 'var(--sp-4)',
@@ -262,6 +276,17 @@ function BookingRow({ booking }) {
       {booking.service?.duration && (
         <span style={{ flexShrink: 0, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
           {booking.service.duration} min
+        </span>
+      )}
+
+      {/* Deuda pendiente del cliente (badge compacto) */}
+      {booking.clientDebt?.pendingTotal > 0 && (
+        <span style={{
+          flexShrink: 0, padding: '3px 10px', borderRadius: 'var(--r-full)',
+          fontSize: 'var(--text-xs)', fontWeight: 700, color: '#ef4444',
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+        }}>
+          Debe {fmtMoney(booking.clientDebt.pendingTotal, currency)}
         </span>
       )}
 
@@ -347,6 +372,10 @@ export default function ProfessionalDashboardPage() {
   const [savingBuffer, setSavingBuffer]   = useState(false);
   const [bufferMsg, setBufferMsg]         = useState('');
   const [cancelMinHours, setCancelMinHours] = useState(0);
+  // Multa por cancelación tardía / no-show (se guarda junto con cancelMinHours)
+  const [feeEnabled, setFeeEnabled]           = useState(false);
+  const [feeWindowHours, setFeeWindowHours]   = useState(12);
+  const [feeAmount, setFeeAmount]             = useState('');
   const [savingPolicy, setSavingPolicy]   = useState(false);
   const [policyMsg, setPolicyMsg]         = useState('');
 
@@ -425,6 +454,9 @@ export default function ProfessionalDashboardPage() {
         setProfile(data);
         setBufferTime(data?.bufferTime ?? 0);
         setCancelMinHours(data?.cancelMinHours ?? 0);
+        setFeeEnabled(data?.cancelFeeEnabled ?? false);
+        setFeeWindowHours(data?.cancelFeeWindowHours || 12);
+        setFeeAmount(data?.cancelFeeAmount != null ? String(Number(data.cancelFeeAmount)) : '');
         setProfileForm({ name: data?.name || '', bio: data?.bio || '', phone: data?.phone || '', specialty: data?.specialty || '', experience: data?.experience || '', country: data?.country || 'CO', timezone: data?.timezone || 'America/Bogota', state: data?.state || '', zipCode: data?.zipCode || '' });
         api.getProPhotos().then(p => setPhotos(Array.isArray(p) ? p : [])).catch(() => {});
         if (data?.businessId) {
@@ -620,9 +652,19 @@ export default function ProfessionalDashboardPage() {
   }
 
   async function saveProCancelPolicy() {
+    if (feeEnabled && (!feeAmount || Number(feeAmount) <= 0)) {
+      setPolicyMsg('Indica el valor de la multa');
+      setTimeout(() => setPolicyMsg(''), 2500);
+      return;
+    }
     setSavingPolicy(true); setPolicyMsg('');
     try {
-      await api.updateProCancelPolicy(cancelMinHours);
+      await api.updateProCancelPolicy({
+        cancelMinHours,
+        feeEnabled,
+        feeWindowHours: Number(feeWindowHours) || 0,
+        feeAmount: Number(feeAmount) || 0,
+      });
       setPolicyMsg('Guardado');
     } catch { setPolicyMsg('Error al guardar'); }
     finally { setSavingPolicy(false); setTimeout(() => setPolicyMsg(''), 2500); }
@@ -1092,7 +1134,7 @@ export default function ProfessionalDashboardPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
               {upcomingBookings.slice(0, 10).map(b => (
-                <BookingRow key={b.id} booking={b} />
+                <BookingRow key={b.id} booking={b} currency={currencyForCountry(pro?.country)} />
               ))}
               {upcomingBookings.length > 10 && (
                 <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
@@ -1653,6 +1695,7 @@ export default function ProfessionalDashboardPage() {
                     b={b}
                     onNoShow={handleProNoShow}
                     onComplete={handleProComplete}
+                    currency={currencyForCountry(pro?.country)}
                   />
                 ))}
               </div>
@@ -2094,7 +2137,8 @@ export default function ProfessionalDashboardPage() {
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--sp-4)', maxWidth: 440 }}>
               Horas mínimas de anticipación que necesita el cliente para cancelar o aplazar. 0 = sin restricción.
             </p>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:'var(--sp-2)', marginBottom:'var(--sp-4)' }}>
+            {/* Con multa activa el bloqueo no aplica: se atenúa para comunicarlo */}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'var(--sp-2)', marginBottom:'var(--sp-4)', opacity: feeEnabled ? 0.45 : 1, transition:'opacity .15s' }}>
               {[0, 2, 6, 12, 24, 48].map(h => (
                 <button key={h} type="button" onClick={() => setCancelMinHours(h)}
                   style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: cancelMinHours === h ? 700 : 500, border:`1.5px solid ${cancelMinHours === h ? 'var(--violet)' : 'var(--border)'}`, background: cancelMinHours === h ? 'var(--violet-subtle)' : 'var(--surface-2)', color: cancelMinHours === h ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
@@ -2102,6 +2146,64 @@ export default function ProfessionalDashboardPage() {
                 </button>
               ))}
             </div>
+
+            {/* Multa por cancelación tardía */}
+            <div style={{ borderTop:'1px solid var(--border)', paddingTop:'var(--sp-4)', marginBottom:'var(--sp-4)' }}>
+              <label style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)', cursor:'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={feeEnabled}
+                  onChange={e => setFeeEnabled(e.target.checked)}
+                  style={{ width: 18, height: 18, accentColor: 'var(--violet)' }}
+                />
+                <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
+                  Cobrar multa por cancelación tardía
+                </span>
+              </label>
+              <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', margin:'var(--sp-2) 0 0 30px', maxWidth: 440, lineHeight: 1.5 }}>
+                Con la multa activa tus clientes siempre podrán cancelar: la multa sustituye
+                el bloqueo por horas de anticipación. Aplica también a inasistencias (no-show).
+              </p>
+
+              {feeEnabled && (
+                <div style={{ margin:'var(--sp-4) 0 0 30px', display:'flex', flexDirection:'column', gap:'var(--sp-3)' }}>
+                  <div>
+                    <label style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', display:'block', marginBottom: 6 }}>
+                      Tiempo para multa (antes de la cita)
+                    </label>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:'var(--sp-2)' }}>
+                      {[1, 2, 6, 12, 24].map(h => (
+                        <button key={h} type="button" onClick={() => setFeeWindowHours(h)}
+                          style={{ padding:'6px 14px', borderRadius:'var(--r-md)', cursor:'pointer', fontSize:'var(--text-sm)', fontWeight: feeWindowHours === h ? 700 : 500, border:`1.5px solid ${feeWindowHours === h ? 'var(--violet)' : 'var(--border)'}`, background: feeWindowHours === h ? 'var(--violet-subtle)' : 'var(--surface-2)', color: feeWindowHours === h ? 'var(--violet)' : 'var(--text-muted)', transition:'all .12s' }}>
+                          {h}h
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ fontSize:'var(--text-xs)', fontWeight:600, color:'var(--text-muted)', display:'block', marginBottom: 6 }}>
+                      Valor de la multa
+                    </label>
+                    <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-2)' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1000"
+                        className="input"
+                        placeholder="20000"
+                        value={feeAmount}
+                        onChange={e => setFeeAmount(e.target.value)}
+                        style={{ maxWidth: 160 }}
+                      />
+                      <span style={{ fontSize:'var(--text-xs)', fontWeight:700, color:'var(--text-muted)' }}>
+                        {currencyForCountry(pro?.country ?? profileForm?.country)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={{ display:'flex', alignItems:'center', gap:'var(--sp-3)' }}>
               <button className="btn btn-primary btn-sm" onClick={saveProCancelPolicy} disabled={savingPolicy}>
                 {savingPolicy ? 'Guardando…' : 'Guardar política'}

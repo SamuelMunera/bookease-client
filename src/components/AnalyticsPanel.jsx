@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api';
+import ConfirmModal from './ConfirmModal';
+import { fmtMoney as fmt } from '../utils/currency';
 
 const PERIODS = [
   { key: 'today', label: 'Hoy' },
@@ -11,9 +13,18 @@ const HOURS_LABELS = Array.from({ length: 24 }, (_, h) =>
   `${String(h).padStart(2, '0')}:00`
 );
 
-function fmt(val, currency) {
-  if (currency === 'USD') return `$${Number(val).toLocaleString('en-US')}`;
-  return `$${Number(val).toLocaleString('es-CO')}`;
+/* ── Multas / deudas de clientes ── */
+const DEBT_REASON_LABEL = { LATE_CANCEL: 'Cancelación tardía', NO_SHOW: 'No asistió' };
+const DEBT_STATUS_META = {
+  PENDING:  { label: 'Pendiente', color: '#ef4444',          bg: 'rgba(239,68,68,0.1)' },
+  PAID:     { label: 'Pagada',    color: '#22c55e',          bg: 'rgba(34,197,94,0.1)' },
+  FORGIVEN: { label: 'Perdonada', color: 'var(--text-muted)', bg: 'rgba(100,100,120,0.12)' },
+};
+
+function fmtDebtDate(v) {
+  if (!v) return '—';
+  const d = new Date(String(v).length === 10 ? `${v}T00:00:00` : v);
+  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function StatCard({ label, value, sub, accent }) {
@@ -88,6 +99,27 @@ export default function AnalyticsPanel({ role = 'business' }) {
   }, [role]);
 
   useEffect(() => { load(period); }, [period, load]);
+
+  // Deudas por multa (solo panel profesional). Independientes del period:
+  // la deuda es estado vivo del cliente, no una métrica del período.
+  const [debts, setDebts]             = useState(null); // { summary, debts } | null
+  const [debtsError, setDebtsError]   = useState(false);
+  const [confirmDebt, setConfirmDebt] = useState(null); // { id, status, text }
+
+  const loadDebts = useCallback(async () => {
+    if (role !== 'professional') return;
+    try { setDebtsError(false); setDebts(await api.getProDebts()); }
+    catch { setDebtsError(true); }
+  }, [role]);
+
+  useEffect(() => { loadDebts(); }, [loadDebts]);
+
+  async function applyDebtStatus() {
+    const { id, status } = confirmDebt;
+    setConfirmDebt(null);
+    try { await api.updateProDebt(id, status); await loadDebts(); }
+    catch { setDebtsError(true); }
+  }
 
   const currency = data?.currency ?? 'COP';
 
@@ -412,6 +444,115 @@ export default function AnalyticsPanel({ role = 'business' }) {
           )}
         </>
       )}
+
+      {/* ── Clientes con multa (solo profesional; independiente del período) ── */}
+      {role === 'professional' && debtsError && (
+        <div style={{
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)', padding: 'var(--sp-4) var(--sp-5)',
+          display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+        }}>
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            No se pudieron cargar las multas de clientes.
+          </span>
+          <button className="btn btn-secondary btn-sm" onClick={loadDebts}>Reintentar</button>
+        </div>
+      )}
+      {role === 'professional' && debts && debts.debts?.length > 0 && (
+        <div style={{
+          background: 'var(--surface-2)', border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)',
+        }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', marginBottom: 'var(--sp-4)', color: 'var(--text)' }}>
+            Clientes con multa
+          </p>
+
+          {/* Resumen de deuda */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
+            <StatCard label="Deuda pendiente" value={fmt(debts.summary?.pendingTotal ?? 0, currency)} accent />
+            <StatCard label="Deudores" value={debts.summary?.debtors ?? 0} />
+            <StatCard label="Cobrado" value={fmt(debts.summary?.paidTotal ?? 0, currency)} />
+            <StatCard label="Perdonado" value={fmt(debts.summary?.forgivenTotal ?? 0, currency)} />
+          </div>
+
+          {/* Listado de multas */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+            {debts.debts.map(d => {
+              const meta = DEBT_STATUS_META[d.status] ?? DEBT_STATUS_META.PENDING;
+              return (
+                <div key={d.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap',
+                  padding: 'var(--sp-3) var(--sp-4)',
+                  border: `1px solid ${d.status === 'PENDING' ? 'rgba(239,68,68,0.25)' : 'var(--border)'}`,
+                  borderRadius: 'var(--r-lg)',
+                  background: d.status === 'PENDING' ? 'rgba(239,68,68,0.04)' : 'transparent',
+                }}>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text)' }}>
+                      {d.client?.name ?? 'Cliente'}
+                      {d.client?.phone && <span style={{ fontWeight: 500, color: 'var(--text-muted)', marginLeft: 8, fontSize: 'var(--text-xs)' }}>{d.client.phone}</span>}
+                    </p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
+                      {d.booking?.serviceName ?? 'Cita'} · {fmtDebtDate(d.booking?.date)}{d.booking?.startTime ? ` ${d.booking.startTime}` : ''}
+                      <span style={{ margin: '0 6px' }}>·</span>
+                      {DEBT_REASON_LABEL[d.reason] ?? d.reason}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right', minWidth: 90 }}>
+                    <p style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: d.status === 'PENDING' ? '#ef4444' : 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+                      {fmt(d.amount, currency)}
+                    </p>
+                    <p style={{ fontSize: 10, color: 'var(--text-subtle)' }}>Multa: {fmtDebtDate(d.createdAt)}</p>
+                  </div>
+                  <span style={{
+                    padding: '3px 10px', borderRadius: 999, flexShrink: 0,
+                    fontSize: 'var(--text-xs)', fontWeight: 700,
+                    color: meta.color, background: meta.bg,
+                  }}>
+                    {meta.label}
+                  </span>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)', flexShrink: 0 }}>
+                    {d.status === 'PENDING' ? (
+                      <>
+                        <button
+                          className="btn btn-sm"
+                          style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.25)', fontWeight: 700 }}
+                          onClick={() => setConfirmDebt({ id: d.id, status: 'PAID', text: `¿Marcar como cobrada la multa de ${fmt(d.amount, currency)} de ${d.client?.name ?? 'este cliente'}?` })}
+                        >
+                          Cobrada
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => setConfirmDebt({ id: d.id, status: 'FORGIVEN', text: `¿Perdonar la multa de ${fmt(d.amount, currency)} de ${d.client?.name ?? 'este cliente'}? Dejará de contar como deuda.` })}
+                        >
+                          Perdonar
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setConfirmDebt({ id: d.id, status: 'PENDING', text: `¿Volver a marcar como pendiente la multa de ${fmt(d.amount, currency)}?` })}
+                      >
+                        Volver a pendiente
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={!!confirmDebt}
+        title="Actualizar multa"
+        message={confirmDebt?.text}
+        confirmLabel="Sí, confirmar"
+        cancelLabel="Volver"
+        onConfirm={applyDebtStatus}
+        onCancel={() => setConfirmDebt(null)}
+      />
     </div>
   );
 }

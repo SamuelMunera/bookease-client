@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
+import { fmtMoney, currencyForCountry } from '../utils/currency';
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -22,7 +23,12 @@ function isValidId(v) {
 // Política de cancelación real del profesional/negocio (F-003). El backend
 // devuelve cancelMinHours (0 = flexible). Mientras se carga (null) mostramos un
 // texto neutro para no afirmar un plazo incorrecto.
-function cancelPolicyText(h) {
+// Con multa activa (fee.enabled) el bloqueo por horas NO aplica: se puede
+// cancelar siempre, pero cancelar tarde genera deuda — el texto lo comunica.
+function cancelPolicyText(h, fee, currency) {
+  if (fee?.enabled && fee.windowHours > 0 && fee.amount > 0) {
+    return `Cancelación gratuita hasta ${fee.windowHours} h antes; después aplica multa de ${fmtMoney(fee.amount, currency)}`;
+  }
   if (h === null || h === undefined) return 'Cancelación gratuita';
   if (h <= 0) return 'Cancelación flexible';
   if (h === 1) return 'Cancelación gratuita hasta 1 h antes';
@@ -205,6 +211,10 @@ export default function BookingPage() {
   const [slotTaken,  setSlotTaken]  = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [cancelMinHours, setCancelMinHours] = useState(null);
+  // Política de multa del profesional (shape público del backend) + país para
+  // formatear el monto en su moneda.
+  const [feePolicy,  setFeePolicy]  = useState(null);
+  const [proCountry, setProCountry] = useState(null);
 
   const paramsValid = isValidId(professionalId) && isValidId(serviceId);
 
@@ -224,7 +234,12 @@ export default function BookingPage() {
     if (!isValidId(professionalId)) return;
     let alive = true;
     api.getProfessional(professionalId)
-      .then(p => { if (alive) setCancelMinHours(p?.cancelMinHours ?? 0); })
+      .then(p => {
+        if (!alive) return;
+        setCancelMinHours(p?.cancelMinHours ?? 0);
+        setFeePolicy(p?.cancellationFee ?? null);
+        setProCountry(p?.country ?? null);
+      })
       .catch(() => { /* fallback: texto neutro mientras cancelMinHours === null */ });
     return () => { alive = false; };
   }, [professionalId]);
@@ -435,7 +450,7 @@ export default function BookingPage() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
-          {cancelPolicyText(cancelMinHours)}
+          {cancelPolicyText(cancelMinHours, feePolicy, currencyForCountry(proCountry))}
         </p>
         <button
           className="btn btn-primary btn-lg"

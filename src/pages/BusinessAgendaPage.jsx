@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
+import { fmtMoney, currencyForCountry } from '../utils/currency';
 
 const DAYS_ES   = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -109,7 +110,7 @@ function StatCard({ num, label, color, icon }) {
 }
 
 /* ── Timeline row ────────────────────────────────────────── */
-function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone }) {
+function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone, currency }) {
   const [confirm, setConfirm] = useState(null); // 'no-show' | 'complete' | 'cancel' | null
   const statusColor = {
     CONFIRMED: 'var(--success)',
@@ -177,6 +178,19 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone })
             </div>
           );
         })()}
+
+        {/* Deuda pendiente del cliente (multas por cancelación / no-show) */}
+        {b.clientDebt?.pendingTotal > 0 && (
+          <div style={{
+            marginTop: 'var(--sp-2)', padding: 'var(--sp-2) var(--sp-3)',
+            borderRadius: 'var(--r-md)', background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            fontSize: 'var(--text-xs)', fontWeight: 600, color: '#ef4444',
+          }}>
+            ⚠ Deuda pendiente: {fmtMoney(b.clientDebt.pendingTotal, currency)}
+            {b.clientDebt.pendingCount > 1 ? ` (${b.clientDebt.pendingCount} multas)` : ''}
+          </div>
+        )}
 
         {/* Actions */}
         {!['CANCELLED', 'NO_SHOW', 'COMPLETED'].includes(b.status) && (
@@ -566,6 +580,7 @@ export default function BusinessAgendaPage() {
               onNoShow={handleNoShow}
               onComplete={handleComplete}
               timezone={selectedTimezone}
+              currency={currencyForCountry(businesses.find(x => x.id === businessId)?.country)}
             />
           ))}
         </div>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
 import api from '../api';
+import { fmtMoney, currencyForCountry } from '../utils/currency';
 
 const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED: 'Cancelada' };
 const STATUS_BADGE = { CONFIRMED: 'badge-confirmed', PENDING: 'badge-pending', CANCELLED: 'badge-cancelled' };
@@ -22,6 +23,18 @@ function fmtLong(dateStr) {
   return new Date(toDateOnly(dateStr) + 'T00:00:00').toLocaleDateString('es-CO', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
+}
+
+// Hint en cliente de si cancelar AHORA cae dentro de la ventana de multa del
+// profesional. Es solo informativo (hora local del navegador): la autoridad
+// para crear la deuda es el backend al procesar la cancelación.
+function cancelFeeApplies(b) {
+  const fee = b.professional?.cancellationFee;
+  if (!fee?.enabled || !fee.windowHours || !fee.amount) return null;
+  const start = new Date(`${toDateOnly(b.date)}T${b.startTime || '00:00'}:00`);
+  if (Number.isNaN(start.getTime())) return null;
+  const hoursLeft = (start.getTime() - Date.now()) / 36e5;
+  return hoursLeft < fee.windowHours ? fee : null;
 }
 
 /* ── Stat card ───────────────────────────────────────────── */
@@ -277,7 +290,12 @@ function AgendaBookingRow({ b, onCancel, onRescheduled }) {
         open={confirmCancel}
         variant="danger"
         title="Cancelar reserva"
-        message="¿Cancelar esta reserva? Esta acción no se puede deshacer."
+        message={(() => {
+          const fee = cancelFeeApplies(b);
+          if (!fee) return '¿Cancelar esta reserva? Esta acción no se puede deshacer.';
+          const cur = currencyForCountry(b.professional?.country);
+          return `Estás cancelando con menos de ${fee.windowHours}h de anticipación. Se aplicará una multa de ${fmtMoney(fee.amount, cur)} que quedará como deuda pendiente con el profesional. ¿Cancelar de todos modos?`;
+        })()}
         confirmLabel="Sí, cancelar"
         cancelLabel="No, volver"
         onConfirm={doCancel}
@@ -295,6 +313,8 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState('upcoming');
+  // Aviso de multa generada por la última cancelación (respuesta del backend)
+  const [feeNotice, setFeeNotice] = useState('');
 
   const isPro = user?.role === 'PROFESSIONAL';
 
@@ -308,7 +328,13 @@ export default function MyBookingsPage() {
   useEffect(() => { load(); }, [isPro]);
 
   async function handleCancel(id, isHome) {
-    await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));
+    const res = await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));
+    // El backend es la autoridad: informa si esta cancelación generó multa.
+    if (res?.feeApplied?.amount) {
+      const b = bookings.find(x => x.id === id);
+      const cur = currencyForCountry(b?.professional?.country);
+      setFeeNotice(`Tu cancelación generó una multa de ${fmtMoney(res.feeApplied.amount, cur)}. Quedó registrada como deuda pendiente con el profesional.`);
+    }
     load();
   }
 
@@ -343,6 +369,26 @@ export default function MyBookingsPage() {
           </div>
         )}
       </div>
+
+      {/* ── Aviso de multa por cancelación tardía ── */}
+      {feeNotice && (
+        <div style={{
+          display:'flex', alignItems:'center', gap:'var(--sp-3)',
+          margin:'var(--sp-4) 0', padding:'var(--sp-3) var(--sp-4)',
+          borderRadius:'var(--r-lg)', background:'rgba(239,68,68,.08)',
+          border:'1px solid rgba(239,68,68,.25)', fontSize:'var(--text-sm)', color:'var(--error)',
+        }}>
+          <span style={{ flex:1, lineHeight:1.5 }}>{feeNotice}</span>
+          <button
+            type="button"
+            aria-label="Cerrar aviso"
+            onClick={() => setFeeNotice('')}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'inherit', fontSize:16, lineHeight:1, padding:4 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* ── Loading ── */}
       {loading && (

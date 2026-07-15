@@ -198,8 +198,13 @@ const api = {
   getProServiceConfigs: () => request('/pro/me/service-configs'),
   saveProServiceConfigs: (configs) => request('/pro/me/service-configs', { method: 'PUT', body: JSON.stringify({ configs }) }),
   updateProBuffer: (bufferTime) => request('/pro/me/buffer', { method: 'PATCH', body: JSON.stringify({ bufferTime }) }),
-  updateProCancelPolicy: (cancelMinHours) => request('/pro/me/cancel-policy', { method: 'PATCH', body: JSON.stringify({ cancelMinHours }) }),
+  // Acepta la política completa: { cancelMinHours?, feeEnabled?, feeWindowHours?, feeAmount? }
+  updateProCancelPolicy: (policy) => request('/pro/me/cancel-policy', { method: 'PATCH', body: JSON.stringify(policy) }),
   updateBizCancelPolicy: (bizId, cancelMinHours) => request(`/businesses/${bizId}`, { method: 'PUT', body: JSON.stringify({ cancelMinHours }) }),
+
+  // Multas por cancelación tardía / no-show (deudas del cliente con el profesional)
+  getProDebts: (status) => request(`/pro/me/debts${status ? `?status=${status}` : ''}`),
+  updateProDebt: (id, status) => request(`/pro/me/debts/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 
   // Join requests
   submitJoinRequest: (code) => request('/pro/join', { method: 'POST', body: JSON.stringify({ code }) }),
