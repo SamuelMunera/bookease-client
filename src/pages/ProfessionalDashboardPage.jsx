@@ -74,8 +74,92 @@ function AgendaStatCard({ num, label, color, icon }) {
   );
 }
 
-function ProTimelineRow({ b, onNoShow, onComplete, currency }) {
+// Aplazar desde la agenda del profesional: misma mecánica que el panel del
+// cliente en MyBookingsPage (fecha → slots reales → PATCH reschedule). El
+// backend notifica por correo al cliente que el profesional movió la cita.
+function ProReschedulePanel({ b, onDone, onClose }) {
+  const [date,      setDate]      = useState('');
+  const [slots,     setSlots]     = useState([]);
+  const [slotLoad,  setSlotLoad]  = useState(false);
+  const [startTime, setStartTime] = useState('');
+  const [saving,    setSaving]    = useState(false);
+  const [error,     setError]     = useState('');
+
+  useEffect(() => {
+    if (!date) { setSlots([]); setStartTime(''); return; }
+    setSlotLoad(true); setStartTime(''); setError('');
+    api.getSlots({ professionalId: b.professional.id, serviceId: b.service.id, date })
+      .then(data => setSlots(data.slots || []))
+      .catch(() => setSlots([]))
+      .finally(() => setSlotLoad(false));
+  }, [date]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!date || !startTime) return;
+    setSaving(true); setError('');
+    try {
+      const updated = await api.rescheduleBooking(b.id, { date, startTime });
+      onDone(updated);
+    } catch (err) { setError(err.message); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div style={{ marginTop:'var(--sp-3)', background:'var(--surface-2)', border:'1px solid var(--border)', borderRadius:'var(--r-lg)', padding:'var(--sp-4)' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'var(--sp-3)' }}>
+        <span style={{ fontSize:'var(--text-sm)', fontWeight:700, color:'var(--text)' }}>
+          Aplazar cita · {b.client?.name ?? 'Cliente'}
+        </span>
+        <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)', display:'flex', padding:4 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <p style={{ fontSize:'var(--text-xs)', color:'var(--text-muted)', marginBottom:'var(--sp-3)' }}>
+        El cliente recibirá un correo con el nuevo horario.
+      </p>
+      <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:'var(--sp-3)' }}>
+        <input
+          type="date" className="input" value={date}
+          min={new Date().toISOString().split('T')[0]}
+          onChange={e => setDate(e.target.value)} required
+          style={{ maxWidth: 200 }}
+        />
+        {date && (
+          slotLoad ? (
+            <div style={{ display:'flex', gap:'var(--sp-2)', flexWrap:'wrap' }}>
+              {[1,2,3,4].map(n => <div key={n} className="skeleton" style={{ width:66, height:34, borderRadius:'var(--r-md)' }} />)}
+            </div>
+          ) : slots.length === 0 ? (
+            <p style={{ fontSize:'var(--text-sm)', color:'var(--text-subtle)' }}>Sin disponibilidad ese día. Prueba con otra fecha.</p>
+          ) : (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'var(--sp-2)' }}>
+              {slots.map(s => {
+                const active = startTime === s.startTime;
+                return (
+                  <button key={s.startTime} type="button" onClick={() => setStartTime(s.startTime)}
+                    style={{ minWidth:66, padding:'7px 14px', borderRadius:'var(--r-md)', border:`1.5px solid ${active ? 'var(--gold)' : 'var(--border)'}`, background: active ? 'var(--gold-subtle)' : 'var(--surface-3)', color: active ? 'var(--gold)' : 'var(--text-muted)', fontSize:'var(--text-sm)', fontWeight: active ? 700 : 500, cursor:'pointer', transition:'border-color .12s, background .12s, color .12s' }}>
+                    {s.startTime}
+                  </button>
+                );
+              })}
+            </div>
+          )
+        )}
+        {error && <p style={{ fontSize:'var(--text-sm)', color:'var(--error)' }}>{error}</p>}
+        <div>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={!date || !startTime || saving}>
+            {saving ? 'Guardando…' : 'Confirmar cambio'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ProTimelineRow({ b, onNoShow, onComplete, onCancel, onRescheduled, currency }) {
   const [confirmAction, setConfirmAction] = useState(null);
+  const [showReschedule, setShowReschedule] = useState(false);
   const statusColor = {
     CONFIRMED: 'var(--success)', PENDING: 'var(--warning)',
     CANCELLED: 'var(--text-subtle)', COMPLETED: 'var(--text-muted)', NO_SHOW: '#ef4444',
@@ -171,6 +255,61 @@ function ProTimelineRow({ b, onNoShow, onComplete, currency }) {
               </div>
             )}
           </div>
+        )}
+
+        {/* Acciones para citas futuras: aplazar / cancelar (con correo al cliente) */}
+        {!isTerminal && !isPastBooking(b) && (
+          <div className="agenda-row-actions" style={{ marginTop: 'var(--sp-3)', flexWrap: 'wrap' }}>
+            {confirmAction === null ? (
+              <>
+                {b.service?.id && b.type !== 'HOME_SERVICE' && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setShowReschedule(v => !v)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                      <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                      <path d="M8 16H3v5"/>
+                    </svg>
+                    Aplazar
+                  </button>
+                )}
+                <button
+                  className="btn btn-sm"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', fontWeight: 700 }}
+                  onClick={() => setConfirmAction('cancel')}
+                >
+                  Cancelar
+                </button>
+              </>
+            ) : confirmAction === 'cancel' && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
+                padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--r-md)',
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+              }}>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: '#ef4444' }}>
+                  ¿Cancelar esta cita? El cliente recibirá un correo.
+                </span>
+                <button
+                  className="btn btn-sm"
+                  style={{ padding: '3px 12px', fontWeight: 700, background: '#ef4444', color: '#000', border: 'none' }}
+                  onClick={() => { setConfirmAction(null); onCancel(b.id); }}
+                >
+                  Sí
+                </button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setConfirmAction(null)}>
+                  No
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {showReschedule && (
+          <ProReschedulePanel
+            b={b}
+            onDone={(updated) => { setShowReschedule(false); onRescheduled(updated); }}
+            onClose={() => setShowReschedule(false)}
+          />
         )}
       </div>
     </div>
@@ -1597,6 +1736,21 @@ export default function ProfessionalDashboardPage() {
             setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'COMPLETED' } : b));
           } catch (e) { setAgendaError(e.message); }
         }
+        async function handleProCancel(id) {
+          setAgendaError('');
+          try {
+            await api.cancelBookingAsPro(id);
+            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'CANCELLED' } : b));
+          } catch (e) { setAgendaError(e.message); }
+        }
+        function handleProRescheduled(updated) {
+          // La cita puede moverse a otra fecha: se actualiza y el filtro por
+          // día de la agenda la reubica solo.
+          if (!updated?.id) return;
+          setBookings(prev => prev.map(b => b.id === updated.id
+            ? { ...b, date: updated.date, startTime: updated.startTime, endTime: updated.endTime, status: updated.status }
+            : b));
+        }
         return (
           <div className="pro-agenda">
             {/* Header */}
@@ -1695,6 +1849,8 @@ export default function ProfessionalDashboardPage() {
                     b={b}
                     onNoShow={handleProNoShow}
                     onComplete={handleProComplete}
+                    onCancel={handleProCancel}
+                    onRescheduled={handleProRescheduled}
                     currency={currencyForCountry(pro?.country)}
                   />
                 ))}

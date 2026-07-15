@@ -342,6 +342,7 @@ const api = {
   getMyBookings: () => request('/bookings/me'),
   cancelBooking: (id) => request(`/bookings/${id}/cancel`, { method: 'PATCH' }),
   cancelBookingAsOwner: (id) => request(`/bookings/${id}/cancel-owner`, { method: 'PATCH' }),
+  cancelBookingAsPro: (id) => request(`/bookings/${id}/cancel-professional`, { method: 'PATCH' }),
   confirmBooking: (id) => request(`/bookings/${id}/confirm`, { method: 'PATCH' }),
   markNoShow: (id) => request(`/bookings/${id}/no-show`, { method: 'PATCH' }),
   markComplete: (id) => request(`/bookings/${id}/complete`, { method: 'PATCH' }),

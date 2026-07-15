@@ -328,7 +328,12 @@ export default function MyBookingsPage() {
   useEffect(() => { load(); }, [isPro]);
 
   async function handleCancel(id, isHome) {
-    const res = await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));
+    // En modo profesional la agenda es propia: cancela por el endpoint del
+    // profesional (sin multa, con correo al cliente). Como cliente, el flujo
+    // normal con política de multa.
+    const res = await (isPro ? api.cancelBookingAsPro(id)
+      : isHome ? api.cancelHomeBooking(id)
+      : api.cancelBooking(id));
     // El backend es la autoridad: informa si esta cancelación generó multa.
     if (res?.feeApplied?.amount) {
       const b = bookings.find(x => x.id === id);
