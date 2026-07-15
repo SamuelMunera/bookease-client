@@ -5,6 +5,7 @@ import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
 import { COUNTRIES, US_TIMEZONES } from '../utils/countryConfig';
 import { fmtMoney, currencyForCountry } from '../utils/currency';
+import { nowInTimezone, todayInTimezone } from '../utils/time';
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import TrialStatusBanner from '../components/TrialStatusBanner';
 
@@ -15,27 +16,31 @@ function fmtAgendaFull(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   return `${AGENDA_DAYS[d.getDay()]} ${d.getDate()} de ${AGENDA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
-function isAgendaToday(dateStr) {
-  const t = new Date(); t.setHours(0,0,0,0);
-  return new Date(dateStr + 'T00:00:00').getTime() === t.getTime();
+function isAgendaToday(dateStr, tz) {
+  return dateStr === todayInTimezone(tz);
 }
 
 const AGENDA_STATUS_BADGE = { CONFIRMED:'badge-confirmed', PENDING:'badge-pending', CANCELLED:'badge-cancelled', COMPLETED:'badge-confirmed', NO_SHOW:'badge-cancelled' };
 const AGENDA_STATUS_LABEL = { CONFIRMED:'Confirmada', PENDING:'Pendiente', CANCELLED:'Cancelada', COMPLETED:'Completada', NO_SHOW:'No asistió' };
 
-function isPastBooking(b) {
-  const today = new Date().toISOString().slice(0, 10);
-  if (b.date.slice(0, 10) < today) return true;
-  if (b.date.slice(0, 10) === today) {
-    const now = new Date();
+// La cita es pasada según la hora en la timezone del profesional (patrón
+// F-004, igual que BusinessAgendaPage). Con la fecha UTC de toISOString() las
+// citas de hoy quedaban marcadas como pasadas desde las ~19:00 en América
+// (UTC ya va en "mañana"): ocultaba Aplazar/Cancelar y mostraba
+// Completar/No asistió en citas futuras.
+function isPastBooking(b, tz) {
+  const now = nowInTimezone(tz);
+  const bookingDate = b.date.slice(0, 10);
+  if (bookingDate < now.date) return true;
+  if (bookingDate === now.date) {
     const [h, m] = (b.startTime || '00:00').split(':').map(Number);
-    return now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
+    return now.hour > h || (now.hour === h && now.minute >= m);
   }
   return false;
 }
 
-function AgendaDateNav({ value, onChange }) {
-  const today = new Date().toISOString().split('T')[0];
+function AgendaDateNav({ value, onChange, timezone }) {
+  const today = todayInTimezone(timezone);
   function shift(days) {
     const d = new Date(value + 'T00:00:00');
     d.setDate(d.getDate() + days);
@@ -157,7 +162,7 @@ function ProReschedulePanel({ b, onDone, onClose }) {
   );
 }
 
-function ProTimelineRow({ b, onNoShow, onComplete, onCancel, onRescheduled, currency }) {
+function ProTimelineRow({ b, onConfirm, onNoShow, onComplete, onCancel, onRescheduled, currency, timezone }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
   const statusColor = {
@@ -213,7 +218,7 @@ function ProTimelineRow({ b, onNoShow, onComplete, onCancel, onRescheduled, curr
         )}
 
         {/* Actions for past, non-terminal bookings */}
-        {!isTerminal && isPastBooking(b) && (
+        {!isTerminal && isPastBooking(b, timezone) && (
           <div className="agenda-row-actions" style={{ marginTop: 'var(--sp-3)' }}>
             {confirmAction === null ? (
               <>
@@ -258,10 +263,16 @@ function ProTimelineRow({ b, onNoShow, onComplete, onCancel, onRescheduled, curr
         )}
 
         {/* Acciones para citas futuras: aplazar / cancelar (con correo al cliente) */}
-        {!isTerminal && !isPastBooking(b) && (
+        {!isTerminal && !isPastBooking(b, timezone) && (
           <div className="agenda-row-actions" style={{ marginTop: 'var(--sp-3)', flexWrap: 'wrap' }}>
             {confirmAction === null ? (
               <>
+                {b.status === 'PENDING' && (
+                  <button className="btn btn-success btn-sm" onClick={() => onConfirm(b.id)}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Confirmar
+                  </button>
+                )}
                 {b.service?.id && b.type !== 'HOME_SERVICE' && (
                   <button className="btn btn-secondary btn-sm" onClick={() => setShowReschedule(v => !v)}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -553,7 +564,9 @@ export default function ProfessionalDashboardPage() {
   const [homeScheduleMsg, setHomeScheduleMsg] = useState('');
 
   // Agenda tab
-  const [agendaDate, setAgendaDate] = useState(() => new Date().toISOString().split('T')[0]);
+  // "Hoy" en la timezone del negocio (fallback Bogotá), no la fecha UTC: con
+  // toISOString() la agenda abría en mañana desde las ~19:00 locales.
+  const [agendaDate, setAgendaDate] = useState(() => todayInTimezone());
   const [agendaError, setAgendaError] = useState('');
 
   // Schedule
@@ -959,7 +972,9 @@ export default function ProfessionalDashboardPage() {
     finally { setUnlinkLoading(false); }
   }
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  // "Hoy" en la timezone del profesional (no UTC): después de las ~19:00 en
+  // América la fecha UTC ya es mañana y desplazaba "Próximas" y "Hoy".
+  const todayStr = todayInTimezone(profile?.timezone);
   const upcomingBookings = bookings.filter(b =>
     b.status !== 'CANCELLED' && b.date >= todayStr
   );
@@ -1722,6 +1737,13 @@ export default function ProfessionalDashboardPage() {
         const aCancelled = agendaBookings.filter(b => b.status === 'CANCELLED');
         const aNoShow    = agendaBookings.filter(b => b.status === 'NO_SHOW');
 
+        async function handleProConfirm(id) {
+          setAgendaError('');
+          try {
+            await api.confirmBooking(id);
+            setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'CONFIRMED' } : b));
+          } catch (e) { setAgendaError(e.message); }
+        }
         async function handleProNoShow(id) {
           setAgendaError('');
           try {
@@ -1762,7 +1784,7 @@ export default function ProfessionalDashboardPage() {
                   {agendaDate ? fmtAgendaFull(agendaDate) : 'Selecciona una fecha'}
                 </p>
               </div>
-              {isAgendaToday(agendaDate) && (
+              {isAgendaToday(agendaDate, pro?.timezone) && (
                 <div className="agenda-today-pill">
                   <span className="agenda-today-dot" />
                   Hoy
@@ -1772,7 +1794,7 @@ export default function ProfessionalDashboardPage() {
 
             {/* Controls */}
             <div className="agenda-controls">
-              <AgendaDateNav value={agendaDate} onChange={setAgendaDate} />
+              <AgendaDateNav value={agendaDate} onChange={setAgendaDate} timezone={pro?.timezone} />
             </div>
 
             {/* Stats */}
@@ -1847,11 +1869,13 @@ export default function ProfessionalDashboardPage() {
                   <ProTimelineRow
                     key={b.id}
                     b={b}
+                    onConfirm={handleProConfirm}
                     onNoShow={handleProNoShow}
                     onComplete={handleProComplete}
                     onCancel={handleProCancel}
                     onRescheduled={handleProRescheduled}
                     currency={currencyForCountry(pro?.country)}
+                    timezone={pro?.timezone}
                   />
                 ))}
               </div>

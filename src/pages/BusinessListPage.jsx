@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCountry } from '../context/CountryContext';
 import useSEO from '../hooks/useSEO';
 import api from '../api';
+import { todayInTimezone } from '../utils/time';
 
 /* ─── constants ─────────────────────────────────────────── */
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
@@ -1123,7 +1124,9 @@ export default function BusinessListPage() {
             {getCalDays(calView.year, calView.month).map((day, i) => {
               if (!day) return <span key={i} />;
               const iso = `${calView.year}-${String(calView.month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-              const todayISO = new Date().toISOString().split('T')[0];
+              // "Hoy" local (no UTC): con toISOString() el calendario
+              // deshabilitaba el día actual desde las ~19:00 en América.
+              const todayISO = todayInTimezone();
               const isPast = iso < todayISO;
               const isSel  = iso === heroDate;
               return (

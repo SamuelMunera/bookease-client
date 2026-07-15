@@ -227,13 +227,15 @@ export default function HomeBookingPage() {
               </svg>
             </div>
           </div>
-          <h2 className="booking-success-title">¡Reserva confirmada!</h2>
+          {/* La reserva nace PENDING: la confirma el profesional, así que el
+              texto no debe prometer una cita ya confirmada. */}
+          <h2 className="booking-success-title">¡Solicitud de reserva enviada!</h2>
           <p className="booking-success-sub">
-            {prof?.name} llegará a tu domicilio el<br />
+            Pediste que {prof?.name} llegue a tu domicilio el<br />
             <strong style={{ textTransform:'capitalize' }}>{formatLabel(date)}</strong> a las <strong>{selectedSlot?.startTime}</strong>
           </p>
           <p className="booking-success-note">
-            Dirección: {success.clientAddress}
+            El profesional la confirmará pronto. Dirección: {success.clientAddress}
           </p>
           <div className="booking-success-actions">
             <button className="btn btn-primary" onClick={() => navigate('/my-bookings')}>

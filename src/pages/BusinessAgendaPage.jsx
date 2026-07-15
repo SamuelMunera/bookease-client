@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import ManualBookingModal from '../components/ManualBookingModal';
 import { fmtMoney, currencyForCountry } from '../utils/currency';
+import { nowInTimezone, todayInTimezone } from '../utils/time';
 
 const DAYS_ES   = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -24,22 +25,8 @@ const STATUS_LABEL = { CONFIRMED: 'Confirmada', PENDING: 'Pendiente', CANCELLED:
 const STATUS_BADGE = { CONFIRMED: 'badge-confirmed', PENDING: 'badge-pending', CANCELLED: 'badge-cancelled', COMPLETED: 'badge-confirmed', NO_SHOW: 'badge-cancelled' };
 
 // F-004: la hora "actual" debe evaluarse en la timezone del negocio, no en la
-// del navegador. Intl.DateTimeFormat con timeZone nos da fecha y hora locales
-// del negocio de forma fiable (hourCycle h23 garantiza 00–23).
-function nowInTimezone(tz) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: tz || 'America/Bogota',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(new Date());
-  const get = (t) => parts.find(p => p.type === t)?.value;
-  return {
-    date: `${get('year')}-${get('month')}-${get('day')}`,
-    hour: Number(get('hour')),
-    minute: Number(get('minute')),
-  };
-}
-
+// del navegador (nowInTimezone vive en utils/time, compartida con la agenda
+// del profesional).
 function isPast(b, tz) {
   const now = nowInTimezone(tz);
   const bookingDate = b.date.slice(0, 10);
@@ -52,8 +39,10 @@ function isPast(b, tz) {
 }
 
 /* ── Quick date nav ──────────────────────────────────────── */
-function DateNav({ value, onChange }) {
-  const today  = new Date().toISOString().split('T')[0];
+function DateNav({ value, onChange, timezone }) {
+  // "Hoy" en la timezone del negocio, no la fecha UTC (que ya va en mañana
+  // desde las ~19:00 locales en América).
+  const today  = todayInTimezone(timezone);
   function shift(days) {
     const d = new Date(value + 'T00:00:00');
     d.setDate(d.getDate() + days);
@@ -276,7 +265,9 @@ export default function BusinessAgendaPage() {
   const { user } = useAuth();
   const [businesses, setBusinesses] = useState([]);
   const [businessId, setBusinessId] = useState('');
-  const [date,       setDate]       = useState(new Date().toISOString().split('T')[0]);
+  // "Hoy" en timezone del negocio (fallback Bogotá; al montar aún no se conoce
+  // la del negocio). Con la fecha UTC la agenda abría en mañana tras las 19:00.
+  const [date,       setDate]       = useState(() => todayInTimezone());
   const [bookings,   setBookings]   = useState([]);
   const [loading,    setLoading]    = useState(false);
   // C-30: error de carga de la agenda (en vez de mostrar el empty-state al fallar).
@@ -406,7 +397,7 @@ export default function BusinessAgendaPage() {
           </select>
         )}
 
-        <DateNav value={date} onChange={setDate} />
+        <DateNav value={date} onChange={setDate} timezone={selectedTimezone} />
       </div>
 
       {/* ── Filtro por profesional ── */}

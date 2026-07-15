@@ -166,13 +166,15 @@ function SuccessScreen({ date, time, onViewBookings, onExplore }) {
         </div>
       </div>
 
-      <h2 className="booking-success-title">¡Reserva confirmada!</h2>
+      {/* La reserva nace PENDING: la confirma el negocio/profesional, así que
+          el texto no debe prometer una cita ya confirmada. */}
+      <h2 className="booking-success-title">¡Solicitud de reserva enviada!</h2>
       <p className="booking-success-sub">
-        Tu cita está agendada para el<br />
+        Pediste tu cita para el<br />
         <strong>{formatLabel(date)}</strong> a las <strong>{time}</strong>
       </p>
       <p className="booking-success-note">
-        Recibirás un correo de confirmación en breve.
+        El profesional la confirmará pronto y recibirás un correo con la confirmación.
       </p>
 
       <div className="booking-success-actions">
