@@ -377,26 +377,25 @@ html { scroll-padding-top: 68px; }
   box-shadow: 0 0 12px var(--gold-glow);
 }
 
-/* Context switch (negocio + profesional) */
-.nav-ctx-switch {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-/* User chip */
+/* User chip — trigger del menú de cuenta en escritorio */
 .nav-user-chip {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 4px 4px 4px 8px;
+  padding: 4px 10px 4px 8px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--r-full);
+  cursor: pointer;
   transition: border-color var(--ease);
 }
 .nav-user-chip:hover { border-color: var(--border-strong); }
+.nav-user-caret {
+  flex-shrink: 0;
+  color: var(--text-subtle);
+  transition: transform var(--ease);
+}
+.nav-user-chip[aria-expanded="true"] .nav-user-caret { transform: rotate(180deg); }
 
 .nav-user-avatar {
   width: 28px; height: 28px;
@@ -416,16 +415,6 @@ html { scroll-padding-top: 68px; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.nav-logout-btn {
-  width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: var(--r-full);
-  color: var(--text-subtle);
-  cursor: pointer;
-  transition: background var(--ease), border-color var(--ease), color var(--ease), transform var(--ease), box-shadow var(--ease), opacity var(--ease);
-}
-.nav-logout-btn:hover { background: var(--error-bg); color: var(--error); }
 
 /* Hamburger */
 .nav-hamburger {
@@ -526,6 +515,46 @@ html { scroll-padding-top: 68px; }
   background: var(--violet-subtle);
   color: var(--violet);
 }
+
+/* ── Menú de cuenta (hamburguesa de usuario) ──
+   El mismo JSX se pinta como dropdown anclado bajo el nav en escritorio y
+   como panel a pantalla completa en móvil (override en @media 768px). */
+.nav-user-menu {
+  position: fixed;
+  top: 76px; right: var(--sp-8);
+  width: 320px;
+  max-height: calc(100vh - 92px);
+  z-index: var(--z-mobile-menu);
+  background: var(--menu-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  display: flex; flex-direction: column;
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  gap: var(--sp-1);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeIn 0.15s ease;
+}
+.nav-menu-section {
+  display: block;
+  padding: var(--sp-2) var(--sp-4) 2px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-subtle);
+}
+.nav-mobile-link.active { color: var(--gold); background: var(--surface-2); }
+/* La navegación general solo se muestra en móvil: en escritorio ya está en .nav-center */
+.nav-menu-general { display: none; }
+.nav-menu-logout {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; text-align: left;
+  color: var(--error);
+  border-top: 1px solid var(--border);
+  margin-top: var(--sp-2); padding-top: 14px;
+}
+.nav-menu-logout:hover { background: var(--error-bg); color: var(--error); }
 
 .nav-mobile-cta {
   margin-top: var(--sp-2);
@@ -1186,7 +1215,6 @@ html { scroll-padding-top: 68px; }
   .footer-brand-desc { max-width: 100%; }
   /* R-011: raise nav control tap targets on touch/tablet widths */
   .theme-toggle { width: 44px; height: 44px; }
-  .nav-logout-btn { width: 44px; height: 44px; }
 }
 
 @media (max-width: 768px) {
@@ -1197,9 +1225,19 @@ html { scroll-padding-top: 68px; }
   .nav-link { display: none; }
   .nav-cta-outline { display: none; }
   .theme-toggle { display: none; }
-  .nav-user-name { display: none; }
-  .nav-ctx-switch { display: none; }
-  .nav-user-chip { display: none; }
+  .nav-user-chip { display: none; } /* en móvil el trigger es la hamburguesa */
+  /* Menú de cuenta: de dropdown anclado a panel completo bajo el nav de 60px */
+  .nav-user-menu {
+    top: 60px; left: 0; right: 0; bottom: 0;
+    width: auto; max-height: none;
+    border: none; border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    box-shadow: none;
+    padding: var(--sp-4) var(--sp-5) var(--sp-6);
+    gap: var(--sp-2);
+  }
+  .nav-menu-general { display: contents; }
+  .nav-menu-logout { margin-top: auto; } /* logout siempre visible al fondo */
   .footer-cta-inner { flex-direction: column; align-items: flex-start; padding: var(--sp-8) var(--sp-5); }
   .footer-body { grid-template-columns: 1fr 1fr; padding: var(--sp-8) var(--sp-5); gap: var(--sp-6); }
   .footer-brand-col { grid-column: 1 / -1; flex-direction: column; }
