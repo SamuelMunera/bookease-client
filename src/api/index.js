@@ -393,6 +393,15 @@ const api = {
   deletePromotion:    (id)       => request(`/promotions/me/${id}`, { method: 'DELETE' }),
   getPublicPromotions:(bizId)    => request(`/promotions/${bizId}/active`),
   getPromotedBusinesses: ()      => request('/promotions/promoted-businesses'),
+
+  // Loyalty (fidelización punch-card, plan Estudio)
+  getMyLoyaltyProgram:   ()             => request('/loyalty/me'),
+  updateLoyaltyProgram:  (body)         => request('/loyalty/me', { method: 'PUT', body: JSON.stringify(body) }),
+  getLoyaltyClients:     (params = {})  => request(`/loyalty/me/clients?${new URLSearchParams(params)}`),
+  getMyLoyaltyCards:     ()             => request('/loyalty/me/cards'),
+  getBusinessLoyaltyCard:(bizId)        => request(`/loyalty/businesses/${bizId}/card`),
+  getPublicLoyaltyProgram:(bizId)       => request(`/loyalty/businesses/${bizId}/program`),
+  redeemLoyaltyReward:   (rewardId)     => request(`/loyalty/rewards/${rewardId}/redeem`, { method: 'POST' }),
 };
 
 export default api;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ConfirmModal from '../components/ConfirmModal';
+import LoyaltyPunchCard from '../components/LoyaltyPunchCard';
 import api from '../api';
 import { fmtMoney, currencyForCountry } from '../utils/currency';
 
@@ -315,6 +316,9 @@ export default function MyBookingsPage() {
   const [tab,      setTab]      = useState('upcoming');
   // Aviso de multa generada por la última cancelación (respuesta del backend)
   const [feeNotice, setFeeNotice] = useState('');
+  // Fidelización: tarjetas de sellos del cliente
+  const [loyaltyCards, setLoyaltyCards] = useState([]);
+  const [dismissedReward, setDismissedReward] = useState(false);
 
   const isPro = user?.role === 'PROFESSIONAL';
 
@@ -326,6 +330,19 @@ export default function MyBookingsPage() {
   // Re-cargar cuando cambie el rol: si el rol se hidrata después del mount
   // (isPro pasa de false a true), esto asegura llamar al endpoint correcto.
   useEffect(() => { load(); }, [isPro]);
+
+  // Tarjetas de fidelidad: solo para clientes (no aplica en modo profesional).
+  useEffect(() => {
+    if (isPro) { setLoyaltyCards([]); return; }
+    api.getMyLoyaltyCards()
+      .then(d => setLoyaltyCards(Array.isArray(d?.cards) ? d.cards : []))
+      .catch(() => setLoyaltyCards([]));
+  }, [isPro]);
+
+  // Recompensas ganadas y pendientes de canjear (para el aviso destacado).
+  const earnedRewards = loyaltyCards.flatMap(c =>
+    (c.rewards || []).filter(r => r.status === 'EARNED').map(r => ({ ...r, business: c.business }))
+  );
 
   async function handleCancel(id, isHome) {
     // En modo profesional la agenda es propia: cancela por el endpoint del
@@ -351,9 +368,12 @@ export default function MyBookingsPage() {
     { key: 'upcoming',  label: 'Próximas',  count: upcoming.length,  color: 'var(--violet)' },
     { key: 'past',      label: 'Pasadas',   count: past.length,      color: 'var(--gold)' },
     { key: 'cancelled', label: 'Canceladas',count: cancelled.length, color: 'var(--text-subtle)' },
+    ...(!isPro && loyaltyCards.length > 0
+      ? [{ key: 'loyalty', label: 'Mis tarjetas', count: loyaltyCards.length, color: 'var(--gold)' }]
+      : []),
   ];
 
-  const visible = tab === 'upcoming' ? upcoming : tab === 'past' ? past : cancelled;
+  const visible = tab === 'upcoming' ? upcoming : tab === 'past' ? past : tab === 'cancelled' ? cancelled : [];
 
   return (
     <div className="page agenda-page" style={{ maxWidth: 900 }}>
@@ -388,6 +408,33 @@ export default function MyBookingsPage() {
             type="button"
             aria-label="Cerrar aviso"
             onClick={() => setFeeNotice('')}
+            style={{ background:'none', border:'none', cursor:'pointer', color:'inherit', fontSize:16, lineHeight:1, padding:4 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* ── Aviso de recompensa de fidelidad lista para canjear ── */}
+      {!isPro && !dismissedReward && earnedRewards.length > 0 && (
+        <div style={{
+          display:'flex', alignItems:'center', gap:'var(--sp-3)',
+          margin:'var(--sp-4) 0', padding:'var(--sp-3) var(--sp-4)',
+          borderRadius:'var(--r-lg)', background:'var(--gold-subtle)',
+          border:'1px solid var(--gold-border)', fontSize:'var(--text-sm)', color:'var(--text)',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-dark)" strokeWidth="2" style={{ flexShrink:0 }}>
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span style={{ flex:1, lineHeight:1.5 }}>
+            {earnedRewards.length === 1
+              ? <>¡Tienes una recompensa lista en <strong>{earnedRewards[0].business?.name}</strong>! Muéstrala en el mostrador para canjearla: <strong>{earnedRewards[0].rewardLabel}</strong>.</>
+              : <>¡Tienes <strong>{earnedRewards.length} recompensas</strong> listas para canjear! Revísalas en "Mis tarjetas".</>}
+          </span>
+          <button
+            type="button"
+            aria-label="Cerrar aviso"
+            onClick={() => setDismissedReward(true)}
             style={{ background:'none', border:'none', cursor:'pointer', color:'inherit', fontSize:16, lineHeight:1, padding:4 }}
           >
             ×
@@ -474,8 +521,26 @@ export default function MyBookingsPage() {
             ))}
           </div>
 
-          {/* Timeline */}
-          {visible.length === 0 ? (
+          {/* Tarjetas de fidelidad */}
+          {tab === 'loyalty' ? (
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:'var(--sp-4)' }}>
+              {loyaltyCards.map(card => {
+                const hasReward = (card.rewards || []).some(r => r.status === 'EARNED');
+                return (
+                  <LoyaltyPunchCard
+                    key={card.business?.id}
+                    stamps={card.stamps}
+                    target={card.stampsRequired}
+                    rewardLabel={card.rewardLabel}
+                    state={!card.active ? 'paused' : hasReward ? 'reward' : 'active'}
+                    businessName={card.business?.name}
+                    businessLogo={card.business?.logoUrl}
+                    cyclesCompleted={card.cyclesCompleted}
+                  />
+                );
+              })}
+            </div>
+          ) : visible.length === 0 ? (
             <div className="empty-state" style={{ padding:'var(--sp-8) 0' }}>
               <p style={{ fontSize:'var(--text-sm)', color:'var(--text-muted)' }}>Sin reservas en esta categoría.</p>
             </div>

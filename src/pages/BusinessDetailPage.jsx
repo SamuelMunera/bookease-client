@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import api from '../api';
 import RecommendedBusinesses from '../components/RecommendedBusinesses';
+import LoyaltyPunchCard from '../components/LoyaltyPunchCard';
 
 // Formato de moneda consistente con el resto de la página.
 function fmtCurrency(n) {
@@ -730,6 +731,8 @@ export default function BusinessDetailPage() {
   const [categories, setCategories]         = useState([]);
   const [hours, setHours]                   = useState([]);
   const [promotions, setPromotions]         = useState([]);
+  const [loyaltyProgram, setLoyaltyProgram] = useState(null); // { active, stampsRequired, rewardLabel }
+  const [loyaltyCard, setLoyaltyCard]       = useState(null); // tarjeta del cliente logueado
   const [selectedProf, setSelectedProf]     = useState('');
   const [selectedService, setSelectedService] = useState('');
   // Servicio que el cliente quiere reservar (p.ej. al pulsar "Reservar" en una
@@ -760,6 +763,8 @@ export default function BusinessDetailPage() {
     setSelectedService('');
     setPendingService('');
     setLoadError('');
+    setLoyaltyProgram(null);
+    setLoyaltyCard(null);
 
     Promise.all([
       api.getBusiness(id),
@@ -771,7 +776,8 @@ export default function BusinessDetailPage() {
       api.getBusinessServiceCategories(id).catch(() => []),
       api.getBusinessHours(id).catch(() => []),
       api.getPublicPromotions(id).catch(() => []),
-    ]).then(([biz, profs, svcs, bizStats, bizReviews, gal, cats, hrs, promos]) => {
+      api.getPublicLoyaltyProgram(id).catch(() => null),
+    ]).then(([biz, profs, svcs, bizStats, bizReviews, gal, cats, hrs, promos, loyalty]) => {
       if (!alive) return;
       if (!biz) { setLoadError('Negocio no encontrado.'); return; }
       setBusiness(biz);
@@ -784,6 +790,7 @@ export default function BusinessDetailPage() {
       setCategories(cats || []);
       setHours(hrs || []);
       setPromotions(Array.isArray(promos) ? promos : []);
+      setLoyaltyProgram(loyalty && loyalty.active ? loyalty : null);
     }).catch((err) => {
       if (!alive) return;
       setLoadError(err.message || 'No se pudo cargar el negocio.');
@@ -795,6 +802,9 @@ export default function BusinessDetailPage() {
   useEffect(() => {
     if (user?.role === 'CLIENT') {
       api.canReviewBusiness(id).then(r => setCanReview(r.canReview)).catch(() => {});
+      api.getBusinessLoyaltyCard(id).then(setLoyaltyCard).catch(() => setLoyaltyCard(null));
+    } else {
+      setLoyaltyCard(null);
     }
   }, [id, user]);
 
@@ -929,6 +939,42 @@ export default function BusinessDetailPage() {
       <BizHero business={business} stats={stats} promo={featuredPromo} onPromoCta={scrollToBooking} fontColors={fontColors} />
 
       <div className="page detail-page" ref={contentRef}>
+
+        {/* ── Tarjeta de fidelidad (si el negocio la tiene activa) ── */}
+        {loyaltyProgram && (
+          <section className="promo-section">
+            <div className="detail-section-label" style={{ marginBottom: 'var(--sp-5)' }}>
+              <div className="detail-section-label-line" />
+              <span>Tarjeta de fidelidad</span>
+              <div className="detail-section-label-line" />
+            </div>
+            <div style={{ maxWidth: 420, margin: '0 auto' }}>
+              {loyaltyCard && loyaltyCard.card ? (
+                /* Cliente logueado con progreso: mostramos su tarjeta real. */
+                <LoyaltyPunchCard
+                  stamps={loyaltyCard.card.stamps}
+                  target={loyaltyCard.program?.stampsRequired ?? loyaltyProgram.stampsRequired}
+                  rewardLabel={loyaltyCard.program?.rewardLabel ?? loyaltyProgram.rewardLabel}
+                  state={(loyaltyCard.rewards || []).some(r => r.status === 'EARNED') ? 'reward' : 'active'}
+                  cyclesCompleted={loyaltyCard.card.cyclesCompleted}
+                />
+              ) : (
+                /* Visitante o cliente sin sellos: mostramos el programa como gancho. */
+                <>
+                  <LoyaltyPunchCard
+                    stamps={0}
+                    target={loyaltyProgram.stampsRequired}
+                    rewardLabel={loyaltyProgram.rewardLabel}
+                    state="active"
+                  />
+                  <p style={{ textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginTop: 'var(--sp-3)' }}>
+                    Junta <strong>{loyaltyProgram.stampsRequired}</strong> sellos completando citas y gana <strong>{loyaltyProgram.rewardLabel}</strong>.
+                  </p>
+                </>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* ── Promociones activas (visibles al cliente) ── */}
         {promotions.length > 0 && (

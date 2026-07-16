@@ -154,7 +154,7 @@ function Steps({ step }) {
 }
 
 /* ── Success screen ──────────────────────────────────────── */
-function SuccessScreen({ date, time, onViewBookings, onExplore }) {
+function SuccessScreen({ date, time, loyalty, onViewBookings, onExplore }) {
   return (
     <div className="booking-success">
       {/* Confetti ring */}
@@ -176,6 +176,17 @@ function SuccessScreen({ date, time, onViewBookings, onExplore }) {
       <p className="booking-success-note">
         El profesional la confirmará pronto y recibirás un correo con la confirmación.
       </p>
+
+      {loyalty?.active && (
+        <p style={{
+          marginTop: 'var(--sp-3)', padding: 'var(--sp-2) var(--sp-4)',
+          borderRadius: 'var(--r-full)', display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)',
+          color: 'var(--gold-dark)', fontSize: 'var(--text-sm)', fontWeight: 600,
+        }}>
+          ⭐ Al completar esta cita sumarás un sello. Junta {loyalty.stampsRequired} y gana {loyalty.rewardLabel}.
+        </p>
+      )}
 
       <div className="booking-success-actions">
         <button className="btn btn-primary" onClick={onViewBookings}>
@@ -217,6 +228,8 @@ export default function BookingPage() {
   // formatear el monto en su moneda.
   const [feePolicy,  setFeePolicy]  = useState(null);
   const [proCountry, setProCountry] = useState(null);
+  // Programa de fidelidad del negocio (para reforzar en la pantalla de éxito).
+  const [loyaltyProgram, setLoyaltyProgram] = useState(null);
 
   const paramsValid = isValidId(professionalId) && isValidId(serviceId);
 
@@ -241,6 +254,12 @@ export default function BookingPage() {
         setCancelMinHours(p?.cancelMinHours ?? 0);
         setFeePolicy(p?.cancellationFee ?? null);
         setProCountry(p?.country ?? null);
+        const bizId = p?.businessId ?? p?.business?.id;
+        if (bizId) {
+          api.getPublicLoyaltyProgram(bizId)
+            .then(lp => { if (alive) setLoyaltyProgram(lp && lp.active ? lp : null); })
+            .catch(() => {});
+        }
       })
       .catch(() => { /* fallback: texto neutro mientras cancelMinHours === null */ });
     return () => { alive = false; };
@@ -297,6 +316,7 @@ export default function BookingPage() {
         <SuccessScreen
           date={date}
           time={selected?.startTime}
+          loyalty={loyaltyProgram}
           onViewBookings={() => navigate('/my-bookings')}
           onExplore={() => navigate('/')}
         />

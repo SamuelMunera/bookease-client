@@ -9,6 +9,7 @@ import BusinessOnboardingChecklist from '../components/BusinessOnboardingCheckli
 import ServiceModal from '../components/ServiceModal';
 import TrialStatusBanner from '../components/TrialStatusBanner';
 import ConfirmModal from '../components/ConfirmModal';
+import LoyaltyPunchCard from '../components/LoyaltyPunchCard';
 import { PLAN_NAMES_ES, getPlanLimit } from '../utils/plans';
 
 const CAT_LABEL = { BARBERSHOP: 'Barbería', SPA: 'Spa & Wellness', SALON: 'Salón de belleza' };
@@ -43,9 +44,38 @@ const TABS = [
   { key: 'finanzas',    label: 'Finanzas' },
   { key: 'referidos',   label: 'Referidos' },
   { key: 'promociones', label: 'Promociones' },
+  { key: 'fidelizacion', label: 'Fidelización' },
   { key: 'apariencia',  label: 'Apariencia' },
   { key: 'perfil',      label: 'Perfil' },
 ];
+
+// Tipos de recompensa del programa de fidelización (deben coincidir con el backend).
+const REWARD_TYPES = [
+  { value: 'FREE_SERVICE', label: 'Servicio gratis' },
+  { value: 'DISCOUNT',     label: 'Descuento (%)' },
+  { value: 'CUSTOM',       label: 'Beneficio personalizado' },
+];
+
+const EMPTY_LOYALTY = {
+  isActive: false,
+  stampsRequired: 8,
+  rewardType: 'FREE_SERVICE',
+  rewardServiceId: '',
+  rewardDiscount: '',
+  rewardDescription: '',
+};
+
+// Etiqueta legible de la recompensa a partir de la config (para el preview).
+function loyaltyRewardLabel(form, services) {
+  if (form.rewardType === 'FREE_SERVICE') {
+    const svc = services?.find(s => s.id === form.rewardServiceId);
+    return svc ? `${svc.name} gratis` : 'Un servicio gratis';
+  }
+  if (form.rewardType === 'DISCOUNT') {
+    return form.rewardDiscount ? `${form.rewardDiscount}% de descuento` : 'Un descuento';
+  }
+  return form.rewardDescription || 'Beneficio especial';
+}
 
 const DISCOUNT_TYPES = [
   { value: 'PERCENTAGE',    label: '% Descuento' },
@@ -232,6 +262,18 @@ export default function BusinessDashboardPage() {
   // U-010: modal de confirmación para eliminar promoción
   const [promoToDelete, setPromoToDelete] = useState(null);
   const [deletingPromo, setDeletingPromo] = useState(false);
+  // Fidelización (punch-card, plan Estudio)
+  const [loyaltyEligible, setLoyaltyEligible] = useState(false);
+  const [loyaltyForm, setLoyaltyForm] = useState(EMPTY_LOYALTY);
+  const [loyaltyLoaded, setLoyaltyLoaded] = useState(false);
+  const [loyaltySaving, setLoyaltySaving] = useState(false);
+  const [loyaltyMsg, setLoyaltyMsg] = useState('');
+  const [loyaltyClients, setLoyaltyClients] = useState([]);
+  const [loyaltyClientsLoading, setLoyaltyClientsLoading] = useState(false);
+  const [loyaltyConfirm, setLoyaltyConfirm] = useState(null); // { message } cuando requiere confirmación
+  // Valores confirmados por el backend, para detectar cambios sensibles al guardar.
+  const loyaltyLastSaved = useRef(null);  // meta de sellos guardada
+  const loyaltyWasActive = useRef(false); // si el programa estaba activo
 
   // DASH-07: registra los timeouts de mensajes y los limpia al desmontar
   // para evitar setState sobre un componente ya desmontado (fugas/warnings).
@@ -296,6 +338,22 @@ export default function BusinessDashboardPage() {
     api.getMyBusinessGallery().then(g => setGallery(g || [])).catch(() => {});
     api.getMyServiceCategories().then(c => setSvcCats(c || [])).catch(() => {});
     api.getMyPromotions().then(p => setPromotions(p || [])).catch(() => {});
+    api.getMyLoyaltyProgram().then(d => {
+      setLoyaltyEligible(!!d.planEligible);
+      if (d.program) {
+        setLoyaltyForm({
+          isActive: !!d.program.isActive,
+          stampsRequired: d.program.stampsRequired ?? 8,
+          rewardType: d.program.rewardType || 'FREE_SERVICE',
+          rewardServiceId: d.program.rewardServiceId || '',
+          rewardDiscount: d.program.rewardDiscount ?? '',
+          rewardDescription: d.program.rewardDescription || '',
+        });
+        loyaltyLastSaved.current = d.program.stampsRequired ?? 8;
+        loyaltyWasActive.current = !!d.program.isActive;
+      }
+      setLoyaltyLoaded(true);
+    }).catch(() => setLoyaltyLoaded(true));
     loadReferrals();
     api.getMyBusinessHours().then(h => {
       if (h?.length) {
@@ -670,6 +728,91 @@ export default function BusinessDashboardPage() {
     });
     setPromoEditing(promo.id);
     setShowPromoForm(true);
+  }
+
+  // ── Fidelización ──────────────────────────────────────────────────────────
+  function loadLoyaltyClients() {
+    setLoyaltyClientsLoading(true);
+    api.getLoyaltyClients({ limit: 100 })
+      .then(d => setLoyaltyClients(Array.isArray(d?.clients) ? d.clients : []))
+      .catch(() => setLoyaltyClients([]))
+      .finally(() => setLoyaltyClientsLoading(false));
+  }
+
+  // Carga la lista de clientes al abrir la pestaña (solo si es elegible).
+  useEffect(() => {
+    if (tab === 'fidelizacion' && loyaltyEligible && loyaltyLoaded) loadLoyaltyClients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, loyaltyEligible, loyaltyLoaded]);
+
+  function loyaltyValidation(form) {
+    const n = Number(form.stampsRequired);
+    if (!Number.isInteger(n) || n < 1 || n > 20) return 'Los sellos requeridos deben ser un número entre 1 y 20.';
+    if (form.rewardType === 'FREE_SERVICE' && !form.rewardServiceId) return 'Selecciona el servicio de regalo.';
+    if (form.rewardType === 'DISCOUNT') {
+      const d = Number(form.rewardDiscount);
+      if (!Number.isFinite(d) || d < 1 || d > 100) return 'El descuento debe estar entre 1 y 100%.';
+    }
+    if (form.rewardType === 'CUSTOM' && !form.rewardDescription.trim()) return 'Describe el beneficio personalizado.';
+    return null;
+  }
+
+  // Confirmaciones sensibles: bajar la meta o pausar un programa activo puede
+  // afectar el progreso de los clientes → pedimos confirmación antes de guardar.
+  function submitLoyalty(e) {
+    e?.preventDefault?.();
+    const err = loyaltyValidation(loyaltyForm);
+    if (err) { setLoyaltyMsg(err); schedule(() => setLoyaltyMsg(''), 4000); return; }
+
+    // Confirmamos si baja la meta respecto a la última guardada, o si pausa
+    // un programa que estaba activo.
+    const loweringGoal = loyaltyLastSaved.current != null &&
+      Number(loyaltyForm.stampsRequired) < loyaltyLastSaved.current;
+    const pausing = loyaltyWasActive.current && !loyaltyForm.isActive;
+
+    if (loweringGoal || pausing) {
+      const parts = [];
+      if (loweringGoal) parts.push('Vas a reducir la meta de sellos. Los clientes que ya la alcancen recibirán su recompensa de inmediato.');
+      if (pausing) parts.push('Vas a pausar el programa. Los clientes dejarán de acumular sellos hasta que lo reactives.');
+      setLoyaltyConfirm({ message: parts.join(' ') });
+      return;
+    }
+    persistLoyalty();
+  }
+
+  async function persistLoyalty() {
+    setLoyaltyConfirm(null);
+    setLoyaltySaving(true);
+    try {
+      const body = {
+        isActive: loyaltyForm.isActive,
+        stampsRequired: Number(loyaltyForm.stampsRequired),
+        rewardType: loyaltyForm.rewardType,
+      };
+      if (loyaltyForm.rewardType === 'FREE_SERVICE') body.rewardServiceId = loyaltyForm.rewardServiceId;
+      if (loyaltyForm.rewardType === 'DISCOUNT') body.rewardDiscount = Number(loyaltyForm.rewardDiscount);
+      if (loyaltyForm.rewardType === 'CUSTOM') body.rewardDescription = loyaltyForm.rewardDescription.trim();
+
+      const res = await api.updateLoyaltyProgram(body);
+      loyaltyLastSaved.current = Number(loyaltyForm.stampsRequired);
+      loyaltyWasActive.current = loyaltyForm.isActive;
+      const emitted = res?.rewardsEmitted || 0;
+      setLoyaltyMsg(emitted > 0
+        ? `✓ Guardado. Se generaron ${emitted} recompensa${emitted !== 1 ? 's' : ''} para clientes que ya cumplían la meta.`
+        : '✓ Programa de fidelización guardado.');
+      schedule(() => setLoyaltyMsg(''), 5000);
+      if (loyaltyEligible) loadLoyaltyClients();
+    } catch (err) {
+      if (err.code === 'PLAN_UPGRADE_REQUIRED') {
+        setLoyaltyEligible(false);
+        setLoyaltyMsg('Esta función requiere el plan Estudio.');
+      } else {
+        setLoyaltyMsg(err.message || 'No se pudo guardar. Intenta de nuevo.');
+      }
+      schedule(() => setLoyaltyMsg(''), 4000);
+    } finally {
+      setLoyaltySaving(false);
+    }
   }
 
   if (loading) {
@@ -2282,6 +2425,195 @@ export default function BusinessDashboardPage() {
           )}
         </div>
       )}
+
+      {tab === 'fidelizacion' && (
+        <div role="tabpanel" id="panel-fidelizacion" aria-labelledby="tab-fidelizacion" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+
+          {/* Header */}
+          <div>
+            <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
+              Retención de clientes
+            </p>
+            <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--text)', margin: 0 }}>TARJETA DE FIDELIDAD</h2>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginTop: 4 }}>
+              Cada cita completada suma un sello. Al llegar a la meta, tu cliente gana la recompensa que definas.
+            </p>
+          </div>
+
+          {!loyaltyLoaded ? (
+            <div className="skeleton" style={{ height: 200, borderRadius: 'var(--r-xl)' }} />
+          ) : !loyaltyEligible ? (
+            /* ── Upsell: función exclusiva del plan Estudio ── */
+            <div style={{
+              background: 'var(--gold-subtle)', border: '1px solid var(--gold-border)',
+              borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)',
+              display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-4)', flexWrap: 'wrap',
+            }}>
+              <div style={{ width: 44, height: 44, borderRadius: 'var(--r-lg)', background: 'var(--gold)', color: '#1a1205', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <p style={{ fontWeight: 800, color: 'var(--text)', fontSize: 'var(--text-base)', marginBottom: 4 }}>
+                  Disponible en el plan Estudio 🔒
+                </p>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 'var(--sp-4)' }}>
+                  La tarjeta de fidelidad por sellos es una función exclusiva del plan <strong>Estudio</strong>.
+                  Configura cuántos sellos se necesitan y qué recompensa entregar, y deja que tus clientes vuelvan por más.
+                </p>
+                <Link to="/pricing" className="btn btn-primary btn-sm" style={{ background: 'var(--gold)', borderColor: 'var(--gold)', color: '#1a1205' }}>
+                  Mejorar a Estudio →
+                </Link>
+              </div>
+              {/* Preview desactivado para dar contexto visual */}
+              <div style={{ width: 200, opacity: 0.5, pointerEvents: 'none' }}>
+                <LoyaltyPunchCard stamps={5} target={8} rewardLabel="1 servicio gratis" state="active" />
+              </div>
+            </div>
+          ) : (
+            /* ── Configuración (plan elegible) ── */
+            <>
+              {loyaltyMsg && (
+                <p style={{ fontSize: 'var(--text-sm)', color: loyaltyMsg.startsWith('✓') ? 'var(--success)' : 'var(--error)' }}>{loyaltyMsg}</p>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--sp-5)', alignItems: 'start' }}>
+
+                {/* Form */}
+                <form onSubmit={submitLoyalty} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-6)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+
+                  {/* Activo */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)', paddingBottom: 'var(--sp-4)', borderBottom: '1px solid var(--border)' }}>
+                    <div>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Programa activo</p>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0 }}>Los clientes acumulan sellos solo si está activo.</p>
+                    </div>
+                    <button type="button" onClick={() => setLoyaltyForm(f => ({ ...f, isActive: !f.isActive }))}
+                      style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: loyaltyForm.isActive ? 'var(--gold)' : 'var(--border)', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
+                      aria-pressed={loyaltyForm.isActive} aria-label="Activar programa">
+                      <span style={{ position: 'absolute', top: 4, left: loyaltyForm.isActive ? 24 : 4, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                    </button>
+                  </div>
+
+                  {/* Sellos requeridos */}
+                  <div>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Sellos para la recompensa (1–20)</label>
+                    <input className="input" type="number" min="1" max="20" step="1" value={loyaltyForm.stampsRequired}
+                      onChange={e => setLoyaltyForm(f => ({ ...f, stampsRequired: e.target.value }))} style={{ width: '100%' }} />
+                  </div>
+
+                  {/* Tipo de recompensa */}
+                  <div>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Recompensa</label>
+                    <select className="input" value={loyaltyForm.rewardType}
+                      onChange={e => setLoyaltyForm(f => ({ ...f, rewardType: e.target.value }))} style={{ width: '100%' }}>
+                      {REWARD_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                    </select>
+                  </div>
+
+                  {loyaltyForm.rewardType === 'FREE_SERVICE' && (
+                    <div>
+                      <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Servicio de regalo</label>
+                      {business.services?.length > 0 ? (
+                        <select className="input" value={loyaltyForm.rewardServiceId}
+                          onChange={e => setLoyaltyForm(f => ({ ...f, rewardServiceId: e.target.value }))} style={{ width: '100%' }}>
+                          <option value="">Selecciona un servicio…</option>
+                          {business.services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                        </select>
+                      ) : (
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>Crea un servicio primero para poder regalarlo.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {loyaltyForm.rewardType === 'DISCOUNT' && (
+                    <div>
+                      <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Porcentaje de descuento (%)</label>
+                      <input className="input" type="number" min="1" max="100" step="1" value={loyaltyForm.rewardDiscount}
+                        onChange={e => setLoyaltyForm(f => ({ ...f, rewardDiscount: e.target.value }))} placeholder="Ej: 50" style={{ width: '100%' }} />
+                    </div>
+                  )}
+
+                  {loyaltyForm.rewardType === 'CUSTOM' && (
+                    <div>
+                      <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Descripción del beneficio</label>
+                      <textarea className="input" rows={2} maxLength={300} value={loyaltyForm.rewardDescription}
+                        onChange={e => setLoyaltyForm(f => ({ ...f, rewardDescription: e.target.value }))} placeholder="Ej: Un producto de regalo a elección" style={{ width: '100%', resize: 'vertical' }} />
+                    </div>
+                  )}
+
+                  <button className="btn btn-primary btn-sm" type="submit" disabled={loyaltySaving} style={{ alignSelf: 'flex-start', background: 'var(--gold)', borderColor: 'var(--gold)', color: '#1a1205' }}>
+                    {loyaltySaving ? 'Guardando…' : 'Guardar programa'}
+                  </button>
+                </form>
+
+                {/* Preview */}
+                <div>
+                  <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 'var(--sp-3)' }}>
+                    Vista previa del cliente
+                  </p>
+                  <LoyaltyPunchCard
+                    stamps={Math.min(3, Number(loyaltyForm.stampsRequired) || 8)}
+                    target={Number(loyaltyForm.stampsRequired) || 8}
+                    rewardLabel={loyaltyRewardLabel(loyaltyForm, business.services)}
+                    state={loyaltyForm.isActive ? 'active' : 'paused'}
+                    businessName={business.name}
+                    businessLogo={business.logoUrl}
+                  />
+                </div>
+              </div>
+
+              {/* Clientes con progreso */}
+              <div>
+                <p style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 'var(--sp-3)' }}>
+                  Progreso de clientes
+                </p>
+                {loyaltyClientsLoading ? (
+                  <div className="skeleton" style={{ height: 120, borderRadius: 'var(--r-xl)' }} />
+                ) : loyaltyClients.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 'var(--sp-10) var(--sp-4)', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-xl)' }}>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-subtle)' }}>Aún no hay clientes con sellos.</p>
+                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)' }}>Los sellos se suman al completar cada cita.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
+                    {loyaltyClients.map(c => (
+                      <div key={c.clientId} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: 160 }}>
+                          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--text)', margin: 0 }}>{c.name || c.email}</p>
+                          {c.name && <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-subtle)', margin: 0 }}>{c.email}</p>}
+                        </div>
+                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--gold-dark)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          ★ {c.stamps}/{c.stampsRequired}
+                        </span>
+                        {c.cyclesCompleted > 0 && (
+                          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>· {c.cyclesCompleted} canje{c.cyclesCompleted !== 1 ? 's' : ''}</span>
+                        )}
+                        {c.pendingRewards > 0 && (
+                          <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 'var(--r-full)', fontWeight: 700, background: 'var(--gold-subtle)', color: 'var(--gold-dark)', border: '1px solid var(--gold-border)' }}>
+                            {c.pendingRewards} recompensa{c.pendingRewards !== 1 ? 's' : ''} por canjear
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Confirmación de cambios sensibles en fidelización */}
+      <ConfirmModal
+        open={loyaltyConfirm != null}
+        title="Confirmar cambios"
+        message={loyaltyConfirm?.message}
+        confirmLabel={loyaltySaving ? 'Guardando…' : 'Guardar de todos modos'}
+        onConfirm={persistLoyalty}
+        onCancel={() => setLoyaltyConfirm(null)}
+      />
 
       {/* U-010: confirmación de borrado de promoción */}
       <ConfirmModal

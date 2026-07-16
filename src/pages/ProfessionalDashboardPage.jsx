@@ -162,9 +162,11 @@ function ProReschedulePanel({ b, onDone, onClose }) {
   );
 }
 
-function ProTimelineRow({ b, onConfirm, onNoShow, onComplete, onCancel, onRescheduled, currency, timezone }) {
+function ProTimelineRow({ b, onConfirm, onNoShow, onComplete, onCancel, onRescheduled, onRedeem, currency, timezone }) {
   const [confirmAction, setConfirmAction] = useState(null);
   const [showReschedule, setShowReschedule] = useState(false);
+  const [redeemAsk, setRedeemAsk] = useState(false);
+  const loyalty = b.clientLoyalty; // { stamps, target, active, rewardPending } | null
   const statusColor = {
     CONFIRMED: 'var(--success)', PENDING: 'var(--warning)',
     CANCELLED: 'var(--text-subtle)', COMPLETED: 'var(--text-muted)', NO_SHOW: '#ef4444',
@@ -191,9 +193,19 @@ function ProTimelineRow({ b, onConfirm, onNoShow, onComplete, onCancel, onResche
               {(b.service?.duration ?? b.homeService?.duration) && <><span className="agenda-meta-sep">·</span>{b.service?.duration ?? b.homeService?.duration} min</>}
             </div>
           </div>
-          <span className={`badge ${AGENDA_STATUS_BADGE[b.status] ?? 'badge-pending'}`}>
-            {AGENDA_STATUS_LABEL[b.status] ?? b.status}
-          </span>
+          <div style={{ display:'flex', gap:'var(--sp-2)', alignItems:'center', flexWrap:'wrap' }}>
+            <span className={`badge ${AGENDA_STATUS_BADGE[b.status] ?? 'badge-pending'}`}>
+              {AGENDA_STATUS_LABEL[b.status] ?? b.status}
+            </span>
+            {loyalty?.active && (
+              <span
+                title={`${loyalty.stamps} de ${loyalty.target} sellos`}
+                style={{ fontSize:10, padding:'2px 8px', borderRadius:'var(--r-full)', background:'var(--gold-subtle)', color:'var(--gold-dark)', border:'1px solid var(--gold-border)', fontWeight:700, whiteSpace:'nowrap' }}
+              >
+                ★ {loyalty.stamps}/{loyalty.target} sellos
+              </span>
+            )}
+          </div>
         </div>
         <div className="agenda-client-row">
           <div className="agenda-client-avatar">{b.client?.name?.[0]?.toUpperCase() ?? '?'}</div>
@@ -214,6 +226,41 @@ function ProTimelineRow({ b, onConfirm, onNoShow, onComplete, onCancel, onResche
           }}>
             ⚠ Deuda pendiente: {fmtMoney(b.clientDebt.pendingTotal, currency)}
             {b.clientDebt.pendingCount > 1 ? ` (${b.clientDebt.pendingCount} multas)` : ''}
+          </div>
+        )}
+
+        {/* Recompensa de fidelidad lista para canjear */}
+        {loyalty?.rewardPending && (
+          <div style={{
+            marginTop: 'var(--sp-2)', padding: 'var(--sp-2) var(--sp-3)',
+            borderRadius: 'var(--r-md)', background: 'var(--gold-subtle)',
+            border: '1px solid var(--gold-border)',
+            display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
+          }}>
+            <span style={{ flex: 1, fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--gold-dark)' }}>
+              🎁 Recompensa lista: {loyalty.rewardPending.label}
+            </span>
+            {redeemAsk ? (
+              <>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--gold-dark)' }}>¿Canjear ahora?</span>
+                <button
+                  className="btn btn-sm"
+                  style={{ padding: '3px 12px', fontWeight: 700, background: 'var(--gold)', color: '#000', border: 'none' }}
+                  onClick={() => { setRedeemAsk(false); onRedeem?.(loyalty.rewardPending.id); }}
+                >
+                  Sí
+                </button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setRedeemAsk(false)}>No</button>
+              </>
+            ) : (
+              <button
+                className="btn btn-sm"
+                style={{ padding: '4px 12px', fontWeight: 700, background: 'var(--gold)', color: '#000', border: 'none' }}
+                onClick={() => setRedeemAsk(true)}
+              >
+                Canjear
+              </button>
+            )}
           </div>
         )}
 
@@ -1765,6 +1812,15 @@ export default function ProfessionalDashboardPage() {
             setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'CANCELLED' } : b));
           } catch (e) { setAgendaError(e.message); }
         }
+        async function handleProRedeem(rewardId) {
+          setAgendaError('');
+          try {
+            await api.redeemLoyaltyReward(rewardId);
+            loadBookings(); // refresca clientLoyalty en todas las filas del cliente
+          } catch (e) {
+            setAgendaError(e.status === 409 ? 'La recompensa ya fue redimida.' : (e.message || 'No se pudo redimir la recompensa.'));
+          }
+        }
         function handleProRescheduled(updated) {
           // La cita puede moverse a otra fecha: se actualiza y el filtro por
           // día de la agenda la reubica solo.
@@ -1874,6 +1930,7 @@ export default function ProfessionalDashboardPage() {
                     onComplete={handleProComplete}
                     onCancel={handleProCancel}
                     onRescheduled={handleProRescheduled}
+                    onRedeem={handleProRedeem}
                     currency={currencyForCountry(pro?.country)}
                     timezone={pro?.timezone}
                   />

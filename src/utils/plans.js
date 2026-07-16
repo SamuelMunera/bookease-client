@@ -15,6 +15,7 @@ export const FEATURES = {
   prioritySupport:   'Soporte prioritario',
   linkCode:          'Código de vinculación',
   advancedAnalytics: 'Analíticas avanzadas',
+  loyalty:           'Tarjeta de fidelidad (sellos)',
   onboarding:        'Onboarding personalizado',
 };
 
@@ -23,7 +24,7 @@ export const FEATURES = {
 const PLAN_FEATURE_KEYS = {
   solo:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport'],
   team:       ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode', 'advancedAnalytics'],
-  studio:     ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode', 'advancedAnalytics'],
+  studio:     ['bookings', 'agenda', 'notifications', 'panel', 'homeService', 'prioritySupport', 'linkCode', 'advancedAnalytics', 'loyalty'],
   enterprise: Object.keys(FEATURES),
 };
 
@@ -37,7 +38,7 @@ function excluded(planId) {
 }
 
 // Rows shown in the compact "key differences" matrix.
-export const COMPARE_FEATURE_KEYS = ['linkCode', 'advancedAnalytics', 'prioritySupport'];
+export const COMPARE_FEATURE_KEYS = ['linkCode', 'advancedAnalytics', 'loyalty', 'prioritySupport'];
 
 // Shared marketing copy — identical across CO/US, only price changes.
 const PLAN_META = {
@@ -57,8 +58,8 @@ const PLAN_META = {
   },
   studio: {
     audience: 'Negocios en crecimiento',
-    mainBenefit: 'Hasta 6 profesionales + analíticas para tomar mejores decisiones',
-    idealFor: 'Tu equipo crece y necesitas datos para decidir qué funciona.',
+    mainBenefit: 'Hasta 6 profesionales + analíticas + tarjeta de fidelidad para retener clientes',
+    idealFor: 'Tu equipo crece y necesitas datos y fidelización para decidir qué funciona.',
     ctaLabel: 'Crear cuenta de negocio',
     ctaTo: '/register',
   },

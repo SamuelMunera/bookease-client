@@ -99,8 +99,10 @@ function StatCard({ num, label, color, icon }) {
 }
 
 /* ── Timeline row ────────────────────────────────────────── */
-function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone, currency }) {
+function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, onRedeem, timezone, currency }) {
   const [confirm, setConfirm] = useState(null); // 'no-show' | 'complete' | 'cancel' | null
+  const [redeemAsk, setRedeemAsk] = useState(false);
+  const loyalty = b.clientLoyalty; // { stamps, target, active, rewardPending } | null
   const statusColor = {
     CONFIRMED: 'var(--success)',
     PENDING:   'var(--warning)',
@@ -148,6 +150,14 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone, c
             <span className={`badge ${STATUS_BADGE[b.status]}`}>
               {STATUS_LABEL[b.status]}
             </span>
+            {loyalty?.active && (
+              <span
+                title={`${loyalty.stamps} de ${loyalty.target} sellos`}
+                style={{ fontSize:10, padding:'2px 8px', borderRadius:'var(--r-full)', background:'var(--gold-subtle)', color:'var(--gold-dark)', border:'1px solid var(--gold-border)', fontWeight:700, whiteSpace:'nowrap' }}
+              >
+                ★ {loyalty.stamps}/{loyalty.target} sellos
+              </span>
+            )}
           </div>
         </div>
 
@@ -178,6 +188,41 @@ function TimelineRow({ b, onConfirm, onCancel, onNoShow, onComplete, timezone, c
           }}>
             ⚠ Deuda pendiente: {fmtMoney(b.clientDebt.pendingTotal, currency)}
             {b.clientDebt.pendingCount > 1 ? ` (${b.clientDebt.pendingCount} multas)` : ''}
+          </div>
+        )}
+
+        {/* Recompensa de fidelidad lista para canjear en mostrador */}
+        {loyalty?.rewardPending && (
+          <div style={{
+            marginTop: 'var(--sp-2)', padding: 'var(--sp-2) var(--sp-3)',
+            borderRadius: 'var(--r-md)', background: 'var(--gold-subtle)',
+            border: '1px solid var(--gold-border)',
+            display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap',
+          }}>
+            <span style={{ flex: 1, fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--gold-dark)' }}>
+              🎁 Recompensa lista: {loyalty.rewardPending.label}
+            </span>
+            {redeemAsk ? (
+              <>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--gold-dark)' }}>¿Canjear ahora?</span>
+                <button
+                  className="btn btn-sm"
+                  style={{ padding: '3px 12px', fontWeight: 700, background: 'var(--gold)', color: '#000', border: 'none' }}
+                  onClick={() => { setRedeemAsk(false); onRedeem(loyalty.rewardPending.id); }}
+                >
+                  Sí
+                </button>
+                <button className="btn btn-secondary btn-sm" style={{ padding: '3px 10px' }} onClick={() => setRedeemAsk(false)}>No</button>
+              </>
+            ) : (
+              <button
+                className="btn btn-sm"
+                style={{ padding: '4px 12px', fontWeight: 700, background: 'var(--gold)', color: '#000', border: 'none' }}
+                onClick={() => setRedeemAsk(true)}
+              >
+                Canjear
+              </button>
+            )}
           </div>
         )}
 
@@ -334,6 +379,13 @@ export default function BusinessAgendaPage() {
     setActionError(null);
     try { await api.markComplete(id); load(); }
     catch (e) { setActionError(e.message || 'No se pudo marcar como completada.'); }
+  }
+  async function handleRedeem(rewardId) {
+    setActionError(null);
+    try { await api.redeemLoyaltyReward(rewardId); load(); }
+    catch (e) {
+      setActionError(e.status === 409 ? 'La recompensa ya fue redimida.' : (e.message || 'No se pudo redimir la recompensa.'));
+    }
   }
 
   // Filtro real por profesional: 'all' deja todas; si no, solo las de ese pro.
@@ -570,6 +622,7 @@ export default function BusinessAgendaPage() {
               onCancel={handleCancel}
               onNoShow={handleNoShow}
               onComplete={handleComplete}
+              onRedeem={handleRedeem}
               timezone={selectedTimezone}
               currency={currencyForCountry(businesses.find(x => x.id === businessId)?.country)}
             />
