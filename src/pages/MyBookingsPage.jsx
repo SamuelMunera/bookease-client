@@ -320,24 +320,28 @@ export default function MyBookingsPage() {
   const [loyaltyCards, setLoyaltyCards] = useState([]);
   const [dismissedReward, setDismissedReward] = useState(false);
 
-  const isPro = user?.role === 'PROFESSIONAL';
-
+  // "Mis reservas" es el contexto PERSONAL (de cliente) de cualquier usuario:
+  // sus propias citas reservadas y sus tarjetas de fidelidad, sin importar el
+  // rol. La agenda de TRABAJO del profesional vive en /pro/dashboard, y la del
+  // dueño en /agenda; no se mezclan aquí. Así un profesional o admin que reserva
+  // en otro negocio ve su cita y sus sellos de ESE negocio (antes se ocultaban
+  // porque la página derivaba todo de isPro).
   function load() {
     setLoading(true);
-    const req = isPro ? api.getProBookings() : api.getMyBookings();
-    req.then(data => setBookings(Array.isArray(data) ? data : [])).finally(() => setLoading(false));
+    api.getMyBookings()
+      .then(data => setBookings(Array.isArray(data) ? data : []))
+      .catch(() => setBookings([]))
+      .finally(() => setLoading(false));
   }
-  // Re-cargar cuando cambie el rol: si el rol se hidrata después del mount
-  // (isPro pasa de false a true), esto asegura llamar al endpoint correcto.
-  useEffect(() => { load(); }, [isPro]);
+  useEffect(() => { load(); }, [user?.id]);
 
-  // Tarjetas de fidelidad: solo para clientes (no aplica en modo profesional).
+  // Tarjetas de fidelidad del usuario (cualquier rol). El backend las devuelve
+  // por identidad (clientId = usuario autenticado).
   useEffect(() => {
-    if (isPro) { setLoyaltyCards([]); return; }
     api.getMyLoyaltyCards()
       .then(d => setLoyaltyCards(Array.isArray(d?.cards) ? d.cards : []))
       .catch(() => setLoyaltyCards([]));
-  }, [isPro]);
+  }, [user?.id]);
 
   // Recompensas ganadas y pendientes de canjear (para el aviso destacado).
   const earnedRewards = loyaltyCards.flatMap(c =>
@@ -345,12 +349,9 @@ export default function MyBookingsPage() {
   );
 
   async function handleCancel(id, isHome) {
-    // En modo profesional la agenda es propia: cancela por el endpoint del
-    // profesional (sin multa, con correo al cliente). Como cliente, el flujo
-    // normal con política de multa.
-    const res = await (isPro ? api.cancelBookingAsPro(id)
-      : isHome ? api.cancelHomeBooking(id)
-      : api.cancelBooking(id));
+    // Contexto de cliente: cancela su propia reserva por el flujo normal (con
+    // política de multa). Domicilio usa su endpoint específico.
+    const res = await (isHome ? api.cancelHomeBooking(id) : api.cancelBooking(id));
     // El backend es la autoridad: informa si esta cancelación generó multa.
     if (res?.feeApplied?.amount) {
       const b = bookings.find(x => x.id === id);
@@ -368,7 +369,7 @@ export default function MyBookingsPage() {
     { key: 'upcoming',  label: 'Próximas',  count: upcoming.length,  color: 'var(--violet)' },
     { key: 'past',      label: 'Pasadas',   count: past.length,      color: 'var(--gold)' },
     { key: 'cancelled', label: 'Canceladas',count: cancelled.length, color: 'var(--text-subtle)' },
-    ...(!isPro && loyaltyCards.length > 0
+    ...(loyaltyCards.length > 0
       ? [{ key: 'loyalty', label: 'Mis tarjetas', count: loyaltyCards.length, color: 'var(--gold)' }]
       : []),
   ];
@@ -416,7 +417,7 @@ export default function MyBookingsPage() {
       )}
 
       {/* ── Aviso de recompensa de fidelidad lista para canjear ── */}
-      {!isPro && !dismissedReward && earnedRewards.length > 0 && (
+      {!dismissedReward && earnedRewards.length > 0 && (
         <div style={{
           display:'flex', alignItems:'center', gap:'var(--sp-3)',
           margin:'var(--sp-4) 0', padding:'var(--sp-3) var(--sp-4)',

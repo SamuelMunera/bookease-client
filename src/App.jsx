@@ -171,8 +171,12 @@ export default function App() {
             <Route path="book" element={
               <ProtectedRoute><BookingPage /></ProtectedRoute>
             } />
+            {/* Mis reservas: cualquier usuario autenticado puede reservar como
+                cliente (la ruta /book no exige rol), así que todos deben poder
+                ver sus propias reservas y tarjetas de fidelidad — incl. ADMIN,
+                BUSINESS_OWNER y PROFESSIONAL (que reservan en otros negocios). */}
             <Route path="my-bookings" element={
-              <ProtectedRoute role={['CLIENT','PROFESSIONAL']}><MyBookingsPage /></ProtectedRoute>
+              <ProtectedRoute><MyBookingsPage /></ProtectedRoute>
             } />
             <Route path="agenda" element={
               <ProtectedRoute role="BUSINESS_OWNER"><BusinessAgendaPage /></ProtectedRoute>

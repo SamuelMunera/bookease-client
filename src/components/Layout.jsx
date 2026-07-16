@@ -14,10 +14,13 @@ const NAV_LINKS = [
 // menú de cuenta (hamburguesa) que agrupa dashboards, agendas y logout.
 const ROLE_LABELS = { BUSINESS_OWNER: 'Negocio', PROFESSIONAL: 'Profesional', CLIENT: 'Cliente', ADMIN: 'Admin' };
 const PANEL_LINKS = {
-  BUSINESS_OWNER: [{ to: '/dashboard', label: 'Panel de negocio' }, { to: '/agenda', label: 'Agenda' }],
-  PROFESSIONAL:   [{ to: '/pro/dashboard', label: 'Mi panel' }, { to: '/my-bookings', label: 'Mis citas' }],
+  // "Mis reservas" (/my-bookings) es el contexto personal de cliente: disponible
+  // para todos los roles, porque cualquiera puede reservar como cliente. La
+  // agenda de trabajo del owner/pro vive en su panel, no aquí.
+  BUSINESS_OWNER: [{ to: '/dashboard', label: 'Panel de negocio' }, { to: '/agenda', label: 'Agenda' }, { to: '/my-bookings', label: 'Mis reservas' }],
+  PROFESSIONAL:   [{ to: '/pro/dashboard', label: 'Mi panel' }, { to: '/my-bookings', label: 'Mis reservas' }],
   CLIENT:         [{ to: '/', label: 'Explorar' }, { to: '/my-bookings', label: 'Mis reservas' }],
-  ADMIN:          [{ to: '/admin/dashboard', label: 'Panel admin' }],
+  ADMIN:          [{ to: '/admin/dashboard', label: 'Panel admin' }, { to: '/my-bookings', label: 'Mis reservas' }],
 };
 
 const FOOTER_COLS = [
@@ -280,7 +283,7 @@ export default function Layout() {
                   <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
                   <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
-                Mis citas
+                Mis reservas
               </Link>
             </>
           )}

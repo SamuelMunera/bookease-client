@@ -281,16 +281,35 @@ export default function BusinessesPage() {
                     Nuevo
                   </div>
                 )}
-                <div className={`biz-card-img ${b.coverUrl ? '' : (CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop')}`}
-                  style={b.coverUrl ? { background: 'transparent', overflow: 'hidden', padding: 0 } : {}}>
-                  {b.coverUrl
-                    ? <img src={b.coverUrl} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    : <>
-                        <span className="biz-card-img-letter">{b.name[0]}</span>
-                        <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
-                      </>
-                  }
-                </div>
+                {/* Imagen del negocio: se prioriza el logo (campo canónico usado
+                    en home, recomendados y fidelización) y se cae a la portada.
+                    Antes solo miraba coverUrl, por eso los negocios que solo
+                    subían logo aparecían sin imagen. onError → placeholder de
+                    categoría para no dejar el recuadro en blanco. */}
+                {(() => {
+                  const imgSrc = b.logoUrl || b.coverUrl;
+                  const fallbackClass = CAT_IMG_CLASS[b.category] || 'biz-card-img-barbershop';
+                  return (
+                    <div className={`biz-card-img ${imgSrc ? '' : fallbackClass}`}
+                      style={imgSrc ? { background: 'transparent', overflow: 'hidden', padding: 0 } : {}}>
+                      {imgSrc
+                        ? <img src={imgSrc} alt={b.name} loading="lazy" decoding="async"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            onError={(e) => {
+                              // URL rota: ocultamos la imagen y activamos el placeholder de categoría.
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement.classList.add(fallbackClass);
+                              e.currentTarget.parentElement.style.background = '';
+                              e.currentTarget.parentElement.style.padding = '';
+                            }} />
+                        : <>
+                            <span className="biz-card-img-letter">{b.name[0]}</span>
+                            <span className="biz-card-img-label">{(categories.find(c => c.slug === b.category)?.name) || b.category}</span>
+                          </>
+                      }
+                    </div>
+                  );
+                })()}
                 <div className="biz-card-body">
                   <h3 className="biz-card-name">{b.name}</h3>
                   <p className="biz-card-address">
