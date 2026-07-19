@@ -894,6 +894,7 @@ html { scroll-padding-top: 68px; }
   border: 1px solid var(--border);
 }
 .biz-map-frame iframe { width: 100%; height: 100%; border: none; display: block; }
+.biz-map-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .biz-map-placeholder {
   width: 100%; height: 180px; border-radius: var(--r-xl);
   border: 1px dashed var(--border);

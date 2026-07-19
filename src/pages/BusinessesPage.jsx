@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import useSEO from '../hooks/useSEO';
 import api from '../api';
+import { forwardGeocode, reverseGeocode } from '../utils/geocode';
 
 const CAT_IMG_CLASS = { BARBERSHOP: 'biz-card-img-barbershop', SPA: 'biz-card-img-spa', SALON: 'biz-card-img-salon' };
 function Stars({ rating }) {
@@ -65,10 +66,9 @@ export default function BusinessesPage() {
     if (!q) { setUserLocation(null); setLocationError(''); const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p); return; }
     setLocationLoading(true); setLocationError('');
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`, { headers: { 'User-Agent': 'Slotly/1.0'} });
-      const data = await res.json();
-      if (data.length > 0) {
-        setUserLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), label: data[0].display_name?.split(',')[0] || q });
+      const result = await forwardGeocode(q);
+      if (result) {
+        setUserLocation({ lat: result.lat, lng: result.lng, label: result.label });
         const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p);
       } else {
         const p = new URLSearchParams(searchParams); p.set('city', q); setSearchParams(p);
@@ -88,9 +88,7 @@ export default function BusinessesPage() {
         const { latitude: lat, longitude: lng } = pos.coords;
         let label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers: { 'User-Agent': 'Slotly/1.0'} });
-          const d = await res.json();
-          label = d.address?.city || d.address?.town || d.address?.village || d.address?.suburb || d.display_name?.split(',')[0] || label;
+          label = (await reverseGeocode(lat, lng)) || label;
         } catch {}
         setUserLocation({ lat, lng, label }); setCityInput('');
         const p = new URLSearchParams(searchParams); p.delete('city'); setSearchParams(p);

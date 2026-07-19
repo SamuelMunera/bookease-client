@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../api';
 import RecommendedBusinesses from '../components/RecommendedBusinesses';
 import LoyaltyPunchCard from '../components/LoyaltyPunchCard';
+import { forwardGeocode, staticMapUrl } from '../utils/geocode';
 
 // Formato de moneda consistente con el resto de la página.
 function fmtCurrency(n) {
@@ -343,27 +344,23 @@ function MapSection({ business }) {
   useEffect(() => {
     if (coords) return;
     if (!address && !city) return;
-    // PUB-09: el navegador ignora (y prohíbe) el header User-Agent en fetch, así
-    // que se elimina. Se añade AbortController para cancelar la petición si el
-    // componente se desmonta o cambia la dirección antes de resolver.
+    // AbortController para cancelar la petición si el componente se desmonta o
+    // cambia la dirección antes de resolver.
     const ctrl = new AbortController();
     setGeocoding(true);
-    const q = encodeURIComponent(`${address}, ${city}`);
-    fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
-      signal: ctrl.signal,
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.length > 0) {
-          setCoords({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
-        }
+    forwardGeocode(`${address}, ${city}`, { signal: ctrl.signal, country })
+      .then(result => {
+        if (result) setCoords({ lat: result.lat, lng: result.lng });
       })
       .catch(() => {})
       .finally(() => { if (!ctrl.signal.aborted) setGeocoding(false); });
     return () => ctrl.abort();
-  }, [address, city, coords]);
+  }, [address, city, country, coords]);
 
-  const mapSrc = coords
+  // Con token de Mapbox se muestra una imagen de mapa estático (más precisa y
+  // ligera); sin token se mantiene el embed de OpenStreetMap como fallback.
+  const staticSrc = coords ? staticMapUrl(coords.lat, coords.lng) : null;
+  const mapSrc = coords && !staticSrc
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.008},${coords.lat - 0.005},${coords.lng + 0.008},${coords.lat + 0.005}&layer=mapnik&marker=${coords.lat},${coords.lng}`
     : null;
 
@@ -387,6 +384,12 @@ function MapSection({ business }) {
         </div>
       )}
 
+      {!geocoding && staticSrc && (
+        <div className="biz-map-frame">
+          <img src={staticSrc} alt="Mapa de ubicación" loading="lazy" />
+        </div>
+      )}
+
       {!geocoding && mapSrc && (
         <div className="biz-map-frame">
           <iframe
@@ -398,7 +401,7 @@ function MapSection({ business }) {
         </div>
       )}
 
-      {!geocoding && !mapSrc && (
+      {!geocoding && !staticSrc && !mapSrc && (
         <div className="biz-map-placeholder">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
