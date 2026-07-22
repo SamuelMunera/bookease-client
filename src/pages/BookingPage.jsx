@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { fmtMoney, currencyForCountry } from '../utils/currency';
+import { to12h } from '../utils/time';
 
 const DAYS_ES   = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTHS_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -171,7 +172,7 @@ function SuccessScreen({ date, time, loyalty, onViewBookings, onExplore }) {
       <h2 className="booking-success-title">¡Solicitud de reserva enviada!</h2>
       <p className="booking-success-sub">
         Pediste tu cita para el<br />
-        <strong>{formatLabel(date)}</strong> a las <strong>{time}</strong>
+        <strong>{formatLabel(date)}</strong> a las <strong>{to12h(time)}</strong>
       </p>
       <p className="booking-success-note">
         El profesional la confirmará pronto y recibirás un correo con la confirmación.
@@ -409,9 +410,9 @@ export default function BookingPage() {
                     className={`slot-btn2${selected?.startTime === slot.startTime ? ' active' : ''}`}
                     onClick={() => setSelected(slot)}
                   >
-                    <span className="slot-btn2-time">{slot.startTime}</span>
+                    <span className="slot-btn2-time">{to12h(slot.startTime)}</span>
                     {slot.endTime && (
-                      <span className="slot-btn2-end">–{slot.endTime}</span>
+                      <span className="slot-btn2-end">–{to12h(slot.endTime)}</span>
                     )}
                   </button>
                 ))}
@@ -430,7 +431,7 @@ export default function BookingPage() {
               <div style={{ flex:1 }}>
                 <p className="slot-selected-label">Cita seleccionada</p>
                 <p className="slot-selected-val">
-                  {formatLabel(date)} · {selected.startTime}
+                  {formatLabel(date)} · {to12h(selected.startTime)}
                   {selected.endTime && ` – ${selected.endTime}`}
                 </p>
               </div>

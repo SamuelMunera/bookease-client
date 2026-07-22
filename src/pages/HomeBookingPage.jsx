@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
+import { to12h } from '../utils/time';
 
 /* ── Helpers ─────────────────────────────────────────────── */
 const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio',
@@ -232,7 +233,7 @@ export default function HomeBookingPage() {
           <h2 className="booking-success-title">¡Solicitud de reserva enviada!</h2>
           <p className="booking-success-sub">
             Pediste que {prof?.name} llegue a tu domicilio el<br />
-            <strong style={{ textTransform:'capitalize' }}>{formatLabel(date)}</strong> a las <strong>{selectedSlot?.startTime}</strong>
+            <strong style={{ textTransform:'capitalize' }}>{formatLabel(date)}</strong> a las <strong>{to12h(selectedSlot?.startTime)}</strong>
           </p>
           <p className="booking-success-note">
             El profesional la confirmará pronto. Dirección: {success.clientAddress}
@@ -407,8 +408,8 @@ export default function HomeBookingPage() {
                       <button key={slot.startTime}
                         className={`slot-btn2${selectedSlot?.startTime === slot.startTime ? ' active' : ''}`}
                         onClick={() => setSlot(slot)}>
-                        <span className="slot-btn2-time">{slot.startTime}</span>
-                        {slot.endTime && <span className="slot-btn2-end">{slot.endTime}</span>}
+                        <span className="slot-btn2-time">{to12h(slot.startTime)}</span>
+                        {slot.endTime && <span className="slot-btn2-end">{to12h(slot.endTime)}</span>}
                       </button>
                     ))}
                   </div>
@@ -478,7 +479,7 @@ export default function HomeBookingPage() {
               { label: 'Duración',   val: `${selectedService?.duration} min` },
               { label: 'Precio',     val: selectedService && `$${Number(selectedService.price).toLocaleString('es-CO')}${selectedService.surcharge && Number(selectedService.surcharge) > 0 ? ` + $${Number(selectedService.surcharge).toLocaleString('es-CO')} domicilio` : ''}` },
               { label: 'Fecha',      val: <span style={{ textTransform:'capitalize' }}>{formatLabel(date)}</span> },
-              { label: 'Hora',       val: selectedSlot?.startTime },
+              { label: 'Hora',       val: to12h(selectedSlot?.startTime) },
               { label: 'Ciudad',     val: city },
               { label: 'Dirección',  val: address },
             ].map(({ label, val }) => (
