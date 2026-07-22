@@ -358,10 +358,15 @@ function MapSection({ business }) {
   }, [address, city, country, coords]);
 
   // Con token de Mapbox se muestra una imagen de mapa estático (más precisa y
-  // ligera); sin token se mantiene el embed de OpenStreetMap como fallback.
+  // ligera); sin token se usa el embed de Google Maps. La key es pública (va en
+  // el iframe): restríngela por referente HTTP y a "Maps Embed API" en Google
+  // Cloud Console.
+  const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
   const staticSrc = coords ? staticMapUrl(coords.lat, coords.lng) : null;
-  const mapSrc = coords && !staticSrc
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.008},${coords.lat - 0.005},${coords.lng + 0.008},${coords.lat + 0.005}&layer=mapnik&marker=${coords.lat},${coords.lng}`
+  const mapSrc = !staticSrc && GMAPS_KEY
+    ? `https://www.google.com/maps/embed/v1/place?key=${GMAPS_KEY}` +
+      `&q=${coords ? `${coords.lat},${coords.lng}` : encodeURIComponent(`${address}, ${city}`)}` +
+      `&zoom=15&language=es`
     : null;
 
   const mapsLink = coords
