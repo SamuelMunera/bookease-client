@@ -5,7 +5,6 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../api';
 import RecommendedBusinesses from '../components/RecommendedBusinesses';
 import LoyaltyPunchCard from '../components/LoyaltyPunchCard';
-import { forwardGeocode } from '../utils/geocode';
 
 // Formato de moneda consistente con el resto de la página.
 function fmtCurrency(n) {
@@ -334,42 +333,27 @@ function HoursSection({ hours }) {
 /* ══════════════════════════════════════════════════════════
    MAP SECTION
    ══════════════════════════════════════════════════════════ */
+const COUNTRY_NAMES = { CO: 'Colombia', US: 'United States' };
+
 function MapSection({ business }) {
-  const { address, city, country } = business;
-  const [coords, setCoords] = useState(
-    business.lat && business.lng ? { lat: business.lat, lng: business.lng } : null
-  );
-  const [geocoding, setGeocoding] = useState(false);
+  const { address, city, state, country } = business;
 
-  useEffect(() => {
-    if (coords) return;
-    if (!address && !city) return;
-    // AbortController para cancelar la petición si el componente se desmonta o
-    // cambia la dirección antes de resolver.
-    const ctrl = new AbortController();
-    setGeocoding(true);
-    forwardGeocode(`${address}, ${city}`, { signal: ctrl.signal, country })
-      .then(result => {
-        if (result) setCoords({ lat: result.lat, lng: result.lng });
-      })
-      .catch(() => {})
-      .finally(() => { if (!ctrl.signal.aborted) setGeocoding(false); });
-    return () => ctrl.abort();
-  }, [address, city, country, coords]);
+  // Dirección completa como texto (calle, ciudad, departamento, país). El embed
+  // de Google la geocodifica en el momento, igual que la app de Google Maps —
+  // más preciso que depender de las lat/lng guardadas, que pueden venir de un
+  // geocodificador anterior y quedar desviadas.
+  const fullAddress = [address, city, state, COUNTRY_NAMES[country] || country]
+    .filter(Boolean).join(', ');
 
-  // Mapa visible: embed interactivo de Google Maps. La key es pública (va en el
-  // iframe): restríngela por referente HTTP y a "Maps Embed API" en Google Cloud
-  // Console. Usa las coordenadas si ya están; si no, la dirección como query.
+  // La key es pública (va en el iframe): restríngela por referente HTTP y a
+  // "Maps Embed API" en Google Cloud Console.
   const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
-  const mapSrc = GMAPS_KEY && (coords || address)
+  const mapSrc = GMAPS_KEY && fullAddress
     ? `https://www.google.com/maps/embed/v1/place?key=${GMAPS_KEY}` +
-      `&q=${coords ? `${coords.lat},${coords.lng}` : encodeURIComponent(`${address}, ${city}`)}` +
-      `&zoom=15&language=es`
+      `&q=${encodeURIComponent(fullAddress)}&zoom=16&language=es`
     : null;
 
-  const mapsLink = coords
-    ? `https://www.google.com/maps/search/?api=1&query=${coords.lat},${coords.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${address}, ${city}`)}`;
+  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
 
   return (
     <section className="biz-map-section">
@@ -381,13 +365,7 @@ function MapSection({ business }) {
       </div>
       <p className="biz-map-address">{address}, {city}{country !== 'CO' ? `, ${country}` : ''}</p>
 
-      {geocoding && (
-        <div className="biz-map-frame" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ color: 'var(--text-subtle)', fontSize: 'var(--text-sm)' }}>Cargando mapa…</span>
-        </div>
-      )}
-
-      {!geocoding && mapSrc && (
+      {mapSrc && (
         <div className="biz-map-frame">
           <iframe
             title="Mapa de ubicación"
@@ -398,7 +376,7 @@ function MapSection({ business }) {
         </div>
       )}
 
-      {!geocoding && !mapSrc && (
+      {!mapSrc && (
         <div className="biz-map-placeholder">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
