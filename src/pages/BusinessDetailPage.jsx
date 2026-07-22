@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../api';
 import RecommendedBusinesses from '../components/RecommendedBusinesses';
 import LoyaltyPunchCard from '../components/LoyaltyPunchCard';
-import { forwardGeocode, staticMapUrl } from '../utils/geocode';
+import { forwardGeocode } from '../utils/geocode';
 
 // Formato de moneda consistente con el resto de la página.
 function fmtCurrency(n) {
@@ -357,13 +357,11 @@ function MapSection({ business }) {
     return () => ctrl.abort();
   }, [address, city, country, coords]);
 
-  // Con token de Mapbox se muestra una imagen de mapa estático (más precisa y
-  // ligera); sin token se usa el embed de Google Maps. La key es pública (va en
-  // el iframe): restríngela por referente HTTP y a "Maps Embed API" en Google
-  // Cloud Console.
+  // Mapa visible: embed interactivo de Google Maps. La key es pública (va en el
+  // iframe): restríngela por referente HTTP y a "Maps Embed API" en Google Cloud
+  // Console. Usa las coordenadas si ya están; si no, la dirección como query.
   const GMAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
-  const staticSrc = coords ? staticMapUrl(coords.lat, coords.lng) : null;
-  const mapSrc = !staticSrc && GMAPS_KEY
+  const mapSrc = GMAPS_KEY && (coords || address)
     ? `https://www.google.com/maps/embed/v1/place?key=${GMAPS_KEY}` +
       `&q=${coords ? `${coords.lat},${coords.lng}` : encodeURIComponent(`${address}, ${city}`)}` +
       `&zoom=15&language=es`
@@ -389,12 +387,6 @@ function MapSection({ business }) {
         </div>
       )}
 
-      {!geocoding && staticSrc && (
-        <div className="biz-map-frame">
-          <img src={staticSrc} alt="Mapa de ubicación" loading="lazy" />
-        </div>
-      )}
-
       {!geocoding && mapSrc && (
         <div className="biz-map-frame">
           <iframe
@@ -406,7 +398,7 @@ function MapSection({ business }) {
         </div>
       )}
 
-      {!geocoding && !staticSrc && !mapSrc && (
+      {!geocoding && !mapSrc && (
         <div className="biz-map-placeholder">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="1.5">
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
